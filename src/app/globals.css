@@ -280,32 +280,24 @@ html.lang-bn .font-serif-d {
   letter-spacing: 0;
 }
 
-/* ---------- Hero: editorial intelligence desk (not SaaS) ---------- */
-.hero {
-  position: relative;
-  overflow: hidden;
-  border-radius: 22px;
-  border: 1px solid var(--line);
-  background:
-    radial-gradient(900px 320px at 12% -60px, color-mix(in srgb, var(--gold) 14%, transparent), transparent),
-    radial-gradient(700px 300px at 95% 110%, color-mix(in srgb, var(--steel) 10%, transparent), transparent),
-    var(--surface);
-  padding: 2.75rem 1.5rem 0;
+/* ---------- Scroll progress ---------- */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gold);
+  transform-origin: 0 50%;
+  z-index: 60;
 }
-@media (min-width: 640px) {
-  .hero { padding: 3.75rem 3rem 0; }
-}
-.hero-live {
+
+/* ---------- Title block (app screen: no hero header) ---------- */
+.title-block-live {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted);
+  gap: 0.5rem;
 }
-html.lang-bn .hero-live { letter-spacing: 0.02em; }
 .live-dot {
   width: 8px;
   height: 8px;
@@ -319,96 +311,115 @@ html.lang-bn .hero-live { letter-spacing: 0.02em; }
   70% { box-shadow: 0 0 0 9px rgba(47, 158, 110, 0); }
   100% { box-shadow: 0 0 0 0 rgba(47, 158, 110, 0); }
 }
-.hero-title {
-  font-family: Fraunces, Georgia, "Times New Roman", serif;
-  font-weight: 600;
-  letter-spacing: -0.025em;
-  line-height: 1.02;
-  font-size: clamp(2.6rem, 7vw, 4.9rem);
-  margin-top: 1.1rem;
-  text-wrap: balance;
-  max-width: 16ch;
+
+/* ---------- Time scrubber (signature move) ---------- */
+.scrubber {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 1.1rem 1.25rem 0.9rem;
 }
-html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; }
-.hero-title .accent {
-  font-style: italic;
-  color: var(--gold-deep);
+.scrub-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  background: transparent;
+  cursor: pointer;
+  margin: 0.35rem 0 0.1rem;
 }
-.hero-sub {
-  margin-top: 1.1rem;
-  max-width: 38rem;
-  font-size: 1.02rem;
-  line-height: 1.7;
-  color: var(--muted);
-  text-wrap: pretty;
+.scrub-range::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 3px;
+  background: var(--line);
 }
-.hero-cta {
-  margin-top: 1.9rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+.scrub-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -8.5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--gold);
+  border: 3px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--gold-deep);
 }
-/* shimmer sweep on primary CTA */
-.btn-shine {
-  position: relative;
-  overflow: hidden;
+.scrub-range::-moz-range-track {
+  height: 3px;
+  border-radius: 3px;
+  background: var(--line);
 }
-.btn-shine::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.45) 50%, transparent 60%);
-  transform: translateX(-120%);
-  transition: transform 0.7s ease;
-  pointer-events: none;
+.scrub-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--gold);
+  border: 3px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--gold-deep);
 }
-.btn-shine:hover::after {
-  transform: translateX(120%);
+.scrub-range:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+  border-radius: 8px;
 }
-.hero-stats {
-  margin-top: 2.5rem;
+
+/* ---------- KPI strip: type, not tiles ---------- */
+.kpi-strip {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-top: 1px solid var(--line);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  overflow: hidden;
 }
-@media (min-width: 640px) {
-  .hero-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (min-width: 768px) {
+  .kpi-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
-.hero-stat {
-  padding: 1.35rem 1rem 1.5rem;
+.kpi-cell {
+  padding: 1.15rem 1.25rem 1.25rem;
   border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
 }
-.hero-stat:first-child { border-left: 0; }
-@media (max-width: 639px) {
-  .hero-stat:nth-child(3) { border-left: 0; }
-  .hero-stat:nth-child(n+3) { border-top: 1px solid var(--line); }
+.kpi-cell:nth-child(odd) { border-left: 0; }
+.kpi-cell:nth-child(n+3) { border-top: 1px solid var(--line); }
+@media (min-width: 768px) {
+  .kpi-cell:nth-child(n+3) { border-top: 0; }
+  .kpi-cell:nth-child(odd) { border-left: 1px solid var(--line); }
+  .kpi-cell:first-child { border-left: 0; }
 }
-.hero-stat b {
-  font-family: Fraunces, Georgia, serif;
-  font-size: 2.1rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-html.lang-bn .hero-stat b { font-family: "SolaimanLipi", sans-serif; }
-.hero-stat span {
-  display: block;
-  margin-top: 0.2rem;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.kpi-label {
+  font-size: 0.78rem;
   color: var(--muted);
 }
-html.lang-bn .hero-stat span { letter-spacing: 0; }
-/* event ticker marquee */
-.hero-marquee {
-  margin: 2.25rem -1.5rem 0;
-  border-top: 1px solid var(--line);
-  background: color-mix(in srgb, var(--gold) 6%, transparent);
+.kpi-value {
+  font-size: 1.7rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
 }
-@media (min-width: 640px) {
-  .hero-marquee { margin-left: -3rem; margin-right: -3rem; }
+.kpi-answer {
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.kpi-sub {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+a.kpi-cell {
+  transition: background 0.15s ease;
+}
+a.kpi-cell:hover {
+  background: var(--surface2);
+}
+/* event ticker */
+.ticker {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
 }
 .marquee {
   overflow: hidden;
@@ -451,68 +462,21 @@ html.lang-bn .hero-stat span { letter-spacing: 0; }
   font-size: 0.7rem;
 }
 
-/* ---------- Separated sections: numbered editorial ---------- */
-.section {
-  padding-top: 0.5rem;
-}
-.section-head {
-  margin-bottom: 1.4rem;
-  max-width: 52rem;
-  display: flex;
-  gap: 1.25rem;
-  align-items: flex-start;
-}
-.section-index {
-  font-family: Fraunces, Georgia, serif;
-  font-size: 3.2rem;
-  font-weight: 600;
-  line-height: 0.9;
-  color: transparent;
-  -webkit-text-stroke: 1.5px color-mix(in srgb, var(--gold) 65%, var(--muted));
-  user-select: none;
-  flex-shrink: 0;
-  margin-top: 0.1rem;
-}
-html.lang-bn .section-index { font-family: "SolaimanLipi", sans-serif; }
-.section-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--gold-deep);
-  margin-bottom: 0.45rem;
-}
-html.lang-bn .section-eyebrow { letter-spacing: 0.02em; }
-.section-eyebrow::before {
-  content: "";
-  width: 1.6rem;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--gold);
-}
+/* ---------- Sections: plain headings, generous air ---------- */
 .section-title {
   font-family: Fraunces, Georgia, "Times New Roman", serif;
-  font-size: 1.9rem;
+  font-size: 1.5rem;
   font-weight: 600;
   letter-spacing: -0.015em;
-  line-height: 1.15;
+  line-height: 1.2;
 }
 html.lang-bn .section-title { font-family: "SolaimanLipi", sans-serif; }
 .section-sub {
-  margin-top: 0.4rem;
-  font-size: 0.92rem;
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
   line-height: 1.65;
   color: var(--muted);
   max-width: 44rem;
-}
-.section-divide {
-  border: 0;
-  border-top: 1px solid var(--line);
-  margin: 0.25rem 0 0;
-  opacity: 0.7;
 }
 
 /* ---------- FAQ ---------- */
@@ -624,9 +588,9 @@ html.lang-bn .step-num { font-family: "SolaimanLipi", sans-serif; }
 }
 html.lang-bn .step-time { letter-spacing: 0; }
 
-/* card hover glow */
+/* card hover: quiet tone step, no glow */
 .card-hover:hover {
-  border-color: color-mix(in srgb, var(--gold) 45%, var(--line));
+  background: var(--surface2);
 }
 
 /* ---------- Reduced motion ---------- */

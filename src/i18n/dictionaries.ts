@@ -1,4 +1,4 @@
-/* Bilingual dictionaries for StockSeason Intelligence.
+/* Bilingual dictionaries for Sweet Smart Calendar.
    Event names, descriptions and country names stay in English (research data);
    all UI chrome is translated. */
 
@@ -26,13 +26,23 @@ const en = {
     line2: "Know when to upload.",
     accent: "when to upload",
     sub: (events: number, markets: number) =>
-      `A calm, research-driven planning system — ${events} seasonal events across ${markets} markets, with clear creation and upload windows for every occasion.`,
+      `A calm, research-driven planning system, ${events} seasonal events across ${markets} markets, with clear creation and upload windows for every occasion.`,
     cta1: "Explore opportunities",
     cta2: "Open smart calendar",
     statEvents: "researched events",
     statMarkets: "global markets",
     statYears: "years of coverage",
     statStages: "action stages",
+  },
+  dash: {
+    finding: (name: string, date: string, days: string) =>
+      `Create ${name} now. Upload by ${date} (${days}).`,
+    findingIdle: "Pick a planning date to see your next move.",
+    scrubT: "Scrub time",
+    scrubH: "Drag to move the planning date. Every number on this page follows it.",
+    today: "Today",
+    past: "90 days back",
+    future: "180 days ahead",
   },
   quick: {
     eyebrow: "Start here",
@@ -63,17 +73,17 @@ const en = {
     star: {
       eyebrow: "Priority",
       title: "What to upload right now",
-      sub: "Highest-priority opportunities for your planning date — ranked by a transparent scoring system.",
+      sub: "Highest-priority opportunities for your planning date, ranked by a transparent scoring system.",
       viewAll: "View all opportunities",
       emptyT: "No active opportunities for this date",
       emptyH: "Try a different planning date.",
     },
     deadlines: {
       eyebrow: "Deadlines",
-      title: "Upload deadlines — next 14 days",
+      title: "Upload deadlines: next 14 days",
       sub: "These events leave the submission window soon. Upload now, or wait a full year.",
       emptyT: "No deadlines in the next 14 days",
-      emptyH: "You're clear — use the time to research ahead.",
+      emptyH: "You're clear, use the time to research ahead.",
       viewAll: "View all opportunities",
       dueIn: (n: number) => (n === 0 ? "due today" : `${n}d left`),
     },
@@ -86,7 +96,7 @@ const en = {
     },
     radar: {
       eyebrow: "Upcoming",
-      title: (n: number) => `On the radar — next ${n} days`,
+      title: (n: number) => `On the radar: next ${n} days`,
       sub: (n: number) => `${n} events occurring in your selected window.`,
       openCal: "Open smart calendar",
       emptyT: "Nothing in this window",
@@ -104,7 +114,7 @@ const en = {
         },
         {
           t: "Create",
-          d: "Produce your assets in focused batches — photos, vectors, templates or video.",
+          d: "Produce your assets in focused batches, photos, vectors, templates or video.",
           time: "90–120 days before",
         },
         {
@@ -121,13 +131,13 @@ const en = {
       items: [
         "sRGB color, correctly exposed, no noise or artifacts",
         "Minimum 4 MP for photos · 15 MP for illustrations",
-        "25 honest keywords — most buyer-relevant first",
+        "25 honest keywords, most buyer-relevant first",
         "Model & property releases attached where needed",
         "Generative AI disclosure checked when applicable",
         "No logos, trademarks or brand imitations",
       ],
       reset: "Reset",
-      done: "All checked — ready to upload.",
+      done: "All checked, ready to upload.",
     },
     faq: {
       eyebrow: "FAQ",
@@ -140,15 +150,15 @@ const en = {
         },
         {
           q: "What does “provisional date” mean?",
-          a: "Lunar and religious dates shift with moon sightings. We mark them honestly and refresh them every research cycle — always verify before your final upload push.",
+          a: "Lunar and religious dates shift with moon sightings. We mark them honestly and refresh them every research cycle, always verify before your final upload push.",
         },
         {
           q: "Can I upload AI-generated seasonal content?",
-          a: "Yes — Adobe Stock accepts generative AI content when you check the disclosure box on every file and follow the content authenticity rules. Never submit AI content as camera-captured.",
+          a: "Yes, Adobe Stock accepts generative AI content when you check the disclosure box on every file and follow the content authenticity rules. Never submit AI content as camera-captured.",
         },
         {
           q: "How many keywords should I use?",
-          a: "Up to 25. Put the most buyer-relevant terms first — the first 10 carry the most weight. Never stuff brand names or unrelated trending terms.",
+          a: "Up to 25. Put the most buyer-relevant terms first, the first 10 carry the most weight. Never stuff brand names or unrelated trending terms.",
         },
         {
           q: "What file specs does Adobe Stock require?",
@@ -156,7 +166,7 @@ const en = {
         },
         {
           q: "Is this official Adobe sales data?",
-          a: "No. Recommendations combine public event research, market coverage and planning logic. They guide what to create and when — never presented as sales rankings.",
+          a: "No. Recommendations combine public event research, market coverage and planning logic. They guide what to create and when, never presented as sales rankings.",
         },
       ],
     },
@@ -176,7 +186,7 @@ const en = {
       eyebrow: "Assets",
       title: "Asset types in demand",
       open: "Open asset planner",
-      desc: "Every event recommends specific asset types — vectors, icons, patterns, photos, templates and video — matched to what buyers license for that occasion.",
+      desc: "Every event recommends specific asset types, vectors, icons, patterns, photos, templates and video, matched to what buyers license for that occasion.",
     },
   },
   status: {
@@ -200,8 +210,8 @@ const en = {
     submission: "Recommended submission window",
     late: "Late submission opportunity",
     immediate: "Immediate / last-minute opportunity",
-    completed: "Event passed — plan evergreen follow-ups",
-    upcoming: "Too early — monitor for now",
+    completed: "Event passed: plan evergreen follow-ups",
+    upcoming: "Too early: monitor for now",
   } as Record<string, string>,
   category: {
     "seasonal-holiday": "Seasonal Holiday",
@@ -228,12 +238,12 @@ const en = {
     title: "Seasonal Opportunities",
     sub: "Ranked by priority score for your planning date. Scores are internal planning indicators, not measured sales probabilities.",
     howScoring: "How scoring works",
-    weightsT: "Transparent scoring — weights",
-    wTiming: (n: number) => `Timing urgency — ${n}% (peaks in the submission window)`,
-    wMarket: (n: number) => `Market relevance — ${n}%`,
-    wDemand: (n: number) => `Seasonal demand evidence — ${n}%`,
-    wVers: (n: number) => `Asset versatility — ${n}%`,
-    wConf: (n: number) => `Research confidence — ${n}% (confirmed vs provisional dates)`,
+    weightsT: "Transparent scoring: weights",
+    wTiming: (n: number) => `Timing urgency, ${n}% (peaks in the submission window)`,
+    wMarket: (n: number) => `Market relevance, ${n}%`,
+    wDemand: (n: number) => `Seasonal demand evidence, ${n}%`,
+    wVers: (n: number) => `Asset versatility, ${n}%`,
+    wConf: (n: number) => `Research confidence, ${n}% (confirmed vs provisional dates)`,
     legend:
       "Critical ≥ 80 · High ≥ 60 · Recommended ≥ 40. Planning windows: research 120–150 days out, production 90–120, submission 60–90, late 30–60, last chance 0–30.",
     searchPh: "Search opportunities…",
@@ -265,14 +275,14 @@ const en = {
     clear: "Clear",
     weekdays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
     noEventsDay: (d: string) => `No events on ${d}`,
-    noEventsH: "Try another day — or clear filters.",
+    noEventsH: "Try another day, or clear filters.",
     more: (n: number) => `+${n} more`,
     uploadWindow: "Upload window",
   },
   markets: {
     title: "Global Market Intelligence",
     sub: (n: number) =>
-      `${n} tracked markets. Market relevance reflects research coverage — never presented as official Adobe Stock sales rankings.`,
+      `${n} tracked markets. Market relevance reflects research coverage, never presented as official Adobe Stock sales rankings.`,
     searchPh: "Search markets…",
     selected: (n: number) => `${n}/3 selected for comparison`,
     countryComparison: "Country comparison",
@@ -313,9 +323,9 @@ const en = {
     fTitle: "Task title *",
     fTitlePh: "e.g. Create 50 Christmas vectors",
     fEvent: "Linked event",
-    fNone: "— none —",
+    fNone: "none",
     fCategory: "Asset category",
-    fAny: "— any —",
+    fAny: "any",
     fTarget: "Target quantity",
     fDone: "Done so far",
     fStart: "Start date",
@@ -330,7 +340,7 @@ const en = {
     allStatuses: "All statuses",
     emptyT1: "No production tasks yet",
     emptyT2: "No tasks match the filters",
-    emptyH: "Create your first task above — e.g. “Create 50 Christmas vectors” — and track it to completion.",
+    emptyH: "Create your first task above, e.g. “Create 50 Christmas vectors”, and track it to completion.",
     prodList: (n: number) => `Production list (${n})`,
     statuses: {
       planned: "Planned",
@@ -343,8 +353,8 @@ const en = {
   },
   contact: {
     title: "Contact",
-    sub: "Questions, corrections or partnership inquiries about StockSeason Intelligence.",
-    creatorOf: "Creator of StockSeason Intelligence",
+    sub: "Questions, corrections or partnership inquiries about Sweet Smart Calendar.",
+    creatorOf: "Creator of Sweet Smart Calendar",
     whatsapp: "WhatsApp",
     chatOn: "Chat on WhatsApp",
     whatToSend: "What to send",
@@ -369,17 +379,17 @@ const en = {
     viewWarnings: (n: number) => `View warnings (${n})`,
     guidelines: "Adobe Stock contributor guidelines",
     guidelinesSub: (d: string) =>
-      `Researched from official Adobe documentation on ${d}. Always re-check Adobe's docs — policies change.`,
+      `Researched from official Adobe documentation on ${d}. Always re-check Adobe's docs, policies change.`,
     eventSources: "Event date sources",
     freshness: "Data freshness & update workflow",
     admin: "Dataset admin",
     adminSub:
-      "Export the full dataset, or validate a JSON import before staging it. Imports are validated here first — applying an import means replacing src/data/events.json and redeploying.",
+      "Export the full dataset, or validate a JSON import before staging it. Imports are validated here first, applying an import means replacing src/data/events.json and redeploying.",
     exportJson: "Export JSON",
     exportCsv: "Export CSV",
     validateImport: "Validate JSON import",
     valid: "Valid. To apply: save as src/data/events.json, run npm run build, and redeploy.",
-    importSummary: (name: string, count: number) => `${name} — ${count} events`,
+    importSummary: (name: string, count: number) => `${name}, ${count} events`,
   },
   event: {
     back: "Back to calendar",
@@ -400,10 +410,10 @@ const en = {
     concepts: "Visual concepts",
     keywords: "Keyword ideas",
     keywordTip:
-      "Front-load the most buyer-relevant terms; keep titles specific and honest. Never stuff brand names or unrelated trending terms — Adobe's similar-content and spam policies penalize it.",
+      "Front-load the most buyer-relevant terms; keep titles specific and honest. Never stuff brand names or unrelated trending terms, Adobe's similar-content and spam policies penalize it.",
     genPlan: "Generate content plan",
     planFor: (name: string, year: number) =>
-      `A practical production plan for ${name} ${year} — concepts, themes, keywords and an upload checklist.`,
+      `A practical production plan for ${name} ${year}, concepts, themes, keywords and an upload checklist.`,
     copyPlan: "Copy plan",
     copied: "Copied!",
     regenerate: "Regenerate",
@@ -413,7 +423,7 @@ const en = {
     planDirection: "Design direction",
     planKeywords: "Keyword research plan",
     planChecklist: "Upload preparation checklist",
-    ipGuard: "IP guardrails — do not generate",
+    ipGuard: "IP guardrails: do not generate",
     refs: "Research references",
     lastVerified: "Last verified",
     calendarT: "Calendar",
@@ -454,7 +464,7 @@ const en = {
     explore: "Explore",
     contactH: "Contact",
     rights: (y: number) =>
-      `© ${y} StockSeason Intelligence · Research-based planning guidance for Adobe Stock contributors`,
+      `© ${y} Sweet Smart Calendar · Research-based planning guidance for Adobe Stock contributors`,
     lastUpdate: "Last research update",
   },
 };
@@ -483,13 +493,23 @@ export const bn: Dict = {
     line2: "কখন আপলোড করবেন জানুন।",
     accent: "কখন আপলোড করবেন",
     sub: (events: number, markets: number) =>
-      `একটি শান্ত, গবেষণানির্ভর পরিকল্পনা ব্যবস্থা — ${markets}টি বাজারে ${events}টি যাচাইকৃত সিজনাল ইভেন্ট, প্রতিটি উপলক্ষের জন্য স্পষ্ট তৈরি ও আপলোডের সময়সীমাসহ।`,
+      `একটি শান্ত, গবেষণানির্ভর পরিকল্পনা ব্যবস্থা, ${markets}টি বাজারে ${events}টি যাচাইকৃত সিজনাল ইভেন্ট, প্রতিটি উপলক্ষের জন্য স্পষ্ট তৈরি ও আপলোডের সময়সীমাসহ।`,
     cta1: "সুযোগগুলো দেখুন",
     cta2: "স্মার্ট ক্যালেন্ডার খুলুন",
     statEvents: "গবেষণাকৃত ইভেন্ট",
     statMarkets: "বৈশ্বিক বাজার",
     statYears: "বছরের কভারেজ",
     statStages: "অ্যাকশন ধাপ",
+  },
+  dash: {
+    finding: (name: string, date: string, days: string) =>
+      `এখন ${name} তৈরি করুন। ${date}-এর মধ্যে আপলোড করুন (${days})।`,
+    findingIdle: "পরের পদক্ষেপ দেখতে একটি পরিকল্পনার তারিখ বেছে নিন।",
+    scrubT: "সময় ঘোরান",
+    scrubH: "পরিকল্পনার তারিখ বদলাতে টানুন। এই পেজের প্রতিটি সংখ্যা সাথে বদলাবে।",
+    today: "আজ",
+    past: "৯০ দিন আগে",
+    future: "১৮০ দিন পরে",
   },
   quick: {
     eyebrow: "এখান থেকে শুরু",
@@ -520,30 +540,30 @@ export const bn: Dict = {
     star: {
       eyebrow: "অগ্রাধিকার",
       title: "এখনই যা আপলোড করবেন",
-      sub: "আপনার পরিকল্পনার তারিখ অনুযায়ী সর্বোচ্চ অগ্রাধিকারের সুযোগ — স্বচ্ছ স্কোরিং পদ্ধতিতে সাজানো।",
+      sub: "আপনার পরিকল্পনার তারিখ অনুযায়ী সর্বোচ্চ অগ্রাধিকারের সুযোগ, স্বচ্ছ স্কোরিং পদ্ধতিতে সাজানো।",
       viewAll: "সব সুযোগ দেখুন",
       emptyT: "এই তারিখে সক্রিয় সুযোগ নেই",
       emptyH: "অন্য পরিকল্পনার তারিখ চেষ্টা করুন।",
     },
     deadlines: {
       eyebrow: "ডেডলাইন",
-      title: "আপলোডের শেষ সময় — পরের ১৪ দিন",
+      title: "আপলোডের শেষ সময়: পরের ১৪ দিন",
       sub: "এই ইভেন্টগুলোর সাবমিশন উইন্ডো শিগগিরই বন্ধ হচ্ছে। এখনই আপলোড করুন, নয়তো পুরো এক বছর অপেক্ষা।",
       emptyT: "পরের ১৪ দিনে কোনো ডেডলাইন নেই",
-      emptyH: "সব ঠিক আছে — এই সময়টা এগিয়ে গবেষণায় লাগান।",
+      emptyH: "সব ঠিক আছে, এই সময়টা এগিয়ে গবেষণায় লাগান।",
       viewAll: "সব সুযোগ দেখুন",
       dueIn: (n: number) => (n === 0 ? "আজই শেষ" : `${n} দিন বাকি`),
     },
     board: {
       eyebrow: "ওয়ার্কফ্লো",
       title: "অ্যাকশন বোর্ড",
-      sub: "ট্র্যাক করা প্রতিটি ইভেন্ট — আজ আপনার কাছে যা চায় সেই অনুযায়ী সাজানো।",
+      sub: "ট্র্যাক করা প্রতিটি ইভেন্ট, আজ আপনার কাছে যা চায় সেই অনুযায়ী সাজানো।",
       more: (n: number) => `আরও ${n}টি`,
       empty: "এখানে কিছু নেই",
     },
     radar: {
       eyebrow: "আসন্ন",
-      title: (n: number) => `রাডারে — পরের ${n} দিন`,
+      title: (n: number) => `রাডারে: পরের ${n} দিন`,
       sub: (n: number) => `নির্বাচিত সময়সীমায় ${n}টি ইভেন্ট আসছে।`,
       openCal: "স্মার্ট ক্যালেন্ডার খুলুন",
       emptyT: "এই সময়সীমায় কিছু নেই",
@@ -561,7 +581,7 @@ export const bn: Dict = {
         },
         {
           t: "তৈরি",
-          d: "মনোযোগী ব্যাচে অ্যাসেট বানান — ছবি, ভেক্টর, টেমপ্লেট বা ভিডিও।",
+          d: "মনোযোগী ব্যাচে অ্যাসেট বানান, ছবি, ভেক্টর, টেমপ্লেট বা ভিডিও।",
           time: "৯০–১২০ দিন আগে",
         },
         {
@@ -578,13 +598,13 @@ export const bn: Dict = {
       items: [
         "sRGB কালার, সঠিক এক্সপোজার, নয়েজ বা আর্টিফ্যাক্ট নেই",
         "ছবিতে কমপক্ষে ৪ MP · ইলাস্ট্রেশনে ১৫ MP",
-        "২৫টি সৎ কিওয়ার্ড — ক্রেতার জন্য সবচেয়ে প্রাসঙ্গিকটি আগে",
+        "২৫টি সৎ কিওয়ার্ড, ক্রেতার জন্য সবচেয়ে প্রাসঙ্গিকটি আগে",
         "প্রয়োজনমতো মডেল ও প্রপার্টি রিলিজ সংযুক্ত",
         "প্রযোজ্য হলে জেনারেটিভ AI ডিসক্লোজার টিক দেওয়া",
         "কোনো লোগো, ট্রেডমার্ক বা ব্র্যান্ড অনুকরণ নয়",
       ],
       reset: "রিসেট",
-      done: "সব টিক দেওয়া — আপলোডের জন্য প্রস্তুত।",
+      done: "সব টিক দেওয়া, আপলোডের জন্য প্রস্তুত।",
     },
     faq: {
       eyebrow: "জিজ্ঞাসা",
@@ -597,15 +617,15 @@ export const bn: Dict = {
         },
         {
           q: "“সম্ভাব্য তারিখ” মানে কী?",
-          a: "চাঁদ দেখার ওপর নির্ভর করে চান্দ্র ও ধর্মীয় তারিখ বদলায়। আমরা সৎভাবে চিহ্নিত করি ও প্রতি গবেষণা-চক্রে হালনাগাদ করি — চূড়ান্ত আপলোডের আগে যাচাই করুন।",
+          a: "চাঁদ দেখার ওপর নির্ভর করে চান্দ্র ও ধর্মীয় তারিখ বদলায়। আমরা সৎভাবে চিহ্নিত করি ও প্রতি গবেষণা-চক্রে হালনাগাদ করি, চূড়ান্ত আপলোডের আগে যাচাই করুন।",
         },
         {
           q: "AI দিয়ে বানানো সিজনাল কনটেন্ট আপলোড করা যায়?",
-          a: "হ্যাঁ — প্রতিটি ফাইলে ডিসক্লোজার বক্স টিক দিয়ে ও কনটেন্ট অথেনটিসিটি নিয়ম মেনে অ্যাডোবি স্টক জেনারেটিভ AI কনটেন্ট নেয়। AI কনটেন্ট কখনো ক্যামেরায় তোলা বলে সাবমিট করবেন না।",
+          a: "হ্যাঁ, প্রতিটি ফাইলে ডিসক্লোজার বক্স টিক দিয়ে ও কনটেন্ট অথেনটিসিটি নিয়ম মেনে অ্যাডোবি স্টক জেনারেটিভ AI কনটেন্ট নেয়। AI কনটেন্ট কখনো ক্যামেরায় তোলা বলে সাবমিট করবেন না।",
         },
         {
           q: "কয়টি কিওয়ার্ড দেব?",
-          a: "সর্বোচ্চ ২৫টি। ক্রেতার জন্য সবচেয়ে প্রাসঙ্গিক শব্দ আগে রাখুন — প্রথম ১০টির ওজন সবচেয়ে বেশি। ব্র্যান্ড নাম বা অপ্রাসঙ্গিক ট্রেন্ডিং শব্দ গুঁজবেন না।",
+          a: "সর্বোচ্চ ২৫টি। ক্রেতার জন্য সবচেয়ে প্রাসঙ্গিক শব্দ আগে রাখুন, প্রথম ১০টির ওজন সবচেয়ে বেশি। ব্র্যান্ড নাম বা অপ্রাসঙ্গিক ট্রেন্ডিং শব্দ গুঁজবেন না।",
         },
         {
           q: "অ্যাডোবি স্টকের ফাইল স্পেসিফিকেশন কী?",
@@ -613,12 +633,12 @@ export const bn: Dict = {
         },
         {
           q: "এটা কি অ্যাডোবির অফিসিয়াল বিক্রয় ডেটা?",
-          a: "না। সুপারিশ তৈরি হয় পাবলিক ইভেন্ট গবেষণা, বাজার কভারেজ ও পরিকল্পনা-যুক্তি মিলিয়ে। কী বানাবেন ও কখন — সেই নির্দেশনা দেয়; বিক্রয় র‍্যাংকিং হিসেবে কখনো উপস্থাপন করা হয় না।",
+          a: "না। সুপারিশ তৈরি হয় পাবলিক ইভেন্ট গবেষণা, বাজার কভারেজ ও পরিকল্পনা-যুক্তি মিলিয়ে। কী বানাবেন ও কখন, সেই নির্দেশনা দেয়; বিক্রয় র‍্যাংকিং হিসেবে কখনো উপস্থাপন করা হয় না।",
         },
       ],
     },
     charts: {
-      byCat: "আসন্ন ইভেন্ট — ক্যাটাগরি অনুযায়ী",
+      byCat: "আসন্ন ইভেন্ট, ক্যাটাগরি অনুযায়ী",
       byCatSub: "পরিকল্পনার তারিখ থেকে পরের ১৮০ দিন",
       stageMix: "প্রস্তুতির ধাপ",
       stageMixSub: "আজকের হিসেবে পরের ১৮০ দিনের অবস্থা",
@@ -633,7 +653,7 @@ export const bn: Dict = {
       eyebrow: "অ্যাসেট",
       title: "চাহিদায় থাকা অ্যাসেটের ধরন",
       open: "অ্যাসেট প্ল্যানার খুলুন",
-      desc: "প্রতিটি ইভেন্ট নির্দিষ্ট অ্যাসেটের ধরন সুপারিশ করে — ভেক্টর, আইকন, প্যাটার্ন, ছবি, টেমপ্লেট ও ভিডিও — যা ক্রেতারা সেই উপলক্ষে লাইসেন্স করে তার সাথে মিলিয়ে।",
+      desc: "প্রতিটি ইভেন্ট নির্দিষ্ট অ্যাসেটের ধরন সুপারিশ করে, ভেক্টর, আইকন, প্যাটার্ন, ছবি, টেমপ্লেট ও ভিডিও, যা ক্রেতারা সেই উপলক্ষে লাইসেন্স করে তার সাথে মিলিয়ে।",
     },
   },
   status: {
@@ -657,8 +677,8 @@ export const bn: Dict = {
     submission: "প্রস্তাবিত সাবমিশন উইন্ডো",
     late: "দেরিতে সাবমিশনের সুযোগ",
     immediate: "তাৎক্ষণিক / শেষ মুহূর্তের সুযোগ",
-    completed: "ইভেন্ট শেষ — এভারগ্রিন পরিকল্পনা করুন",
-    upcoming: "এখনো অনেক দেরি — নজরে রাখুন",
+    completed: "ইভেন্ট শেষ, এভারগ্রিন পরিকল্পনা করুন",
+    upcoming: "এখনো অনেক দেরি, নজরে রাখুন",
   } as Record<string, string>,
   category: {
     "seasonal-holiday": "সিজনাল ছুটি",
@@ -685,12 +705,12 @@ export const bn: Dict = {
     title: "সিজনাল সুযোগ",
     sub: "পরিকল্পনার তারিখ অনুযায়ী অগ্রাধিকার স্কোরে সাজানো। স্কোর অভ্যন্তরীণ পরিকল্পনার নির্দেশক, পরিমাপকৃত বিক্রয় সম্ভাবনা নয়।",
     howScoring: "স্কোরিং যেভাবে হয়",
-    weightsT: "স্বচ্ছ স্কোরিং — ওজন",
-    wTiming: (n: number) => `টাইমিং জরুরিতা — ${n}% (সাবমিশন উইন্ডোতে সর্বোচ্চ)`,
-    wMarket: (n: number) => `বাজার প্রাসঙ্গিকতা — ${n}%`,
-    wDemand: (n: number) => `সিজনাল চাহিদার প্রমাণ — ${n}%`,
-    wVers: (n: number) => `অ্যাসেট বহুমুখিতা — ${n}%`,
-    wConf: (n: number) => `গবেষণা আস্থা — ${n}% (নিশ্চিত বনাম সম্ভাব্য তারিখ)`,
+    weightsT: "স্বচ্ছ স্কোরিং, ওজন",
+    wTiming: (n: number) => `টাইমিং জরুরিতা, ${n}% (সাবমিশন উইন্ডোতে সর্বোচ্চ)`,
+    wMarket: (n: number) => `বাজার প্রাসঙ্গিকতা, ${n}%`,
+    wDemand: (n: number) => `সিজনাল চাহিদার প্রমাণ, ${n}%`,
+    wVers: (n: number) => `অ্যাসেট বহুমুখিতা, ${n}%`,
+    wConf: (n: number) => `গবেষণা আস্থা, ${n}% (নিশ্চিত বনাম সম্ভাব্য তারিখ)`,
     legend:
       "ক্রিটিক্যাল ≥ ৮০ · উচ্চ ≥ ৬০ · প্রস্তাবিত ≥ ৪০। পরিকল্পনা উইন্ডো: গবেষণা ১২০–১৫০ দিন আগে, প্রোডাকশন ৯০–১২০, সাবমিশন ৬০–৯০, দেরি ৩০–৬০, শেষ সুযোগ ০–৩০।",
     searchPh: "সুযোগ খুঁজুন…",
@@ -707,7 +727,7 @@ export const bn: Dict = {
   },
   cal: {
     title: "স্মার্ট ক্যালেন্ডার",
-    sub: (n: number) => `${n}টি ইভেন্ট — প্রস্তুতির উইন্ডো দেখতে যেকোনো ইভেন্টে ক্লিক করুন`,
+    sub: (n: number) => `${n}টি ইভেন্ট, প্রস্তুতির উইন্ডো দেখতে যেকোনো ইভেন্টে ক্লিক করুন`,
     today: "আজ",
     month: "মাস",
     week: "সপ্তাহ",
@@ -722,14 +742,14 @@ export const bn: Dict = {
     clear: "মুছুন",
     weekdays: ["সোম", "মঙ্গল", "বুধ", "বৃহস্পতি", "শুক্র", "শনি", "রবি"],
     noEventsDay: (d: string) => `${d}-এ কোনো ইভেন্ট নেই`,
-    noEventsH: "অন্য দিন চেষ্টা করুন — বা ফিল্টার মুছুন।",
+    noEventsH: "অন্য দিন চেষ্টা করুন, বা ফিল্টার মুছুন।",
     more: (n: number) => `আরও ${n}টি`,
     uploadWindow: "আপলোড উইন্ডো",
   },
   markets: {
     title: "বৈশ্বিক বাজার ইন্টেলিজেন্স",
     sub: (n: number) =>
-      `${n}টি ট্র্যাক করা বাজার। বাজার প্রাসঙ্গিকতা গবেষণা কভারেজের প্রতিফলন — অফিসিয়াল অ্যাডোবি স্টক বিক্রয় র‍্যাংকিং হিসেবে কখনো উপস্থাপন করা হয় না।`,
+      `${n}টি ট্র্যাক করা বাজার। বাজার প্রাসঙ্গিকতা গবেষণা কভারেজের প্রতিফলন, অফিসিয়াল অ্যাডোবি স্টক বিক্রয় র‍্যাংকিং হিসেবে কখনো উপস্থাপন করা হয় না।`,
     searchPh: "বাজার খুঁজুন…",
     selected: (n: number) => `তুলনার জন্য ${n}/৩টি নির্বাচিত`,
     countryComparison: "দেশ তুলনা",
@@ -770,9 +790,9 @@ export const bn: Dict = {
     fTitle: "টাস্কের শিরোনাম *",
     fTitlePh: "যেমন: ৫০টি ক্রিসমাস ভেক্টর বানান",
     fEvent: "সংযুক্ত ইভেন্ট",
-    fNone: "— নেই —",
+    fNone: "নেই",
     fCategory: "অ্যাসেট ক্যাটাগরি",
-    fAny: "— যেকোনো —",
+    fAny: "যেকোনো",
     fTarget: "লক্ষ্য সংখ্যা",
     fDone: "এ পর্যন্ত সম্পন্ন",
     fStart: "শুরুর তারিখ",
@@ -787,7 +807,7 @@ export const bn: Dict = {
     allStatuses: "সব অবস্থা",
     emptyT1: "এখনো কোনো প্রোডাকশন টাস্ক নেই",
     emptyT2: "ফিল্টারে কোনো টাস্ক মিলছে না",
-    emptyH: "উপরে প্রথম টাস্ক বানান — যেমন “৫০টি ক্রিসমাস ভেক্টর বানান” — এবং শেষ পর্যন্ত ট্র্যাক করুন।",
+    emptyH: "উপরে প্রথম টাস্ক বানান, যেমন “৫০টি ক্রিসমাস ভেক্টর বানান”, এবং শেষ পর্যন্ত ট্র্যাক করুন।",
     prodList: (n: number) => `প্রোডাকশন তালিকা (${n})`,
     statuses: {
       planned: "পরিকল্পিত",
@@ -800,8 +820,8 @@ export const bn: Dict = {
   },
   contact: {
     title: "যোগাযোগ",
-    sub: "StockSeason Intelligence নিয়ে প্রশ্ন, সংশোধন বা পার্টনারশিপের প্রস্তাব।",
-    creatorOf: "StockSeason Intelligence-এর নির্মাতা",
+    sub: "Sweet Smart Calendar নিয়ে প্রশ্ন, সংশোধন বা পার্টনারশিপের প্রস্তাব।",
+    creatorOf: "Sweet Smart Calendar-এর নির্মাতা",
     whatsapp: "হোয়াটসঅ্যাপ",
     chatOn: "হোয়াটসঅ্যাপে চ্যাট করুন",
     whatToSend: "যা পাঠাবেন",
@@ -826,17 +846,17 @@ export const bn: Dict = {
     viewWarnings: (n: number) => `সতর্কতা দেখুন (${n})`,
     guidelines: "অ্যাডোবি স্টক কন্ট্রিবিউটর গাইডলাইন",
     guidelinesSub: (d: string) =>
-      `${d}-এ অফিসিয়াল অ্যাডোবি ডকুমেন্টেশন থেকে গবেষণাকৃত। অ্যাডোবির ডক্স সবসময় আবার দেখুন — নীতি বদলায়।`,
+      `${d}-এ অফিসিয়াল অ্যাডোবি ডকুমেন্টেশন থেকে গবেষণাকৃত। অ্যাডোবির ডক্স সবসময় আবার দেখুন, নীতি বদলায়।`,
     eventSources: "ইভেন্ট তারিখের উৎস",
     freshness: "ডেটার সতেজতা ও হালনাগাদ প্রক্রিয়া",
     admin: "ডেটাসেট অ্যাডমিন",
     adminSub:
-      "পুরো ডেটাসেট এক্সপোর্ট করুন, বা স্টেজিংয়ের আগে JSON ইমপোর্ট যাচাই করুন। ইমপোর্ট এখানেই যাচাই হয় — প্রয়োগ মানে src/data/events.json বদলে আবার ডিপ্লয়।",
+      "পুরো ডেটাসেট এক্সপোর্ট করুন, বা স্টেজিংয়ের আগে JSON ইমপোর্ট যাচাই করুন। ইমপোর্ট এখানেই যাচাই হয়, প্রয়োগ মানে src/data/events.json বদলে আবার ডিপ্লয়।",
     exportJson: "JSON এক্সপোর্ট",
     exportCsv: "CSV এক্সপোর্ট",
     validateImport: "JSON ইমপোর্ট যাচাই",
     valid: "বৈধ। প্রয়োগ করতে: src/data/events.json হিসেবে সংরক্ষণ করুন, npm run build চালান, আবার ডিপ্লয় করুন।",
-    importSummary: (name: string, count: number) => `${name} — ${count}টি ইভেন্ট`,
+    importSummary: (name: string, count: number) => `${name}, ${count}টি ইভেন্ট`,
   },
   event: {
     back: "ক্যালেন্ডারে ফিরুন",
@@ -857,10 +877,10 @@ export const bn: Dict = {
     concepts: "ভিজ্যুয়াল কনসেপ্ট",
     keywords: "কিওয়ার্ড আইডিয়া",
     keywordTip:
-      "ক্রেতার জন্য সবচেয়ে প্রাসঙ্গিক শব্দ আগে রাখুন; শিরোনাম নির্দিষ্ট ও সৎ রাখুন। ব্র্যান্ড নাম বা অপ্রাসঙ্গিক ট্রেন্ডিং শব্দ কখনো গুঁজবেন না — অ্যাডোবির সিমিলার-কনটেন্ট ও স্প্যাম নীতি শাস্তি দেয়।",
+      "ক্রেতার জন্য সবচেয়ে প্রাসঙ্গিক শব্দ আগে রাখুন; শিরোনাম নির্দিষ্ট ও সৎ রাখুন। ব্র্যান্ড নাম বা অপ্রাসঙ্গিক ট্রেন্ডিং শব্দ কখনো গুঁজবেন না, অ্যাডোবির সিমিলার-কনটেন্ট ও স্প্যাম নীতি শাস্তি দেয়।",
     genPlan: "কনটেন্ট প্ল্যান বানান",
     planFor: (name: string, year: number) =>
-      `${name} ${year}-এর ব্যবহারিক প্রোডাকশন প্ল্যান — কনসেপ্ট, থিম, কিওয়ার্ড ও আপলোড চেকলিস্ট।`,
+      `${name} ${year}-এর ব্যবহারিক প্রোডাকশন প্ল্যান, কনসেপ্ট, থিম, কিওয়ার্ড ও আপলোড চেকলিস্ট।`,
     copyPlan: "প্ল্যান কপি",
     copied: "কপি হয়েছে!",
     regenerate: "আবার বানান",
@@ -870,7 +890,7 @@ export const bn: Dict = {
     planDirection: "ডিজাইন দিকনির্দেশনা",
     planKeywords: "কিওয়ার্ড গবেষণা পরিকল্পনা",
     planChecklist: "আপলোড প্রস্তুতি চেকলিস্ট",
-    ipGuard: "IP সুরক্ষা — বানাবেন না",
+    ipGuard: "IP সুরক্ষা, বানাবেন না",
     refs: "গবেষণা রেফারেন্স",
     lastVerified: "শেষ যাচাই",
     calendarT: "ক্যালেন্ডার",
@@ -911,7 +931,7 @@ export const bn: Dict = {
     explore: "ঘুরে দেখুন",
     contactH: "যোগাযোগ",
     rights: (y: number) =>
-      `© ${y} StockSeason Intelligence · অ্যাডোবি স্টক কন্ট্রিবিউটরদের জন্য গবেষণাভিত্তিক পরিকল্পনা নির্দেশনা`,
+      `© ${y} Sweet Smart Calendar · অ্যাডোবি স্টক কন্ট্রিবিউটরদের জন্য গবেষণাভিত্তিক পরিকল্পনা নির্দেশনা`,
     lastUpdate: "শেষ গবেষণা হালনাগাদ",
   },
 };

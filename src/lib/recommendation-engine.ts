@@ -51,8 +51,8 @@ export const STAGE_LABEL: Record<PrepStage, string> = {
   submission: "Recommended submission window",
   late: "Late submission opportunity",
   immediate: "Immediate / last-minute opportunity",
-  completed: "Event passed — post-event & evergreen planning",
-  upcoming: "Too early — monitor for now",
+  completed: "Event passed: post-event & evergreen planning",
+  upcoming: "Too early: monitor for now",
 };
 
 export const STAGE_COLOR: Record<PrepStage, string> = {
@@ -105,7 +105,7 @@ export function toOccurrence(
 }
 
 /* ------------------------------------------------------------------ */
-/* Priority scoring — transparent internal planning indicator.        */
+/* Priority scoring: transparent internal planning indicator.        */
 /* Weights: timing 30% · market 25% · demand 20% · versatility 15% ·    */
 /* confidence 10%. NOT a measured sales probability.                   */
 /* ------------------------------------------------------------------ */
@@ -188,7 +188,7 @@ function buildReason(occ: EventOccurrence): string {
   if (event.assetTypes.length >= 5)
     bits.push(`versatile across ${event.assetTypes.length} asset types`);
   if (event.dateStatus !== "confirmed")
-    bits.push("date is provisional — verify before final upload push");
+    bits.push("date is provisional (verify before final upload push)");
   return bits.length > 0
     ? bits.join("; ") + "."
     : "Solid seasonal fit for a diversified portfolio.";

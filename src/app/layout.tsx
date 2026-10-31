@@ -11,23 +11,23 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://stockseason-intell
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "StockSeason Intelligence — Global Adobe Stock Seasonal Calendar",
-    template: "%s · StockSeason Intelligence",
+    default: "Sweet Smart Calendar: Global Adobe Stock Seasonal Calendar",
+    template: "%s · Sweet Smart Calendar",
   },
   description:
-    "Know what to create and when to upload. A global seasonal intelligence platform for Adobe Stock contributors — smart calendar, priority opportunities, market intelligence and production planning.",
+    "Know what to create and when to upload. A global seasonal intelligence platform for Adobe Stock contributors: smart calendar, priority opportunities, market intelligence and production planning.",
   keywords: ["adobe stock", "stock contributor", "seasonal calendar", "upload planner", "microstock", "content planning"],
   authors: [{ name: "Md Sonet Mia" }],
   openGraph: {
     type: "website",
-    siteName: "StockSeason Intelligence",
-    title: "StockSeason Intelligence — Know What to Create. Know When to Upload.",
+    siteName: "Sweet Smart Calendar",
+    title: "Sweet Smart Calendar: Know What to Create. Know When to Upload.",
     description:
       "Your global seasonal intelligence system for smarter Adobe Stock content planning.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "StockSeason Intelligence",
+    title: "Sweet Smart Calendar",
     description: "Plan Smarter. Upload Earlier. Create for Global Demand.",
   },
   robots: { index: true, follow: true },

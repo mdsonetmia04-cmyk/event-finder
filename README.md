@@ -1,4 +1,4 @@
-# StockSeason Intelligence
+# Sweet Smart Calendar
 
 **Plan Smarter. Upload Earlier. Create for Global Demand.**
 

@@ -115,7 +115,7 @@ export function Header() {
           </span>
           <span className="leading-tight">
             <span className="font-serif-d block text-[17px] font-semibold tracking-tight">
-              StockSeason Intelligence
+              Sweet Smart Calendar
             </span>
             <span className="label !text-[10px] hidden sm:block">Plan Smarter · Upload Earlier</span>
           </span>
@@ -186,7 +186,7 @@ export function Footer() {
     <footer className="mt-16 border-t no-print" style={{ borderColor: "var(--line)" }}>
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-3">
         <div>
-          <p className="font-serif-d text-lg font-semibold">StockSeason Intelligence</p>
+          <p className="font-serif-d text-lg font-semibold">Sweet Smart Calendar</p>
           <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
             {t.footer.tagline}
           </p>

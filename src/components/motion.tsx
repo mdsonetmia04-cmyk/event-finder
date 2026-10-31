@@ -1,6 +1,6 @@
 "use client";
 
-/* Motion primitives for StockSeason Intelligence.
+/* Motion primitives for Sweet Smart Calendar.
    Patterns adapted from Magic UI (MIT, magicuidesign/magicui):
    marquee loop + spring number ticker, rebuilt for this codebase. */
 
@@ -9,7 +9,9 @@ import {
   motion,
   useInView,
   useMotionValue,
+  useScroll,
   useSpring,
+  useTransform,
 } from "framer-motion";
 import {
   useEffect,
@@ -191,6 +193,41 @@ export function Expand({
       )}
     </AnimatePresence>
   );
+}
+
+/* ---------------- Scroll progress ---------------- */
+
+export function ScrollProgress() {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 140, damping: 28, mass: 0.4 });
+  return (
+    <motion.div
+      className="scroll-progress"
+      style={{ scaleX }}
+      aria-hidden="true"
+    />
+  );
+}
+
+/* ---------------- Pointer parallax ---------------- */
+
+export function usePointerParallax(strength = 10) {
+  const px = useMotionValue(0);
+  const py = useMotionValue(0);
+  const sx = useSpring(px, { stiffness: 70, damping: 22 });
+  const sy = useSpring(py, { stiffness: 70, damping: 22 });
+  const x = useTransform(sx, (v) => v * strength);
+  const y = useTransform(sy, (v) => v * strength * 0.6);
+  const onMove = (e: React.MouseEvent<HTMLElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    px.set((e.clientX - r.left) / r.width - 0.5);
+    py.set((e.clientY - r.top) / r.height - 0.5);
+  };
+  const onLeave = () => {
+    px.set(0);
+    py.set(0);
+  };
+  return { x, y, onMove, onLeave };
 }
 
 /* ---------------- Animated check draw ---------------- */

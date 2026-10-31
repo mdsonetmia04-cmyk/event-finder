@@ -78,10 +78,10 @@ export default function EventDetailClient({ id }: { id: string }) {
   const copyPlan = async () => {
     if (!plan) return;
     const text = [
-      `CONTENT PLAN — ${event.name} (${year})`,
+      `CONTENT PLAN: ${event.name} (${year})`,
       "",
       "CONCEPTS:",
-      ...plan.concepts.map((c, i) => `${i + 1}. [${c.assetType}] ${c.title} — ${c.description} Composition: ${c.composition}`),
+      ...plan.concepts.map((c, i) => `${i + 1}. [${c.assetType}] ${c.title}: ${c.description} Composition: ${c.composition}`),
       "",
       "COLLECTION THEMES:",
       ...plan.collectionThemes.map((t) => `- ${t}`),

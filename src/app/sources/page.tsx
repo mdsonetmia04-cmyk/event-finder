@@ -167,7 +167,7 @@ export default function SourcesPage() {
       <div className="card p-5">
         <h3 className="font-serif-d mb-2 text-lg font-semibold">{t.sources.freshness}</h3>
         <ul className="grid gap-1.5 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
-          <li>· <strong style={{ color: "var(--text)" }}>Last research update: {META.lastResearchUpdate}.</strong> Re-verify lunar/religious dates yearly — they shift with moon sightings.</li>
+          <li>· <strong style={{ color: "var(--text)" }}>Last research update: {META.lastResearchUpdate}.</strong> Re-verify lunar/religious dates yearly, they shift with moon sightings.</li>
           <li>· Dates marked <strong style={{ color: "var(--text)" }}>provisional</strong> are estimates shown honestly; confirmed dates come from official calendars or certain calendar rules.</li>
           <li>· To update: edit <code>scripts/event-defs.mjs</code>, run <code>npm run build:data</code>, then rebuild and redeploy.</li>
           <li>· {META.disclaimer}</li>

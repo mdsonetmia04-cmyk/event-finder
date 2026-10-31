@@ -1,4 +1,4 @@
-/** Core domain types for StockSeason Intelligence */
+/** Core domain types for Sweet Smart Calendar */
 
 export type DateStatus = "confirmed" | "provisional" | "unverified";
 

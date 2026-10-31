@@ -12,10 +12,10 @@ export function generateMetadata({ params }: { params: Promise<{ id: string }> }
     const e = eventById[id];
     if (!e) return { title: "Event not found" };
     return {
-      title: `${e.name} — Seasonal Intelligence`,
+      title: `${e.name} · Sweet Smart Calendar`,
       description: `${e.description} Creation windows, submission deadlines, asset recommendations and keyword ideas for Adobe Stock contributors.`,
       openGraph: {
-        title: `${e.name} · StockSeason Intelligence`,
+        title: `${e.name} · Sweet Smart Calendar`,
         description: e.description,
       },
     };

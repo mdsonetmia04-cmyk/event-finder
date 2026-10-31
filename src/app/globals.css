@@ -826,3 +826,100 @@ html.lang-bn .kanban-card-title { font-family: "SolaimanLipi", sans-serif; }
   padding: 2px 10px;
   flex-shrink: 0;
 }
+
+/* ---------- Bold week strip (Calendar week view) ---------- */
+.week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 0.9rem;
+}
+.week-strip-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 0.55rem 0.2rem 0.45rem;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.week-strip-day:hover { background: var(--surface2); }
+.week-strip-day[data-sel] {
+  background: var(--surface);
+  border-color: var(--gold);
+}
+.ws-dow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ws-num {
+  font-family: Fraunces, Georgia, serif;
+  font-size: clamp(1.55rem, 4.2vw, 2.35rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+html.lang-bn .ws-num { font-family: "SolaimanLipi", sans-serif; }
+.week-strip-day[data-today] .ws-num { color: var(--gold-deep); }
+.ws-count {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 15px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.ws-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--gold);
+  display: inline-block;
+}
+
+/* ---------- Planner hero (warm greeting + seasonal art) ---------- */
+.planner-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.3rem 1.5rem;
+  overflow: hidden;
+  position: relative;
+}
+.planner-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(420px 160px at 88% 50%, rgba(201, 151, 31, 0.10), transparent 70%);
+}
+.planner-hero h2 {
+  font-size: clamp(1.5rem, 3.6vw, 2.05rem);
+  letter-spacing: -0.01em;
+}
+.planner-hero-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+}
+.season-art {
+  width: 158px;
+  height: 110px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+@media (max-width: 600px) {
+  .season-art { width: 112px; height: 78px; }
+  .planner-hero { padding: 1.1rem 1.15rem; }
+}

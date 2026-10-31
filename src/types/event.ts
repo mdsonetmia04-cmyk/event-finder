@@ -130,7 +130,7 @@ export interface ProductionTask {
   doneQuantity: number;
   startDate: string;
   deadline: string;
-  status: "planned" | "in-progress" | "completed";
+  status: "to-shoot" | "editing" | "ready" | "uploaded";
   notes: string;
   createdAt: string;
 }

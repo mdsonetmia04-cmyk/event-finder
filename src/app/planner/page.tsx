@@ -1,7 +1,11 @@
 "use client";
 
+/* Planner: a warm Fitplan-style greeting hero with a seasonal illustration,
+   then the production queue as a 4-stage kanban pipeline —
+   To Shoot → Editing → Ready → Uploaded. */
+
 import { useMemo, useState } from "react";
-import { ListPlus, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ListPlus, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { EmptyState, SectionHeader } from "@/components/ui";
 import { useCollections } from "@/components/collections";
 import { useLang } from "@/i18n/LanguageContext";
@@ -9,7 +13,204 @@ import { ASSET_CATEGORIES, EVENTS, eventById } from "@/lib/data";
 import { daysBetween, todayISO } from "@/lib/date-engine";
 import type { ProductionTask } from "@/types/event";
 
-const STATUSES = ["planned", "in-progress", "completed"] as const;
+const STAGES = ["to-shoot", "editing", "ready", "uploaded"] as const;
+type Stage = (typeof STAGES)[number];
+
+type Season = "spring" | "summer" | "autumn" | "winter";
+
+function dhakaNow(): { hour: number; month: number } {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Dhaka",
+      hour: "numeric",
+      month: "numeric",
+      hour12: false,
+    })
+      .formatToParts(new Date())
+      .map((p) => [p.type, p.value])
+  );
+  return { hour: Number(parts.hour) % 24, month: Number(parts.month) };
+}
+
+function seasonOf(month: number): Season {
+  if (month >= 3 && month <= 5) return "spring";
+  if (month >= 6 && month <= 8) return "summer";
+  if (month >= 9 && month <= 11) return "autumn";
+  return "winter";
+}
+
+/* Hand-drawn seasonal vignettes in gold + ink. The art follows the season. */
+function SeasonArt({ season }: { season: Season }) {
+  const gold = "var(--gold)";
+  const ink = "var(--text)";
+  const soft = "var(--gold-deep)";
+  if (season === "spring") {
+    const blossoms: [number, number][] = [[148, 52], [168, 74], [128, 78], [110, 52], [88, 88]];
+    return (
+      <svg viewBox="0 0 200 140" className="season-art" aria-hidden="true">
+        <path d="M18 128 C 60 118, 92 92, 150 62" fill="none" stroke={ink} strokeWidth={3.5} strokeLinecap="round" />
+        <path d="M84 102 C 96 92, 100 78, 104 62" fill="none" stroke={ink} strokeWidth={2.5} strokeLinecap="round" />
+        <path d="M120 84 C 132 78, 140 68, 146 56" fill="none" stroke={ink} strokeWidth={2.5} strokeLinecap="round" />
+        {blossoms.map(([x, y], i) => (
+          <g key={i} stroke={gold} strokeWidth={2} fill="none">
+            <circle cx={x - 6} cy={y} r={4.5} />
+            <circle cx={x + 6} cy={y} r={4.5} />
+            <circle cx={x} cy={y - 6} r={4.5} />
+            <circle cx={x} cy={y + 6} r={4.5} />
+            <circle cx={x} cy={y} r={2.2} fill={soft} stroke="none" />
+          </g>
+        ))}
+      </svg>
+    );
+  }
+  if (season === "summer") {
+    return (
+      <svg viewBox="0 0 200 140" className="season-art" aria-hidden="true">
+        <circle cx={100} cy={56} r={24} fill="none" stroke={gold} strokeWidth={3.5} />
+        {Array.from({ length: 8 }, (_, i) => {
+          const a = (i * Math.PI) / 4;
+          const x1 = 100 + 32 * Math.cos(a);
+          const y1 = 56 + 32 * Math.sin(a);
+          const x2 = 100 + 42 * Math.cos(a);
+          const y2 = 56 + 42 * Math.sin(a);
+          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={gold} strokeWidth={3} strokeLinecap="round" />;
+        })}
+        <path d="M8 118 Q 55 88, 105 112 T 192 108" fill="none" stroke={ink} strokeWidth={3} strokeLinecap="round" />
+        <path d="M30 128 Q 80 112, 130 124" fill="none" stroke={soft} strokeWidth={2} strokeLinecap="round" opacity={0.7} />
+      </svg>
+    );
+  }
+  if (season === "autumn") {
+    const leaves: [number, number, number][] = [[60, 40, 30], [105, 28, -20], [145, 55, 45], [80, 80, -40], [125, 95, 15], [45, 95, 60]];
+    return (
+      <svg viewBox="0 0 200 140" className="season-art" aria-hidden="true">
+        <path d="M20 20 C 70 50, 120 60, 185 45" fill="none" stroke={soft} strokeWidth={2} strokeDasharray="1 7" strokeLinecap="round" opacity={0.8} />
+        <path d="M15 70 C 70 95, 130 100, 190 85" fill="none" stroke={soft} strokeWidth={2} strokeDasharray="1 7" strokeLinecap="round" opacity={0.6} />
+        {leaves.map(([x, y, r], i) => (
+          <ellipse
+            key={i}
+            cx={x}
+            cy={y}
+            rx={11}
+            ry={6.5}
+            fill="none"
+            stroke={i % 2 ? gold : ink}
+            strokeWidth={2.5}
+            transform={`rotate(${r} ${x} ${y})`}
+          />
+        ))}
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 200 140" className="season-art" aria-hidden="true">
+      <circle cx={158} cy={34} r={14} fill="none" stroke={gold} strokeWidth={3} opacity={0.85} />
+      <path d="M30 120 C 55 100, 70 80, 78 52" fill="none" stroke={ink} strokeWidth={3.5} strokeLinecap="round" />
+      <path d="M52 96 L 34 84 M62 82 L 46 66 M70 68 L 88 58" stroke={ink} strokeWidth={2.5} strokeLinecap="round" />
+      <path d="M100 108 H 185 M85 122 H 160 M115 94 H 175" stroke={soft} strokeWidth={2.5} strokeLinecap="round" opacity={0.55} />
+    </svg>
+  );
+}
+
+function PlannerHero({ active, dueThisWeek }: { active: number; dueThisWeek: number }) {
+  const { t, lang } = useLang();
+  const { hour, month } = dhakaNow();
+  const locale = lang === "bn" ? "bn-BD" : "en-US";
+  const dateStr = new Intl.DateTimeFormat(locale, {
+    timeZone: "Asia/Dhaka",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date());
+  return (
+    <div className="planner-hero card">
+      <div className="min-w-0">
+        <p className="planner-hero-kicker">{dateStr}</p>
+        <h2 className="font-serif-d mt-1 font-semibold leading-tight">
+          {t.planner.greet(hour)}, {t.planner.heroName}
+        </h2>
+        <p className="mt-1.5 text-sm" style={{ color: "var(--muted)" }}>
+          {t.planner.heroSub(active, dueThisWeek)}
+        </p>
+      </div>
+      <SeasonArt season={seasonOf(month)} />
+    </div>
+  );
+}
+
+function TaskCard({
+  task,
+  onEdit,
+  onDelete,
+  onPatch,
+  onMove,
+}: {
+  task: ProductionTask;
+  onEdit: () => void;
+  onDelete: () => void;
+  onPatch: (patch: Partial<ProductionTask>) => void;
+  onMove: (dir: 1 | -1) => void;
+}) {
+  const { t, lang } = useLang();
+  const pct = task.targetQuantity
+    ? Math.round((Math.min(task.doneQuantity, task.targetQuantity) / task.targetQuantity) * 100)
+    : 0;
+  const daysLeft = task.deadline ? daysBetween(todayISO(), task.deadline) : null;
+  const stageIdx = STAGES.indexOf(task.status);
+  return (
+    <div className="kanban-card">
+      <p className="kanban-card-title">{task.title}</p>
+      <p className="mt-1 text-[12px] leading-relaxed" style={{ color: "var(--muted)" }}>
+        {task.eventName ? `${task.eventName} · ` : ""}
+        {task.assetCategory || t.planner.fAny}
+        {daysLeft !== null && (
+          <>
+            {" · "}
+            <strong style={{ color: daysLeft < 0 ? "#C0524D" : daysLeft <= 7 ? "var(--gold-deep)" : "var(--muted)" }}>
+              {daysLeft < 0 ? t.planner.dOverdue(Math.abs(daysLeft)) : daysLeft === 0 ? t.planner.dueToday : t.planner.dLeft(daysLeft)}
+            </strong>
+          </>
+        )}
+      </p>
+      {task.notes && <p className="mt-1 text-[12px]" style={{ color: "var(--muted)" }}>“{task.notes}”</p>}
+      <div className="mt-2.5 flex items-center gap-2">
+        <div className="progress flex-1">
+          <div style={{ width: `${pct}%` }} />
+        </div>
+        <div className="flex items-center gap-1 text-xs tabular-nums">
+          <button className="btn btn-ghost !px-1.5 !py-0.5" onClick={() => onPatch({ doneQuantity: Math.max(0, task.doneQuantity - 1) })} aria-label="Decrease">−</button>
+          <span className="font-semibold">{task.doneQuantity}/{task.targetQuantity}</span>
+          <button className="btn btn-ghost !px-1.5 !py-0.5" onClick={() => onPatch({ doneQuantity: Math.min(task.targetQuantity, task.doneQuantity + 1) })} aria-label="Increase">+</button>
+        </div>
+      </div>
+      <div className="mt-2 flex items-center justify-between">
+        <div className="flex gap-1">
+          <button className="btn btn-ghost !px-1.5 !py-1" title={t.planner.movePrev} disabled={stageIdx <= 0} onClick={() => onMove(-1)} aria-label={t.planner.movePrev}>
+            <ChevronLeft size={14} />
+          </button>
+          <button className="btn btn-ghost !px-1.5 !py-1" title={t.planner.moveNext} disabled={stageIdx >= STAGES.length - 1} onClick={() => onMove(1)} aria-label={t.planner.moveNext}>
+            <ChevronRight size={14} />
+          </button>
+        </div>
+        <div className="flex gap-1">
+          <button className="btn btn-ghost !px-1.5 !py-1" title={t.planner.editT} onClick={onEdit} aria-label={t.planner.editT}>
+            <Pencil size={13} />
+          </button>
+          <button
+            className="btn btn-ghost !px-1.5 !py-1"
+            title={t.planner.cancel}
+            aria-label={t.planner.cancel}
+            onClick={() => {
+              if (confirm(lang === "bn" ? "এই টাস্ক মুছে ফেলবেন?" : "Delete this task?")) onDelete();
+            }}
+          >
+            <Trash2 size={13} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const emptyForm = {
   title: "",
@@ -19,7 +220,7 @@ const emptyForm = {
   doneQuantity: 0,
   startDate: todayISO(),
   deadline: "",
-  status: "planned" as ProductionTask["status"],
+  status: "to-shoot" as Stage,
   notes: "",
 };
 
@@ -30,7 +231,6 @@ export default function PlannerPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
 
   const set = (patch: Partial<typeof emptyForm>) => setForm((f) => ({ ...f, ...patch }));
 
@@ -76,7 +276,7 @@ export default function PlannerPage() {
         doneQuantity: 0,
         startDate: form.startDate,
         deadline: form.deadline || form.startDate,
-        status: "planned",
+        status: "to-shoot",
         notes: form.notes.trim(),
       });
     }
@@ -85,18 +285,41 @@ export default function PlannerPage() {
     setShowForm(false);
   };
 
+  const moveTask = (task: ProductionTask, dir: 1 | -1) => {
+    const i = STAGES.indexOf(task.status) + dir;
+    if (i < 0 || i >= STAGES.length) return;
+    const patch: Partial<ProductionTask> = { status: STAGES[i] };
+    if (STAGES[i] === "uploaded") patch.doneQuantity = task.targetQuantity;
+    updateTask(task.id, patch);
+  };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return tasks
-      .filter((t) => !statusFilter || t.status === statusFilter)
       .filter((t) => !q || `${t.title} ${t.eventName ?? ""} ${t.notes}`.toLowerCase().includes(q))
       .sort((a, b) => a.deadline.localeCompare(b.deadline));
-  }, [tasks, query, statusFilter]);
+  }, [tasks, query]);
+
+  const columns = useMemo(() => {
+    const map = new Map<Stage, ProductionTask[]>();
+    for (const s of STAGES) map.set(s, []);
+    for (const t of filtered) map.get(t.status)?.push(t);
+    return map;
+  }, [filtered]);
 
   const totals = useMemo(() => {
     const target = tasks.reduce((s, t) => s + t.targetQuantity, 0);
     const done = tasks.reduce((s, t) => s + Math.min(t.doneQuantity, t.targetQuantity), 0);
     return { target, done, pct: target ? Math.round((done / target) * 100) : 0 };
+  }, [tasks]);
+
+  const dueThisWeek = useMemo(() => {
+    const today = todayISO();
+    return tasks.filter((t) => {
+      if (t.status === "uploaded" || !t.deadline) return false;
+      const d = daysBetween(today, t.deadline);
+      return d >= 0 && d <= 7;
+    }).length;
   }, [tasks]);
 
   const quickAdd = productionList
@@ -116,11 +339,13 @@ export default function PlannerPage() {
         }
       />
 
+      <PlannerHero active={tasks.filter((ta) => ta.status !== "uploaded").length} dueThisWeek={dueThisWeek} />
+
       {/* Summary */}
       <div className="grid gap-3 sm:grid-cols-4">
         {[
-          { label: t.planner.sActive, value: tasks.filter((ta) => ta.status !== "completed").length },
-          { label: t.planner.sCompleted, value: tasks.filter((ta) => ta.status === "completed").length },
+          { label: t.planner.sActive, value: tasks.filter((ta) => ta.status !== "uploaded").length },
+          { label: t.planner.sCompleted, value: tasks.filter((ta) => ta.status === "uploaded").length },
           { label: t.planner.sPlanned, value: totals.target },
           { label: t.planner.sProgress, value: `${totals.pct}%` },
         ].map((s) => (
@@ -208,9 +433,9 @@ export default function PlannerPage() {
             </label>
             <label>
               <span className="label">{t.planner.fStatus}</span>
-              <select className="input mt-1" value={form.status} onChange={(e) => set({ status: e.target.value as ProductionTask["status"] })}>
-                {STATUSES.map((s) => (
-                  <option key={s} value={s} className="capitalize">{t.planner.statuses[s] ?? s}</option>
+              <select className="input mt-1" value={form.status} onChange={(e) => set({ status: e.target.value as Stage })}>
+                {STAGES.map((s) => (
+                  <option key={s} value={s}>{t.planner.stages[s] ?? s}</option>
                 ))}
               </select>
             </label>
@@ -230,74 +455,50 @@ export default function PlannerPage() {
         </div>
       )}
 
-      {/* Filters + list */}
+      {/* Search */}
       <div className="card flex flex-wrap items-center gap-2 p-3">
         <label className="relative min-w-[180px] flex-1">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--muted)" }} />
           <input className="input !pl-9" placeholder={t.planner.searchPh} value={query} onChange={(e) => setQuery(e.target.value)} />
         </label>
-        <select className="input !w-auto" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label={t.planner.allStatuses}>
-          <option value="">{t.planner.allStatuses}</option>
-          {STATUSES.map((s) => (
-            <option key={s} value={s} className="capitalize">{t.planner.statuses[s] ?? s}</option>
-          ))}
-        </select>
       </div>
 
-      {filtered.length === 0 ? (
-        <EmptyState
-          title={tasks.length === 0 ? t.planner.emptyT1 : t.planner.emptyT2}
-          hint={t.planner.emptyH}
-        />
+      {/* Kanban pipeline */}
+      {tasks.length === 0 ? (
+        <EmptyState title={t.planner.emptyT1} hint={t.planner.emptyH} />
+      ) : filtered.length === 0 ? (
+        <EmptyState title={t.planner.emptyT2} hint={t.planner.emptyH} />
       ) : (
-        <div className="grid gap-3">
-          {filtered.map((task) => {
-            const pct = task.targetQuantity ? Math.round((Math.min(task.doneQuantity, task.targetQuantity) / task.targetQuantity) * 100) : 0;
-            const daysLeft = task.deadline ? daysBetween(todayISO(), task.deadline) : null;
-            return (
-              <div key={task.id} className="card p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-semibold leading-snug">{task.title}</p>
-                    <p className="mt-0.5 text-xs" style={{ color: "var(--muted)" }}>
-                      {task.eventName ? `${task.eventName} · ` : ""}
-                      {task.assetCategory || t.planner.fAny} · {task.startDate} → {task.deadline || "—"}
-                      {daysLeft !== null && (
-                        <span className="font-semibold" style={{ color: daysLeft < 0 ? "#C0524D" : daysLeft <= 14 ? "#C98A2B" : "var(--muted)" }}>
-                          {" "}· {daysLeft < 0 ? t.planner.dOverdue(Math.abs(daysLeft)) : daysLeft === 0 ? t.planner.dueToday : t.planner.dLeft(daysLeft)}
-                        </span>
-                      )}
-                    </p>
-                    {task.notes && <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>“{task.notes}”</p>}
-                  </div>
-                  <div className="flex items-center gap-1.5 no-print">
-                    <span className={`chip !text-[11px] capitalize ${task.status === "completed" ? "!border-0" : ""}`}
-                      style={task.status === "completed" ? { background: "rgba(47,158,110,.14)", color: "#2F9E6E" } : {}}>
-                      {t.planner.statuses[task.status] ?? task.status}
-                    </span>
-                    <button className="btn btn-ghost !px-2 !py-1.5" title={t.planner.editT} onClick={() => startEdit(task)}><Pencil size={13} /></button>
-                    <button
-                      className="btn btn-ghost !px-2 !py-1.5"
-                      title={task.status === "completed" ? t.planner.statuses["in-progress"] : t.planner.statuses.completed}
-                      onClick={() => updateTask(task.id, { status: task.status === "completed" ? "in-progress" : "completed", doneQuantity: task.status === "completed" ? task.doneQuantity : task.targetQuantity })}
-                    >
-                      ✓
-                    </button>
-                    <button className="btn btn-ghost !px-2 !py-1.5" title={t.planner.cancel} onClick={() => { if (confirm(lang === "bn" ? "এই টাস্ক মুছে ফেলবেন?" : "Delete this task?")) deleteTask(task.id); }}><Trash2 size={13} /></button>
-                  </div>
-                </div>
-                <div className="mt-3 flex items-center gap-3">
-                  <div className="progress flex-1"><div style={{ width: `${pct}%` }} /></div>
-                  <div className="flex items-center gap-1.5 text-xs tabular-nums no-print">
-                    <button className="btn btn-ghost !px-2 !py-0.5" onClick={() => updateTask(task.id, { doneQuantity: Math.max(0, task.doneQuantity - 1) })} aria-label="Decrease">−</button>
-                    <span className="w-16 text-center font-semibold">{task.doneQuantity}/{task.targetQuantity}</span>
-                    <button className="btn btn-ghost !px-2 !py-0.5" onClick={() => updateTask(task.id, { doneQuantity: Math.min(task.targetQuantity, task.doneQuantity + 1) })} aria-label="Increase">+</button>
-                  </div>
-                  <span className="text-xs font-semibold tabular-nums" style={{ color: "var(--muted)" }}>{pct}%</span>
-                </div>
+        <div className="kanban-board">
+          {STAGES.map((s) => (
+            <section key={s} className="kanban-col" aria-label={t.planner.stages[s] ?? s}>
+              <header className="kanban-col-head">
+                <span
+                  className="kanban-dot"
+                  style={{ background: s === "uploaded" ? "#2F9E6E" : "var(--gold)" }}
+                  aria-hidden="true"
+                />
+                <h3 className="kanban-col-title">{t.planner.stages[s] ?? s}</h3>
+                <span className="kanban-count tabular-nums">{columns.get(s)?.length ?? 0}</span>
+              </header>
+              <div className="kanban-col-body">
+                {(columns.get(s) ?? []).length === 0 ? (
+                  <p className="kanban-empty" aria-hidden="true">—</p>
+                ) : (
+                  (columns.get(s) ?? []).map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onEdit={() => startEdit(task)}
+                      onDelete={() => deleteTask(task.id)}
+                      onPatch={(patch) => updateTask(task.id, patch)}
+                      onMove={(dir) => moveTask(task, dir)}
+                    />
+                  ))
+                )}
               </div>
-            );
-          })}
+            </section>
+          ))}
         </div>
       )}
 

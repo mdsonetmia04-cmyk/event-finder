@@ -253,7 +253,7 @@ export default function CalendarPage() {
           <MonthTimeline cursor={cursor} occs={filtered} onSelect={setSelected} />
         </>
       )}
-      {view === "week" && <WeekView cursor={cursor} occOnDay={occOnDay} onSelect={setSelected} />}
+      {view === "week" && <WeekView cursor={cursor} occOnDay={occOnDay} onSelect={setSelected} onDayClick={setCursor} />}
       {view === "day" && <DayView cursor={cursor} occOnDay={occOnDay} onSelect={setSelected} />}
       {view === "year" && <YearView cursor={cursor} occOnDay={occOnDay} onMonthClick={(m) => { setCursor(m); setView("month"); }} />}
 
@@ -407,43 +407,74 @@ function MonthTimeline({ cursor, occs, onSelect }: {
 
 /* ---------------- Week ---------------- */
 
-function WeekView({ cursor, occOnDay, onSelect }: {
+function WeekView({ cursor, occOnDay, onSelect, onDayClick }: {
   cursor: Date;
   occOnDay: (iso: string) => CalOcc[];
   onSelect: (o: CalOcc) => void;
+  onDayClick: (d: Date) => void;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const locale = lang === "bn" ? bn : undefined;
   const start = startOfWeek(cursor, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  const today = new Date();
   return (
-    <div className="card grid gap-px overflow-hidden p-0 sm:grid-cols-7" style={{ background: "var(--line)" }}>
-      {days.map((d) => {
-        const iso = toISO(d);
-        const occs = occOnDay(iso);
-        const isToday = isSameDay(d, new Date());
-        return (
-          <div key={iso} className="min-h-[220px] p-2.5" style={{ background: "var(--surface)" }}>
-            <p className="label !text-[10px]">{format(d, "EEE")}</p>
-            <p className="font-serif-d text-lg font-semibold" style={isToday ? { color: "var(--gold-deep)" } : {}}>
-              {format(d, "d")}
-            </p>
-            <div className="mt-2 flex flex-col gap-1.5">
-              {occs.length === 0 && <p className="text-[11px]" style={{ color: "var(--muted)" }}>—</p>}
-              {occs.map((o) => (
-                <button
-                  key={`${o.event.id}-${o.year}`}
-                  onClick={() => onSelect(o)}
-                  className="rounded-lg p-2 text-left text-[11px] hover:opacity-80"
-                  style={{ background: "var(--surface2)", borderLeft: "3px solid var(--gold)" }}
-                >
-                  <span className="font-semibold leading-tight">{o.event.name}</span>
-                  <span className="mt-0.5 block" style={{ color: "var(--muted)" }}>{t.status[o.status] ?? o.status}</span>
-                </button>
-              ))}
+    <div>
+      {/* Bold week strip: big numerals, minimal — click a day to focus it */}
+      <div className="week-strip" role="tablist" aria-label={t.cal.week}>
+        {days.map((d) => {
+          const iso = toISO(d);
+          const n = occOnDay(iso).length;
+          const isToday = isSameDay(d, today);
+          const isSel = isSameDay(d, cursor);
+          return (
+            <button
+              key={iso}
+              role="tab"
+              aria-selected={isSel}
+              onClick={() => onDayClick(d)}
+              className="week-strip-day"
+              data-today={isToday || undefined}
+              data-sel={isSel || undefined}
+            >
+              <span className="ws-dow">{format(d, "EEE", { locale })}</span>
+              <span className="ws-num">{format(d, "d", { locale })}</span>
+              <span className="ws-count">
+                {n > 0 && (
+                  <>
+                    <i className="ws-dot" aria-hidden="true" />
+                    <span className="tabular-nums">{n}</span>
+                  </>
+                )}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="card grid gap-px overflow-hidden p-0 sm:grid-cols-7" style={{ background: "var(--line)" }}>
+        {days.map((d) => {
+          const iso = toISO(d);
+          const occs = occOnDay(iso);
+          return (
+            <div key={iso} className="min-h-[220px] p-2.5" style={{ background: "var(--surface)" }}>
+              <div className="flex flex-col gap-1.5">
+                {occs.length === 0 && <p className="text-[11px]" style={{ color: "var(--muted)" }}>—</p>}
+                {occs.map((o) => (
+                  <button
+                    key={`${o.event.id}-${o.year}`}
+                    onClick={() => onSelect(o)}
+                    className="rounded-lg p-2 text-left text-[11px] hover:opacity-80"
+                    style={{ background: "var(--surface2)", borderLeft: "3px solid var(--gold)" }}
+                  >
+                    <span className="font-semibold leading-tight">{o.event.name}</span>
+                    <span className="mt-0.5 block" style={{ color: "var(--muted)" }}>{t.status[o.status] ?? o.status}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

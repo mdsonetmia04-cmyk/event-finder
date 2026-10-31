@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   type ReactNode,
 } from "react";
 import {
@@ -29,11 +30,33 @@ interface Collections {
 
 const Ctx = createContext<Collections | null>(null);
 
+/* One-time migration: the old 3-stage task pipeline becomes the new 4-stage one. */
+const MIGRATE_STATUS: Record<string, ProductionTask["status"]> = {
+  planned: "to-shoot",
+  "in-progress": "editing",
+  completed: "uploaded",
+};
+
 export function CollectionsProvider({ children }: { children: ReactNode }) {
   const [favorites, setFavorites] = useLocalStorage<string[]>(KEYS.favorites, []);
   const [completed, setCompleted] = useLocalStorage<string[]>(KEYS.completed, []);
   const [productionList, setProductionList] = useLocalStorage<string[]>(KEYS.productionList, []);
   const [tasks, setTasks] = useLocalStorage<ProductionTask[]>(KEYS.tasks, []);
+
+  useEffect(() => {
+    setTasks((list) => {
+      let changed = false;
+      const next = list.map((t) => {
+        const s = MIGRATE_STATUS[t.status as string];
+        if (s && s !== t.status) {
+          changed = true;
+          return { ...t, status: s };
+        }
+        return t;
+      });
+      return changed ? next : list;
+    });
+  }, [setTasks]);
 
   const toggleFavorite = useCallback((id: string) => setFavorites((l) => toggleInList(l, id)), [setFavorites]);
   const toggleCompleted = useCallback((id: string) => setCompleted((l) => toggleInList(l, id)), [setCompleted]);

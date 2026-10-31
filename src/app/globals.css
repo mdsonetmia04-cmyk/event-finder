@@ -731,3 +731,98 @@ html.lang-bn .step-time { letter-spacing: 0; }
   .btn-shine::after { display: none; }
   .rise { animation: none; }
 }
+
+/* ---------- Kanban pipeline (Opportunities) ---------- */
+.kanban-board {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.75rem;
+  scroll-snap-type: x proximity;
+  align-items: flex-start;
+}
+.kanban-col {
+  flex: 0 0 292px;
+  max-width: 292px;
+  scroll-snap-align: start;
+  background: var(--surface2);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 0.85rem;
+}
+.kanban-col-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.15rem 0.25rem 0.7rem;
+}
+.kanban-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.kanban-col-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kanban-count {
+  font-size: 11.5px;
+  font-weight: 700;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 1px 9px;
+  color: var(--muted);
+}
+.kanban-col-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: 62vh;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.kanban-empty {
+  text-align: center;
+  padding: 1.25rem 0;
+  color: var(--muted);
+  opacity: 0.5;
+  font-size: 1.25rem;
+}
+.kanban-card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0.8rem 0.9rem;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.kanban-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold);
+  box-shadow: 0 6px 18px rgba(151, 113, 26, 0.12);
+}
+.kanban-card-title {
+  font-family: Fraunces, Georgia, serif;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+}
+html.lang-bn .kanban-card-title { font-family: "SolaimanLipi", sans-serif; }
+.kanban-score {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--gold-deep);
+  background: rgba(201, 151, 31, 0.12);
+  border-radius: 999px;
+  padding: 2px 10px;
+  flex-shrink: 0;
+}

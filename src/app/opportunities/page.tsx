@@ -1,9 +1,13 @@
 "use client";
 
+/* Opportunities as a kanban pipeline, in the language of Dribbble's
+   "CRM Dashboard App Design" (Ronas IT): warm ivory columns, one stage per
+   status, events flowing left to right as deadlines approach. */
+
 import { useMemo, useState } from "react";
-import { CalendarDays, Info, Search } from "lucide-react";
-import { OpportunityCard } from "@/components/cards";
-import { EmptyState, SectionHeader } from "@/components/ui";
+import Link from "next/link";
+import { ArrowUpRight, CalendarDays, Info, Search } from "lucide-react";
+import { EmptyState, PriorityBadge, SectionHeader } from "@/components/ui";
 import {
   CATEGORY_LABEL,
   COUNTRIES,
@@ -11,12 +15,69 @@ import {
   REGIONS,
 } from "@/lib/data";
 import { isValidISODate, todayISO } from "@/lib/date-engine";
-import { getOpportunities, SCORE_WEIGHTS } from "@/lib/recommendation-engine";
-import { useLang } from "@/i18n/LanguageContext";
-import type { EventCategory, EventStatus, PriorityLabel } from "@/types/event";
+import {
+  SCORE_WEIGHTS,
+  STATUS_STYLE,
+  getOpportunities,
+} from "@/lib/recommendation-engine";
+import { useDaysLabel, useLang } from "@/i18n/LanguageContext";
+import type { EventCategory, EventStatus, Opportunity, PriorityLabel } from "@/types/event";
 
+const PIPELINE: EventStatus[] = [
+  "RESEARCH NOW",
+  "CREATE NOW",
+  "UPLOAD NOW",
+  "HIGH PRIORITY",
+  "LAST CHANCE",
+  "UPCOMING",
+];
 const ALL_PRIORITIES: PriorityLabel[] = ["critical", "high", "recommended", "watch"];
-const ALL_STATUSES: EventStatus[] = ["RESEARCH NOW", "CREATE NOW", "UPLOAD NOW", "HIGH PRIORITY", "UPCOMING", "LAST CHANCE"];
+
+function KanbanCard({ opp }: { opp: Opportunity }) {
+  const { t } = useLang();
+  const daysLabel = useDaysLabel();
+  const e = opp.event;
+  const urgent = opp.daysUntil >= 0 && opp.daysUntil <= 14;
+  return (
+    <Link href={`/events/${e.id}`} className="kanban-card">
+      <div className="flex items-start justify-between gap-2">
+        <span className="kanban-card-title">{e.name}</span>
+        <span className="kanban-score tabular-nums" title={t.cards.priorityScore}>
+          {opp.score.total}
+        </span>
+      </div>
+      <p className="mt-1 text-[12.5px]" style={{ color: urgent ? "var(--gold-deep)" : "var(--muted)" }}>
+        <strong>{daysLabel(opp.daysUntil)}</strong>
+        <span style={{ color: "var(--muted)" }}> · {CATEGORY_LABEL[e.category]}</span>
+      </p>
+      <div className="mt-2.5 flex items-center justify-between">
+        <PriorityBadge priority={opp.priority} showStars={false} />
+        <ArrowUpRight size={14} style={{ color: "var(--muted)" }} aria-hidden="true" />
+      </div>
+    </Link>
+  );
+}
+
+function KanbanColumn({ status, items }: { status: EventStatus; items: Opportunity[] }) {
+  const { t } = useLang();
+  const s = STATUS_STYLE[status];
+  return (
+    <section className="kanban-col" aria-label={t.status[status] ?? status}>
+      <header className="kanban-col-head">
+        <span className="kanban-dot" style={{ background: s.fg }} aria-hidden="true" />
+        <h3 className="kanban-col-title">{t.status[status] ?? status}</h3>
+        <span className="kanban-count tabular-nums">{items.length}</span>
+      </header>
+      <div className="kanban-col-body">
+        {items.length === 0 ? (
+          <p className="kanban-empty" aria-hidden="true">—</p>
+        ) : (
+          items.map((opp) => <KanbanCard key={`${opp.event.id}-${opp.year}`} opp={opp} />)
+        )}
+      </div>
+    </section>
+  );
+}
 
 export default function OpportunitiesPage() {
   const [date, setDate] = useState(todayISO());
@@ -25,7 +86,6 @@ export default function OpportunitiesPage() {
   const [region, setRegion] = useState("");
   const [category, setCategory] = useState("");
   const [priority, setPriority] = useState("");
-  const [status, setStatus] = useState("");
   const [showHow, setShowHow] = useState(false);
   const { t } = useLang();
 
@@ -40,14 +100,23 @@ export default function OpportunitiesPage() {
           regions: region ? [region] : undefined,
           categories: category ? [category as EventCategory] : undefined,
           priorities: priority ? [priority as PriorityLabel] : undefined,
-          statuses: status ? [status as EventStatus] : undefined,
         },
-        60
+        120
       ),
-    [date, query, country, region, category, priority, status]
+    [date, query, country, region, category, priority]
   );
 
-  const hasFilters = query || country || region || category || priority || status;
+  const columns = useMemo(() => {
+    const map = new Map<EventStatus, Opportunity[]>();
+    for (const s of PIPELINE) map.set(s, []);
+    for (const opp of opportunities) {
+      const list = map.get(opp.status);
+      if (list) list.push(opp);
+    }
+    return map;
+  }, [opportunities]);
+
+  const hasFilters = query || country || region || category || priority;
 
   return (
     <div className="flex flex-col gap-5">
@@ -73,9 +142,7 @@ export default function OpportunitiesPage() {
             <li>· {t.opp.wVers(Math.round(SCORE_WEIGHTS.versatility * 100))}</li>
             <li>· {t.opp.wConf(Math.round(SCORE_WEIGHTS.confidence * 100))}</li>
           </ul>
-          <p className="mt-2 text-xs">
-            {t.opp.legend}
-          </p>
+          <p className="mt-2 text-xs">{t.opp.legend}</p>
         </div>
       )}
 
@@ -125,16 +192,10 @@ export default function OpportunitiesPage() {
             <option key={p} value={p} className="capitalize">{t.priority[p] ?? p}</option>
           ))}
         </select>
-        <select className="input !w-auto" value={status} onChange={(e) => setStatus(e.target.value)} aria-label={t.opp.allStatuses}>
-          <option value="">{t.opp.allStatuses}</option>
-          {ALL_STATUSES.map((s) => (
-            <option key={s} value={s}>{t.status[s] ?? s}</option>
-          ))}
-        </select>
         {hasFilters && (
           <button
             className="btn btn-ghost !px-3 !py-1.5 !text-xs"
-            onClick={() => { setQuery(""); setCountry(""); setRegion(""); setCategory(""); setPriority(""); setStatus(""); }}
+            onClick={() => { setQuery(""); setCountry(""); setRegion(""); setCategory(""); setPriority(""); }}
           >
             {t.opp.clear}
           </button>
@@ -143,14 +204,15 @@ export default function OpportunitiesPage() {
 
       <p className="text-sm" style={{ color: "var(--muted)" }}>
         <strong style={{ color: "var(--text)" }} className="tabular-nums">{t.opp.ranked(opportunities.length)}</strong>
+        {" · "}{t.opp.pipeHint}
       </p>
 
       {opportunities.length === 0 ? (
         <EmptyState title={t.opp.emptyT} hint={t.opp.emptyH} />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {opportunities.map((opp) => (
-            <OpportunityCard key={`${opp.event.id}-${opp.year}`} opp={opp} />
+        <div className="kanban-board">
+          {PIPELINE.map((s) => (
+            <KanbanColumn key={s} status={s} items={columns.get(s) ?? []} />
           ))}
         </div>
       )}

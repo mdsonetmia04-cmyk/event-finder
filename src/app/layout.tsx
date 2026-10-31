@@ -1,16 +1,10 @@
 import type { Metadata } from "next";
-import { Fraunces, Hind_Siliguri, Inter } from "next/font/google";
+import { Fraunces, Inter } from "next/font/google";
 import AppShell from "@/components/AppShell";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", display: "swap" });
-const hindSiliguri = Hind_Siliguri({
-  subsets: ["bengali", "latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-bn",
-  display: "swap",
-});
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://stockseason-intelligence.vercel.app";
 
@@ -49,7 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className={`${inter.variable} ${fraunces.variable} ${hindSiliguri.variable}`} suppressHydrationWarning>
+      <body className={`${inter.variable} ${fraunces.variable}`} suppressHydrationWarning>
         <AppShell>{children}</AppShell>
       </body>
     </html>

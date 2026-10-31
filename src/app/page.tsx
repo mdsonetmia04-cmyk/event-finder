@@ -6,11 +6,12 @@ import { ArrowRight, CalendarClock, Factory, Globe2, UploadCloud } from "lucide-
 import DateSelector from "@/components/DateSelector";
 import { EventCard, OpportunityCard } from "@/components/cards";
 import { CategoryBarChart, StageDonutChart } from "@/components/charts";
+import { LiveClock, Marquee, NumberTicker, Pressable, Reveal } from "@/components/motion";
 import { AccentLine, Deadlines, Faq, HowItWorks, Section, UploadChecklist } from "@/components/sections";
 import { EmptyState } from "@/components/ui";
-import { useLang } from "@/i18n/LanguageContext";
+import { useDaysLabel, useLang } from "@/i18n/LanguageContext";
 import { ASSET_CATEGORIES, COUNTRIES, EVENTS, META, countryByCode } from "@/lib/data";
-import { formatLong, todayISO } from "@/lib/date-engine";
+import { formatLong, formatMonthDay, todayISO } from "@/lib/date-engine";
 import {
   getActionGroups,
   getAllOccurrences,
@@ -24,6 +25,7 @@ export default function DashboardPage() {
   const [date, setDate] = useState(todayISO());
   const [windowDays, setWindowDays] = useState(30);
   const { t } = useLang();
+  const daysLabel = useDaysLabel();
 
   const opportunities = useMemo(() => getOpportunities(EVENTS, date, {}, 30), [date]);
   const groups = useMemo(() => getActionGroups(EVENTS, date), [date]);
@@ -34,6 +36,15 @@ export default function DashboardPage() {
     [allOcc, windowDays]
   );
   const planningSet = useMemo(() => allOcc.filter((o) => o.daysUntil >= 0 && o.daysUntil <= 180), [allOcc]);
+
+  const tickerItems = useMemo(
+    () =>
+      allOcc
+        .filter((o) => o.daysUntil >= 0 && o.daysUntil <= 60)
+        .sort((a, b) => a.daysUntil - b.daysUntil)
+        .slice(0, 14),
+    [allOcc]
+  );
 
   const createToday = groups["CREATE NOW"][0] ?? groups["RESEARCH NOW"][0];
   const uploadNow = opportunities[0];
@@ -97,91 +108,126 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-10">
-      {/* ---------- Hero ---------- */}
-      <section className="hero rise">
-        <span className="hero-eyebrow">{t.hero.eyebrow}</span>
-        <h1 className="hero-title">
-          {t.hero.line1}
-          <br />
-          <AccentLine line={t.hero.line2} accent={t.hero.accent} />
-        </h1>
-        <p className="hero-sub">{t.hero.sub(EVENTS.length, COUNTRIES.length)}</p>
-        <div className="hero-cta">
-          <Link href="/opportunities" className="btn btn-gold">
-            {t.hero.cta1} <ArrowRight size={16} />
-          </Link>
-          <Link href="/calendar" className="btn btn-ghost">
-            {t.hero.cta2}
-          </Link>
-        </div>
-        <div className="hero-stats">
-          {stats.map((s) => (
-            <div key={s.l} className="hero-stat">
-              <b>{s.v}</b>
-              <span>{s.l}</span>
-            </div>
-          ))}
+      {/* ---------- Hero: editorial desk ---------- */}
+      <section className="hero">
+        <Reveal>
+          <p className="hero-live">
+            <span className="live-dot" aria-hidden="true" />
+            Live · Dhaka <LiveClock />
+          </p>
+          <h1 className="hero-title">
+            {t.hero.line1}
+            <br />
+            <AccentLine line={t.hero.line2} accent={t.hero.accent} />
+          </h1>
+          <p className="hero-sub">{t.hero.sub(EVENTS.length, COUNTRIES.length)}</p>
+          <div className="hero-cta">
+            <Pressable>
+              <Link href="/opportunities" className="btn btn-gold btn-shine">
+                {t.hero.cta1} <ArrowRight size={16} />
+              </Link>
+            </Pressable>
+            <Pressable>
+              <Link href="/calendar" className="btn btn-ghost">
+                {t.hero.cta2}
+              </Link>
+            </Pressable>
+          </div>
+        </Reveal>
+        <Reveal delay={0.15}>
+          <div className="hero-stats">
+            {stats.map((s, i) => (
+              <div key={s.l} className="hero-stat">
+                <b>
+                  <NumberTicker value={s.v} delay={0.2 + i * 0.12} />
+                </b>
+                <span>{s.l}</span>
+              </div>
+            ))}
+          </div>
+        </Reveal>
+        <div className="hero-marquee">
+          <Marquee duration={55}>
+            {tickerItems.map((o) => (
+              <span className="ticker-item" key={`${o.event.id}-${o.year}`}>
+                <span className="ticker-star" aria-hidden="true">✦</span>
+                <b>{o.event.name}</b>
+                <span>{formatMonthDay(o.date)} · {daysLabel(o.daysUntil)}</span>
+              </span>
+            ))}
+          </Marquee>
         </div>
       </section>
 
       {/* ---------- Quick answers ---------- */}
       <section>
-        <div className="section-head">
-          <p className="section-eyebrow">{t.quick.eyebrow}</p>
-          <h2 className="section-title">{t.quick.title}</h2>
-        </div>
+        <Reveal>
+          <div className="section-head">
+            <div>
+              <p className="section-eyebrow">{t.quick.eyebrow}</p>
+              <h2 className="section-title">{t.quick.title}</h2>
+            </div>
+          </div>
+        </Reveal>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {fourQuestions.map((item, i) => {
             const Icon = item.icon;
             return (
-              <Link
-                key={item.q}
-                href={item.href}
-                className={`card card-hover rise rise-${i + 1} block p-5`}
-              >
-                <span
-                  className="flex h-9 w-9 items-center justify-center rounded-xl"
-                  style={{ background: "color-mix(in srgb, var(--gold) 14%, transparent)", color: "var(--gold-deep)" }}
-                >
-                  <Icon size={17} />
-                </span>
-                <p className="label mt-3">{item.q}</p>
-                <p className="font-serif-d mt-1.5 text-[16px] font-semibold leading-snug">{item.a}</p>
-                <p className="mt-1 text-xs tabular-nums" style={{ color: "var(--muted)" }}>
-                  {item.sub}
-                </p>
-              </Link>
+              <Reveal key={item.q} delay={i * 0.07}>
+                <Pressable className="w-full">
+                  <Link href={item.href} className="card card-hover block h-full p-5">
+                    <span
+                      className="flex h-9 w-9 items-center justify-center rounded-xl"
+                      style={{ background: "color-mix(in srgb, var(--gold) 14%, transparent)", color: "var(--gold-deep)" }}
+                    >
+                      <Icon size={17} />
+                    </span>
+                    <p className="label mt-3">{item.q}</p>
+                    <p className="font-serif-d mt-1.5 text-[16px] font-semibold leading-snug">{item.a}</p>
+                    <p className="mt-1 text-xs tabular-nums" style={{ color: "var(--muted)" }}>
+                      {item.sub}
+                    </p>
+                  </Link>
+                </Pressable>
+              </Reveal>
             );
           })}
         </div>
       </section>
 
       {/* ---------- Date selection ---------- */}
-      <section>
-        <DateSelector date={date} onDateChange={setDate} windowDays={windowDays} onWindowChange={setWindowDays} />
-        <p className="mt-2 text-xs" style={{ color: "var(--muted)" }}>
-          {t.dateSel.planningFor} <strong style={{ color: "var(--text)" }}>{formatLong(date)}</strong> ·{" "}
-          {t.dateSel.recalc}
-        </p>
-      </section>
+      <Reveal>
+        <section>
+          <DateSelector date={date} onDateChange={setDate} windowDays={windowDays} onWindowChange={setWindowDays} />
+          <p className="mt-2 text-xs" style={{ color: "var(--muted)" }}>
+            {t.dateSel.planningFor} <strong style={{ color: "var(--text)" }}>{formatLong(date)}</strong> ·{" "}
+            {t.dateSel.recalc}
+          </p>
+        </section>
+      </Reveal>
 
       {/* ---------- Star opportunities ---------- */}
       <Section
+        index="01"
         eyebrow={t.sec.star.eyebrow}
         title={t.sec.star.title}
         sub={t.sec.star.sub}
         action={
-          <Link href="/opportunities" className="btn btn-ghost !text-xs">
-            {t.sec.star.viewAll} <ArrowRight size={13} />
-          </Link>
+          <Pressable>
+            <Link href="/opportunities" className="btn btn-ghost !text-xs">
+              {t.sec.star.viewAll} <ArrowRight size={13} />
+            </Link>
+          </Pressable>
         }
       >
         {opportunities.length === 0 ? (
           <EmptyState title={t.sec.star.emptyT} hint={t.sec.star.emptyH} />
         ) : (
           <div className="grid gap-4 lg:grid-cols-3">
-            {opportunities.slice(0, 3).map((opp) => (
-              <OpportunityCard key={`${opp.event.id}-${opp.year}`} opp={opp} />
+            {opportunities.slice(0, 3).map((opp, i) => (
+              <Reveal key={`${opp.event.id}-${opp.year}`} delay={i * 0.08}>
+                <OpportunityCard opp={opp} />
+              </Reveal>
             ))}
           </div>
         )}
@@ -192,32 +238,35 @@ export default function DashboardPage() {
 
       {/* ---------- Action board ---------- */}
       <Section
+        index="03"
         eyebrow={t.sec.board.eyebrow}
         title={t.sec.board.title}
         sub={t.sec.board.sub}
       >
         <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
-          {BOARD_STATUSES.map((status) => {
+          {BOARD_STATUSES.map((status, i) => {
             const list = groups[status];
             return (
-              <div key={status} className="card flex flex-col gap-2.5 p-3.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold tracking-wide">{t.status[status] ?? status}</span>
-                  <span className="chip !px-2 tabular-nums">{list.length}</span>
+              <Reveal key={status} delay={Math.min(i * 0.06, 0.24)}>
+                <div className="card flex h-full flex-col gap-2.5 p-3.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold tracking-wide">{t.status[status] ?? status}</span>
+                    <span className="chip !px-2 tabular-nums">{list.length}</span>
+                  </div>
+                  {list.length === 0 ? (
+                    <p className="py-4 text-center text-xs" style={{ color: "var(--muted)" }}>
+                      {t.sec.board.empty}
+                    </p>
+                  ) : (
+                    list.slice(0, 2).map((occ) => <EventCard key={`${occ.event.id}-${occ.year}`} occ={occ} compact />)
+                  )}
+                  {list.length > 2 && (
+                    <Link href="/opportunities" className="text-center text-xs font-medium hover:underline" style={{ color: "var(--steel-deep)" }}>
+                      {t.sec.board.more(list.length - 2)}
+                    </Link>
+                  )}
                 </div>
-                {list.length === 0 ? (
-                  <p className="py-4 text-center text-xs" style={{ color: "var(--muted)" }}>
-                    {t.sec.board.empty}
-                  </p>
-                ) : (
-                  list.slice(0, 2).map((occ) => <EventCard key={`${occ.event.id}-${occ.year}`} occ={occ} compact />)
-                )}
-                {list.length > 2 && (
-                  <Link href="/opportunities" className="text-center text-xs font-medium hover:underline" style={{ color: "var(--steel-deep)" }}>
-                    {t.sec.board.more(list.length - 2)}
-                  </Link>
-                )}
-              </div>
+              </Reveal>
             );
           })}
         </div>
@@ -225,21 +274,26 @@ export default function DashboardPage() {
 
       {/* ---------- On the radar ---------- */}
       <Section
+        index="04"
         eyebrow={t.sec.radar.eyebrow}
         title={t.sec.radar.title(windowDays)}
         sub={t.sec.radar.sub(inWindow.length)}
         action={
-          <Link href="/calendar" className="btn btn-ghost !text-xs">
-            {t.sec.radar.openCal} <ArrowRight size={13} />
-          </Link>
+          <Pressable>
+            <Link href="/calendar" className="btn btn-ghost !text-xs">
+              {t.sec.radar.openCal} <ArrowRight size={13} />
+            </Link>
+          </Pressable>
         }
       >
         {inWindow.length === 0 ? (
           <EmptyState title={t.sec.radar.emptyT} hint={t.sec.radar.emptyH} />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {inWindow.slice(0, 6).map((occ) => (
-              <EventCard key={`${occ.event.id}-${occ.year}`} occ={occ} compact />
+            {inWindow.slice(0, 6).map((occ, i) => (
+              <Reveal key={`${occ.event.id}-${occ.year}`} delay={Math.min(i * 0.05, 0.25)}>
+                <EventCard occ={occ} compact />
+              </Reveal>
             ))}
           </div>
         )}
@@ -250,24 +304,29 @@ export default function DashboardPage() {
 
       {/* ---------- Charts ---------- */}
       <Section
+        index="06"
         title={t.sec.charts.byCat}
         sub={t.sec.charts.byCatSub}
       >
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="card p-5">
-            <h3 className="font-serif-d text-lg font-semibold">{t.sec.charts.byCat}</h3>
-            <p className="mb-2 text-xs" style={{ color: "var(--muted)" }}>
-              {t.sec.charts.byCatSub}
-            </p>
-            <CategoryBarChart data={catCounts} labels={t.category} />
-          </div>
-          <div className="card p-5">
-            <h3 className="font-serif-d text-lg font-semibold">{t.sec.charts.stageMix}</h3>
-            <p className="mb-2 text-xs" style={{ color: "var(--muted)" }}>
-              {t.sec.charts.stageMixSub}
-            </p>
-            <StageDonutChart data={stageCounts} labels={t.stage} />
-          </div>
+          <Reveal>
+            <div className="card h-full p-5">
+              <h3 className="font-serif-d text-lg font-semibold">{t.sec.charts.byCat}</h3>
+              <p className="mb-2 text-xs" style={{ color: "var(--muted)" }}>
+                {t.sec.charts.byCatSub}
+              </p>
+              <CategoryBarChart data={catCounts} labels={t.category} />
+            </div>
+          </Reveal>
+          <Reveal delay={0.08}>
+            <div className="card h-full p-5">
+              <h3 className="font-serif-d text-lg font-semibold">{t.sec.charts.stageMix}</h3>
+              <p className="mb-2 text-xs" style={{ color: "var(--muted)" }}>
+                {t.sec.charts.stageMixSub}
+              </p>
+              <StageDonutChart data={stageCounts} labels={t.stage} />
+            </div>
+          </Reveal>
         </div>
       </Section>
 
@@ -279,6 +338,7 @@ export default function DashboardPage() {
 
       {/* ---------- Markets & assets ---------- */}
       <Section
+        index="09"
         eyebrow={t.sec.markets.eyebrow}
         title={t.sec.markets.title}
         action={
@@ -288,36 +348,40 @@ export default function DashboardPage() {
         }
       >
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="card p-5">
-            <div className="grid gap-2 sm:grid-cols-2">
-              {marketCounts.map(([code, count]) => (
-                <Link key={code} href={`/markets?country=${code}`} className="flex items-center justify-between rounded-lg px-3 py-2 hover:opacity-80" style={{ background: "var(--surface2)" }}>
-                  <span className="text-sm font-medium">
-                    {countryByCode[code]?.flag} {countryByCode[code]?.name}
-                  </span>
-                  <span className="chip !px-2 tabular-nums">{count} {t.sec.markets.eventsSuffix}</span>
+          <Reveal>
+            <div className="card h-full p-5">
+              <div className="grid gap-2 sm:grid-cols-2">
+                {marketCounts.map(([code, count]) => (
+                  <Link key={code} href={`/markets?country=${code}`} className="flex items-center justify-between rounded-lg px-3 py-2 hover:opacity-80" style={{ background: "var(--surface2)" }}>
+                    <span className="text-sm font-medium">
+                      {countryByCode[code]?.flag} {countryByCode[code]?.name}
+                    </span>
+                    <span className="chip !px-2 tabular-nums">{count} {t.sec.markets.eventsSuffix}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </Reveal>
+          <Reveal delay={0.08}>
+            <div className="card h-full p-5">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="font-serif-d text-lg font-semibold">{t.sec.assets.title}</h3>
+                <Link href="/planner" className="text-xs font-medium hover:underline" style={{ color: "var(--steel-deep)" }}>
+                  {t.sec.assets.open} →
                 </Link>
-              ))}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {ASSET_CATEGORIES.map((a) => (
+                  <span key={a.id} className="chip" title={a.description}>
+                    {a.name}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-3 text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
+                {t.sec.assets.desc}
+              </p>
             </div>
-          </div>
-          <div className="card p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-serif-d text-lg font-semibold">{t.sec.assets.title}</h3>
-              <Link href="/planner" className="text-xs font-medium hover:underline" style={{ color: "var(--steel-deep)" }}>
-                {t.sec.assets.open} →
-              </Link>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {ASSET_CATEGORIES.map((a) => (
-                <span key={a.id} className="chip" title={a.description}>
-                  {a.name}
-                </span>
-              ))}
-            </div>
-            <p className="mt-3 text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
-              {t.sec.assets.desc}
-            </p>
-          </div>
+          </Reveal>
         </div>
       </Section>
 

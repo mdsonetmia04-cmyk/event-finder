@@ -16,8 +16,10 @@ import {
   subMonths,
   subYears,
 } from "date-fns";
+import { bn } from "date-fns/locale";
 import EventModal from "@/components/EventModal";
 import { EmptyState, SectionHeader } from "@/components/ui";
+import { useLang } from "@/i18n/LanguageContext";
 import {
   CATEGORY_COLOR,
   CATEGORY_LABEL,
@@ -102,6 +104,8 @@ export default function CalendarPage() {
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
   const [priority, setPriority] = useState("");
+  const { t, lang } = useLang();
+  const locale = lang === "bn" ? bn : undefined;
 
   const all = useMemo(buildOccurrences, []);
 
@@ -139,12 +143,12 @@ export default function CalendarPage() {
 
   const title =
     view === "month"
-      ? format(cursor, "MMMM yyyy")
+      ? format(cursor, "MMMM yyyy", { locale })
       : view === "year"
-        ? format(cursor, "yyyy")
+        ? format(cursor, "yyyy", { locale })
         : view === "week"
-          ? `Week of ${format(startOfWeek(cursor, { weekStartsOn: 1 }), "MMM d, yyyy")}`
-          : format(cursor, "EEEE, MMMM d, yyyy");
+          ? format(startOfWeek(cursor, { weekStartsOn: 1 }), "MMMM d, yyyy", { locale })
+          : format(cursor, "EEEE, MMMM d, yyyy", { locale });
 
   const resetFilters = () => {
     setQuery(""); setCountry(""); setRegion(""); setCategory(""); setStatus(""); setPriority("");
@@ -154,15 +158,15 @@ export default function CalendarPage() {
   return (
     <div className="flex flex-col gap-5">
       <SectionHeader
-        title="Smart Calendar"
-        subtitle={`${filtered.length} event occurrences · click any event for its preparation windows`}
+        title={t.cal.title}
+        subtitle={t.cal.sub(filtered.length)}
       />
 
       {/* Controls */}
       <div className="card flex flex-wrap items-center gap-2 p-3">
         <div className="flex gap-1">
           <button className="btn btn-ghost !px-2.5 !py-1.5" onClick={() => nav(-1)} aria-label="Previous"><ChevronLeft size={16} /></button>
-          <button className="btn btn-ghost !px-3 !py-1.5 !text-xs" onClick={() => setCursor(new Date())}>Today</button>
+          <button className="btn btn-ghost !px-3 !py-1.5 !text-xs" onClick={() => setCursor(new Date())}>{t.cal.today}</button>
           <button className="btn btn-ghost !px-2.5 !py-1.5" onClick={() => nav(1)} aria-label="Next"><ChevronRight size={16} /></button>
         </div>
         <h2 className="font-serif-d px-2 text-xl font-semibold">{title}</h2>
@@ -173,7 +177,7 @@ export default function CalendarPage() {
               onClick={() => setView(v)}
               className={`btn !px-3 !py-1.5 !text-xs capitalize ${view === v ? "btn-active" : "btn-ghost"}`}
             >
-              {v}
+              {t.cal[v]}
             </button>
           ))}
         </div>
@@ -183,41 +187,41 @@ export default function CalendarPage() {
       <div className="card flex flex-wrap items-center gap-2 p-3">
         <label className="relative flex-1 min-w-[180px]">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--muted)" }} />
-          <input className="input !pl-9" placeholder="Search events…" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <input className="input !pl-9" placeholder={t.cal.searchPh} value={query} onChange={(e) => setQuery(e.target.value)} />
         </label>
-        <select className="input !w-auto" value={country} onChange={(e) => setCountry(e.target.value)} aria-label="Country filter">
-          <option value="">All countries</option>
+        <select className="input !w-auto" value={country} onChange={(e) => setCountry(e.target.value)} aria-label={t.cal.allCountries}>
+          <option value="">{t.cal.allCountries}</option>
           {COUNTRIES.map((c) => (
             <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
           ))}
         </select>
-        <select className="input !w-auto" value={region} onChange={(e) => setRegion(e.target.value)} aria-label="Region filter">
-          <option value="">All regions</option>
+        <select className="input !w-auto" value={region} onChange={(e) => setRegion(e.target.value)} aria-label={t.cal.allRegions}>
+          <option value="">{t.cal.allRegions}</option>
           {REGIONS.map((r) => (
             <option key={r} value={r}>{r}</option>
           ))}
         </select>
-        <select className="input !w-auto" value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Category filter">
-          <option value="">All types</option>
+        <select className="input !w-auto" value={category} onChange={(e) => setCategory(e.target.value)} aria-label={t.cal.allTypes}>
+          <option value="">{t.cal.allTypes}</option>
           {ALL_CATEGORIES.map((c) => (
-            <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>
+            <option key={c} value={c}>{t.category[c] ?? CATEGORY_LABEL[c]}</option>
           ))}
         </select>
-        <select className="input !w-auto" value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status filter">
-          <option value="">All statuses</option>
+        <select className="input !w-auto" value={status} onChange={(e) => setStatus(e.target.value)} aria-label={t.cal.allStatuses}>
+          <option value="">{t.cal.allStatuses}</option>
           {ALL_STATUSES.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>{t.status[s] ?? s}</option>
           ))}
         </select>
-        <select className="input !w-auto" value={priority} onChange={(e) => setPriority(e.target.value)} aria-label="Priority filter">
-          <option value="">All priorities</option>
+        <select className="input !w-auto" value={priority} onChange={(e) => setPriority(e.target.value)} aria-label={t.cal.allPriorities}>
+          <option value="">{t.cal.allPriorities}</option>
           {ALL_PRIORITIES.map((p) => (
-            <option key={p} value={p} className="capitalize">{p}</option>
+            <option key={p} value={p} className="capitalize">{t.priority[p] ?? p}</option>
           ))}
         </select>
         {hasFilters && (
           <button className="btn btn-ghost !px-3 !py-1.5 !text-xs" onClick={resetFilters}>
-            Clear
+            {t.cal.clear}
           </button>
         )}
       </div>
@@ -232,7 +236,7 @@ export default function CalendarPage() {
       <div className="card flex flex-wrap gap-x-4 gap-y-1.5 p-3 text-xs" style={{ color: "var(--muted)" }}>
         {ALL_CATEGORIES.map((c) => (
           <span key={c} className="inline-flex items-center gap-1.5">
-            <span className="dot" style={{ background: CATEGORY_COLOR[c] }} /> {CATEGORY_LABEL[c]}
+            <span className="dot" style={{ background: CATEGORY_COLOR[c] }} /> {t.category[c] ?? CATEGORY_LABEL[c]}
           </span>
         ))}
       </div>
@@ -250,6 +254,7 @@ function MonthView({ cursor, occOnDay, onSelect, onDayClick }: {
   onSelect: (o: CalOcc) => void;
   onDayClick: (d: Date) => void;
 }) {
+  const { t } = useLang();
   const start = startOfWeek(startOfMonth(cursor), { weekStartsOn: 1 });
   const end = endOfWeek(endOfMonth(cursor), { weekStartsOn: 1 });
   const days: Date[] = [];
@@ -259,7 +264,7 @@ function MonthView({ cursor, occOnDay, onSelect, onDayClick }: {
   return (
     <div className="card p-3">
       <div className="cal-grid mb-1.5">
-        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
+        {t.cal.weekdays.map((d) => (
           <p key={d} className="label !text-[10px] py-1 text-center">{d}</p>
         ))}
       </div>
@@ -291,7 +296,7 @@ function MonthView({ cursor, occOnDay, onSelect, onDayClick }: {
                 ))}
                 {occs.length > 3 && (
                   <span className="px-1 text-[10px]" style={{ color: "var(--muted)" }}>
-                    +{occs.length - 3} more
+                    {t.cal.more(occs.length - 3)}
                   </span>
                 )}
               </div>
@@ -310,6 +315,7 @@ function WeekView({ cursor, occOnDay, onSelect }: {
   occOnDay: (iso: string) => CalOcc[];
   onSelect: (o: CalOcc) => void;
 }) {
+  const { t } = useLang();
   const start = startOfWeek(cursor, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
   return (
@@ -333,7 +339,7 @@ function WeekView({ cursor, occOnDay, onSelect }: {
                   style={{ borderColor: CATEGORY_COLOR[o.event.category], background: "var(--surface2)" }}
                 >
                   <span className="font-semibold leading-tight">{o.event.name}</span>
-                  <span className="mt-0.5 block" style={{ color: "var(--muted)" }}>{o.status}</span>
+                  <span className="mt-0.5 block" style={{ color: "var(--muted)" }}>{t.status[o.status] ?? o.status}</span>
                 </button>
               ))}
             </div>
@@ -351,9 +357,11 @@ function DayView({ cursor, occOnDay, onSelect }: {
   occOnDay: (iso: string) => CalOcc[];
   onSelect: (o: CalOcc) => void;
 }) {
+  const { t, lang } = useLang();
+  const locale = lang === "bn" ? bn : undefined;
   const occs = occOnDay(toISO(cursor));
   if (occs.length === 0) {
-    return <EmptyState title={`No events on ${format(cursor, "MMMM d, yyyy")}`} hint="Try another day — or clear filters." />;
+    return <EmptyState title={t.cal.noEventsDay(format(cursor, "MMMM d, yyyy", { locale }))} hint={t.cal.noEventsH} />;
   }
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -361,12 +369,12 @@ function DayView({ cursor, occOnDay, onSelect }: {
         <button key={`${o.event.id}-${o.year}`} onClick={() => onSelect(o)} className="card card-hover p-4 text-left">
           <p className="flex items-center gap-2 text-[11px] font-bold" style={{ color: CATEGORY_COLOR[o.event.category] }}>
             <span className="dot" style={{ background: CATEGORY_COLOR[o.event.category] }} />
-            {CATEGORY_LABEL[o.event.category].toUpperCase()} · {o.status}
+            {(t.category[o.event.category] ?? CATEGORY_LABEL[o.event.category]).toUpperCase()} · {t.status[o.status] ?? o.status}
           </p>
           <p className="font-serif-d mt-1.5 text-[17px] font-semibold leading-snug">{o.event.name}</p>
           <p className="mt-1 line-clamp-2 text-[13px]" style={{ color: "var(--muted)" }}>{o.event.description}</p>
           <p className="mt-2 text-xs" style={{ color: "var(--muted)" }}>
-            Upload window: <strong style={{ color: "var(--text)" }}>{o.submissionStart} → {o.submissionDeadline}</strong>
+            {t.cal.uploadWindow}: <strong style={{ color: "var(--text)" }}>{o.submissionStart} → {o.submissionDeadline}</strong>
           </p>
         </button>
       ))}

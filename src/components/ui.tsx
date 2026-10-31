@@ -2,48 +2,53 @@
 
 import { AlertTriangle, Inbox } from "lucide-react";
 import type { ReactNode } from "react";
-import { CATEGORY_COLOR, CATEGORY_LABEL } from "@/lib/data";
+import { CATEGORY_COLOR } from "@/lib/data";
 import { PRIORITY_META, STATUS_STYLE } from "@/lib/recommendation-engine";
+import { useLang } from "@/i18n/LanguageContext";
 import type { EventCategory, EventStatus, PriorityLabel } from "@/types/event";
 
 export function StatusBadge({ status }: { status: EventStatus }) {
   const s = STATUS_STYLE[status];
+  const { t } = useLang();
   return (
     <span
       className="chip !border-0 !py-1 text-[11px] font-bold tracking-wide"
       style={{ background: s.bg, color: s.fg }}
     >
-      {status}
+      {t.status[status] ?? status}
     </span>
   );
 }
 
 export function PriorityBadge({ priority, showStars = true }: { priority: PriorityLabel; showStars?: boolean }) {
   const meta = PRIORITY_META[priority];
+  const { t } = useLang();
   return (
     <span className="chip" style={{ borderColor: meta.color, color: meta.color }}>
       {showStars && meta.stars ? <span>{meta.stars}</span> : null}
-      <span className="font-semibold">{meta.label}</span>
+      <span className="font-semibold">{t.priority[priority] ?? meta.label}</span>
     </span>
   );
 }
 
 export function CategoryBadge({ category }: { category: EventCategory }) {
   const color = CATEGORY_COLOR[category];
+  const { t } = useLang();
   return (
     <span className="chip">
       <span className="dot" style={{ background: color }} />
-      {CATEGORY_LABEL[category]}
+      {t.category[category] ?? category}
     </span>
   );
 }
 
 export function DateStatusNote({ status }: { status: "confirmed" | "provisional" | "unverified" }) {
+  const { t } = useLang();
   if (status === "confirmed") return null;
   return (
-    <span className="chip" style={{ borderColor: "#C98A2B", color: "#C98A2B" }} title="Date may shift — verify before the final upload push">
+    <span className="chip" style={{ borderColor: "#C98A2B", color: "#C98A2B" }} title={t.dateNote.provisional}>
       <AlertTriangle size={12} />
-      {status === "provisional" ? "Provisional date" : "Unverified date"}
+      {status === "provisional" ? t.dateNote.provisional : t.dateNote.unverified}
     </span>
   );
 }

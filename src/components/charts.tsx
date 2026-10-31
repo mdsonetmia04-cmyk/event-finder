@@ -26,8 +26,18 @@ function tooltipStyle(): React.CSSProperties {
   };
 }
 
-export function CategoryBarChart({ data }: { data: { category: EventCategory; count: number }[] }) {
-  const rows = data.map((d) => ({ name: CATEGORY_LABEL[d.category], count: d.count, fill: CATEGORY_COLOR[d.category] }));
+export function CategoryBarChart({
+  data,
+  labels,
+}: {
+  data: { category: EventCategory; count: number }[];
+  labels?: Record<string, string>;
+}) {
+  const rows = data.map((d) => ({
+    name: labels?.[d.category] ?? CATEGORY_LABEL[d.category],
+    count: d.count,
+    fill: CATEGORY_COLOR[d.category],
+  }));
   return (
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -47,10 +57,22 @@ export function CategoryBarChart({ data }: { data: { category: EventCategory; co
   );
 }
 
-export function StageDonutChart({ data }: { data: { stage: PrepStage; count: number }[] }) {
+export function StageDonutChart({
+  data,
+  labels,
+}: {
+  data: { stage: PrepStage; count: number }[];
+  labels?: Record<string, string>;
+}) {
+  const labelOf = (s: PrepStage) => labels?.[s] ?? STAGE_LABEL[s];
   const rows = data
     .filter((d) => d.count > 0)
-    .map((d) => ({ name: STAGE_LABEL[d.stage].split("—")[0].split("&")[0].trim(), full: STAGE_LABEL[d.stage], count: d.count, fill: STAGE_COLOR[d.stage] }));
+    .map((d) => ({
+      name: labelOf(d.stage).split("—")[0].split("&")[0].trim(),
+      full: labelOf(d.stage),
+      count: d.count,
+      fill: STAGE_COLOR[d.stage],
+    }));
   return (
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">

@@ -3,6 +3,7 @@
 import { CalendarDays, RotateCcw } from "lucide-react";
 import { addDays, addYears, format, startOfYear } from "date-fns";
 import { isValidISODate, todayISO } from "@/lib/date-engine";
+import { useLang } from "@/i18n/LanguageContext";
 
 interface Props {
   date: string;
@@ -15,6 +16,7 @@ const WINDOWS = [7, 30, 90];
 
 export default function DateSelector({ date, onDateChange, windowDays, onWindowChange }: Props) {
   const today = todayISO();
+  const { t } = useLang();
 
   const jump = (days: number) => {
     const d = addDays(new Date(date + "T12:00:00"), days);
@@ -26,7 +28,7 @@ export default function DateSelector({ date, onDateChange, windowDays, onWindowC
       <div className="flex flex-wrap items-center gap-3">
         <label className="flex items-center gap-2 text-sm font-medium">
           <CalendarDays size={16} style={{ color: "var(--gold-deep)" }} />
-          Planning date
+          {t.dateSel.planningDate}
         </label>
         <input
           type="date"
@@ -37,37 +39,37 @@ export default function DateSelector({ date, onDateChange, windowDays, onWindowC
           onChange={(e) => {
             if (isValidISODate(e.target.value)) onDateChange(e.target.value);
           }}
-          aria-label="Select planning date"
+          aria-label={t.dateSel.planningDate}
         />
         <div className="flex flex-wrap gap-1.5">
           <button className="btn btn-ghost !px-3 !py-1.5 !text-xs" onClick={() => onDateChange(today)}>
-            <RotateCcw size={12} /> Today
+            <RotateCcw size={12} /> {t.dateSel.today}
           </button>
           <button className="btn btn-ghost !px-3 !py-1.5 !text-xs" onClick={() => jump(7)}>
-            +7 days
+            {t.dateSel.d7}
           </button>
           <button className="btn btn-ghost !px-3 !py-1.5 !text-xs" onClick={() => jump(30)}>
-            +30 days
+            {t.dateSel.d30}
           </button>
           <button className="btn btn-ghost !px-3 !py-1.5 !text-xs" onClick={() => jump(90)}>
-            +90 days
+            {t.dateSel.d90}
           </button>
           <button
             className="btn btn-ghost !px-3 !py-1.5 !text-xs"
             onClick={() => onDateChange(format(startOfYear(new Date()), "yyyy-MM-dd"))}
           >
-            Current year
+            {t.dateSel.curYear}
           </button>
           <button
             className="btn btn-ghost !px-3 !py-1.5 !text-xs"
             onClick={() => onDateChange(format(startOfYear(addYears(new Date(), 1)), "yyyy-MM-dd"))}
           >
-            Next year
+            {t.dateSel.nextYear}
           </button>
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3" style={{ borderColor: "var(--line)" }}>
-        <span className="label">Upcoming window</span>
+        <span className="label">{t.dateSel.window}</span>
         <div className="flex gap-1.5">
           {WINDOWS.map((w) => (
             <button
@@ -75,12 +77,12 @@ export default function DateSelector({ date, onDateChange, windowDays, onWindowC
               onClick={() => onWindowChange(w)}
               className={`btn !px-3 !py-1.5 !text-xs ${windowDays === w ? "btn-active" : "btn-ghost"}`}
             >
-              Next {w} days
+              {t.dateSel.nextDays(w)}
             </button>
           ))}
         </div>
         <span className="text-xs" style={{ color: "var(--muted)" }}>
-          Controls how far ahead the dashboard lists upcoming events.
+          {t.dateSel.windowHint}
         </span>
       </div>
     </div>

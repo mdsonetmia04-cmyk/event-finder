@@ -8,16 +8,17 @@ import { EventCard } from "@/components/cards";
 import { EmptyState, SectionHeader } from "@/components/ui";
 import { COUNTRIES, countryByCode } from "@/lib/data";
 import { formatMonthDay, todayISO } from "@/lib/date-engine";
+import { useLang } from "@/i18n/LanguageContext";
 import {
   compareCountries,
   countriesByRegion,
   getCountryOccurrences,
-  relevanceLabel,
 } from "@/lib/market-engine";
 
 export default function MarketsPage() {
+  const { t } = useLang();
   return (
-    <Suspense fallback={<div className="card p-8 text-center text-sm" style={{ color: "var(--muted)" }}>Loading markets…</div>}>
+    <Suspense fallback={<div className="card p-8 text-center text-sm" style={{ color: "var(--muted)" }}>{t.markets.loading}</div>}>
       <MarketsInner />
     </Suspense>
   );
@@ -25,6 +26,7 @@ export default function MarketsPage() {
 
 function MarketsInner() {
   const params = useSearchParams();
+  const { t } = useLang();
   const initial = params.get("country") ?? "";
   const [activeCode, setActiveCode] = useState(initial && countryByCode[initial] ? initial : "");
   const [query, setQuery] = useState("");
@@ -64,26 +66,26 @@ function MarketsInner() {
       {!active ? (
         <>
           <SectionHeader
-            title="Global Market Intelligence"
-            subtitle={`${COUNTRIES.length} tracked markets. Market relevance reflects research coverage — never presented as official Adobe Stock sales rankings.`}
+            title={t.markets.title}
+            subtitle={t.markets.sub(COUNTRIES.length)}
           />
           <div className="card flex items-center gap-2 p-3">
             <label className="relative flex-1">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--muted)" }} />
-              <input className="input !pl-9" placeholder="Search markets…" value={query} onChange={(e) => setQuery(e.target.value)} />
+              <input className="input !pl-9" placeholder={t.markets.searchPh} value={query} onChange={(e) => setQuery(e.target.value)} />
             </label>
             {compare.length > 0 && (
               <span className="chip">
-                <GitCompareArrows size={12} /> {compare.length}/3 selected for comparison
+                <GitCompareArrows size={12} /> {t.markets.selected(compare.length)}
               </span>
             )}
           </div>
 
           {comparison.length >= 2 && (
             <section className="card p-5">
-              <h3 className="font-serif-d mb-1 text-lg font-semibold">Country comparison</h3>
+              <h3 className="font-serif-d mb-1 text-lg font-semibold">{t.markets.countryComparison}</h3>
               <p className="mb-4 text-xs" style={{ color: "var(--muted)" }}>
-                Upcoming seasonal calendars side by side, from today.
+                {t.markets.upcomingSide}
               </p>
               <div className="grid gap-4 md:grid-cols-3">
                 {comparison.map(({ country, occurrences }) => (
@@ -93,7 +95,7 @@ function MarketsInner() {
                     </p>
                     <div className="flex flex-col gap-1.5">
                       {occurrences.length === 0 && (
-                        <p className="text-xs" style={{ color: "var(--muted)" }}>Nothing upcoming</p>
+                        <p className="text-xs" style={{ color: "var(--muted)" }}>{t.markets.nothingUpcoming}</p>
                       )}
                       {occurrences.map((o) => (
                         <Link
@@ -104,7 +106,7 @@ function MarketsInner() {
                         >
                           <span className="font-medium">{o.event.name}</span>
                           <span className="block" style={{ color: "var(--muted)" }}>
-                            {formatMonthDay(o.date)} · {o.daysUntil}d · {o.status}
+                            {formatMonthDay(o.date)} · {o.daysUntil}d · {t.status[o.status] ?? o.status}
                           </span>
                         </Link>
                       ))}
@@ -113,7 +115,7 @@ function MarketsInner() {
                 ))}
               </div>
               <button className="btn btn-ghost mt-4 !text-xs" onClick={() => setCompare([])}>
-                Clear comparison
+                {t.markets.clearComparison}
               </button>
             </section>
           )}
@@ -132,21 +134,21 @@ function MarketsInner() {
                         <button
                           onClick={() => toggleCompare(c.code)}
                           className={`btn !px-2.5 !py-1 !text-[11px] ${inCompare ? "btn-active" : "btn-ghost"}`}
-                          title="Add to comparison"
+                          title={t.markets.compare}
                         >
-                          <GitCompareArrows size={12} /> {inCompare ? "Added" : "Compare"}
+                          <GitCompareArrows size={12} /> {inCompare ? t.markets.added : t.markets.compare}
                         </button>
                       </div>
                       <p className="mt-2 font-serif-d text-[16px] font-semibold">{c.name}</p>
                       <p className="text-xs" style={{ color: "var(--muted)" }}>
-                        {relevanceLabel(c.relevance)} relevance · {c.shoppingPeriods.length} shopping periods
+                        {t.markets.relLevels[c.relevance] ?? c.relevance} {t.markets.relevance} · {c.shoppingPeriods.length} {t.markets.shoppingPeriods}
                       </p>
                       <button
                         onClick={() => setActiveCode(c.code)}
                         className="mt-3 inline-flex items-center gap-1 text-xs font-semibold hover:underline"
                         style={{ color: "var(--steel-deep)" }}
                       >
-                        Explore market <ArrowRight size={12} />
+                        {t.markets.exploreMarket} <ArrowRight size={12} />
                       </button>
                       <p className="mt-1 hidden text-xs tabular-nums" style={{ color: "var(--muted)" }}>
                         {upcoming > 0 ? "Has upcoming events" : ""}
@@ -158,7 +160,7 @@ function MarketsInner() {
             </section>
           ))}
           {Object.keys(filteredRegions).length === 0 && (
-            <EmptyState title="No markets found" hint="Try a different search term." />
+            <EmptyState title={t.markets.noMarketsT} hint={t.markets.noMarketsH} />
           )}
         </>
       ) : (
@@ -181,11 +183,12 @@ function CountryDetail({
   occurrences: ReturnType<typeof getCountryOccurrences>;
   onBack: () => void;
 }) {
+  const { t } = useLang();
   const c = countryByCode[code];
   return (
     <div className="flex flex-col gap-5">
       <button onClick={onBack} className="btn btn-ghost w-fit !text-xs">
-        <ArrowLeft size={13} /> All markets
+        <ArrowLeft size={13} /> {t.markets.allMarkets}
       </button>
 
       <div className="card p-5 sm:p-6">
@@ -194,7 +197,7 @@ function CountryDetail({
           <div>
             <h2 className="font-serif-d text-2xl font-semibold">{c.name}</h2>
             <p className="text-sm" style={{ color: "var(--muted)" }}>
-              {c.region} · {relevanceLabel(c.relevance)} market relevance
+              {c.region} · {t.markets.relLevels[c.relevance] ?? c.relevance} {t.markets.relevance}
             </p>
           </div>
           <div className="ml-auto flex gap-1" aria-label={`Relevance ${c.relevance} of 5`}>
@@ -214,7 +217,7 @@ function CountryDetail({
 
         <div className="mt-5 grid gap-4 md:grid-cols-3">
           <div>
-            <p className="label mb-2">Key shopping periods</p>
+            <p className="label mb-2">{t.markets.keyShopping}</p>
             <ul className="grid gap-1 text-[13px]">
               {c.shoppingPeriods.map((s) => (
                 <li key={s} className="flex gap-1.5"><span style={{ color: "var(--gold-deep)" }}>•</span> {s}</li>
@@ -222,7 +225,7 @@ function CountryDetail({
             </ul>
           </div>
           <div>
-            <p className="label mb-2">Commercial sectors to investigate</p>
+            <p className="label mb-2">{t.markets.sectors}</p>
             <ul className="grid gap-1 text-[13px]">
               {c.sectors.map((s) => (
                 <li key={s} className="flex gap-1.5"><span style={{ color: "var(--steel)" }}>•</span> {s}</li>
@@ -230,18 +233,18 @@ function CountryDetail({
             </ul>
           </div>
           <div>
-            <p className="label mb-2">Research confidence</p>
+            <p className="label mb-2">{t.markets.researchConf}</p>
             <p className="text-[13px] leading-relaxed" style={{ color: "var(--muted)" }}>{c.confidence}</p>
           </div>
         </div>
       </div>
 
       <SectionHeader
-        title={`Upcoming in ${c.name}`}
-        subtitle={`${occurrences.length} seasonal events on the horizon, nearest first.`}
+        title={t.markets.upcomingIn(c.name)}
+        subtitle={t.markets.onHorizon(occurrences.length)}
       />
       {occurrences.length === 0 ? (
-        <EmptyState title="No upcoming events tracked" />
+        <EmptyState title={t.markets.noUpcomingT} />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {occurrences.map((o) => (

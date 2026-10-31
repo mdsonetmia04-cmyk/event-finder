@@ -4,13 +4,16 @@ import Link from "next/link";
 import { ArrowRight, X } from "lucide-react";
 import { useEffect } from "react";
 import { assetCategoryById, countryByCode } from "@/lib/data";
-import { formatLong, daysLabel } from "@/lib/date-engine";
-import { STAGE_LABEL, STAGE_COLOR } from "@/lib/recommendation-engine";
+import { formatLong } from "@/lib/date-engine";
+import { STAGE_COLOR } from "@/lib/recommendation-engine";
+import { useDaysLabel, useLang } from "@/i18n/LanguageContext";
 import type { EventOccurrence } from "@/types/event";
 import { ActionButtons } from "./cards";
 import { CategoryBadge, DateStatusNote, StatusBadge } from "./ui";
 
 export default function EventModal({ occ, onClose }: { occ: EventOccurrence | null; onClose: () => void }) {
+  const { t } = useLang();
+  const daysLabel = useDaysLabel();
   useEffect(() => {
     const fn = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", fn);
@@ -53,19 +56,19 @@ export default function EventModal({ occ, onClose }: { occ: EventOccurrence | nu
         <div className="mt-4 rounded-xl p-3.5" style={{ background: "var(--surface2)" }}>
           <p className="flex items-center gap-2 text-sm font-semibold">
             <span className="dot" style={{ background: STAGE_COLOR[occ.stage] }} />
-            {STAGE_LABEL[occ.stage]}
+            {t.stage[occ.stage] ?? occ.stage}
           </p>
           <div className="mt-2 grid grid-cols-3 gap-2 text-center text-xs">
             <div>
-              <p className="label">Create from</p>
+              <p className="label">{t.modal.createFrom}</p>
               <p className="mt-0.5 font-semibold">{occ.creationStart}</p>
             </div>
             <div>
-              <p className="label">Upload from</p>
+              <p className="label">{t.modal.uploadFrom}</p>
               <p className="mt-0.5 font-semibold">{occ.submissionStart}</p>
             </div>
             <div>
-              <p className="label">Upload by</p>
+              <p className="label">{t.modal.uploadBy}</p>
               <p className="mt-0.5 font-semibold">{occ.submissionDeadline}</p>
             </div>
           </div>
@@ -76,7 +79,7 @@ export default function EventModal({ occ, onClose }: { occ: EventOccurrence | nu
         </p>
 
         <div className="mt-3">
-          <p className="label mb-1.5">Relevant markets</p>
+          <p className="label mb-1.5">{t.modal.relMarkets}</p>
           <div className="flex flex-wrap gap-1.5">
             {e.countries.map((c) => (
               <span key={c} className="chip !text-[11px]">
@@ -87,7 +90,7 @@ export default function EventModal({ occ, onClose }: { occ: EventOccurrence | nu
         </div>
 
         <div className="mt-3">
-          <p className="label mb-1.5">Top asset suggestions</p>
+          <p className="label mb-1.5">{t.modal.topSuggest}</p>
           <ul className="grid gap-1 text-[13px] sm:grid-cols-2">
             {e.assetSuggestions.slice(0, 6).map((s) => (
               <li key={s} className="flex gap-1.5">
@@ -98,7 +101,7 @@ export default function EventModal({ occ, onClose }: { occ: EventOccurrence | nu
         </div>
 
         <div className="mt-3">
-          <p className="label mb-1.5">Asset types</p>
+          <p className="label mb-1.5">{t.modal.assetTypes}</p>
           <div className="flex flex-wrap gap-1.5">
             {e.assetTypes.slice(0, 8).map((t) => (
               <span key={t} className="chip !text-[11px]">
@@ -111,7 +114,7 @@ export default function EventModal({ occ, onClose }: { occ: EventOccurrence | nu
         <div className="mt-5 flex flex-wrap gap-2">
           <ActionButtons eventId={e.id} year={occ.year} compact />
           <Link href={`/events/${e.id}`} className="btn btn-gold !text-xs">
-            Open full research page <ArrowRight size={13} />
+            {t.modal.openFull} <ArrowRight size={13} />
           </Link>
         </div>
       </div>

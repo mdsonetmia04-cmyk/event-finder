@@ -12,6 +12,7 @@ import {
   Upload,
 } from "lucide-react";
 import { SectionHeader } from "@/components/ui";
+import { useLang } from "@/i18n/LanguageContext";
 import { CONTRIBUTOR_FACTS } from "@/data/contributor-facts";
 import { EVENTS, META } from "@/lib/data";
 import { eventsToCSV, validateEvents, type ValidationIssue } from "@/lib/event-validator";
@@ -46,6 +47,7 @@ export default function SourcesPage() {
     issues: ValidationIssue[];
   } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const { t } = useLang();
 
   const handleImport = async (file: File) => {
     try {
@@ -66,18 +68,18 @@ export default function SourcesPage() {
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader
-        title="Research Sources & Data Admin"
-        subtitle="Every date carries its source, verification status and last-checked date. Nothing here claims access to private Adobe Stock sales data."
+        title={t.sources.title}
+        subtitle={t.sources.sub}
       />
 
       {/* Stats */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {[
-          { label: "Events tracked", value: EVENTS.length, icon: Database },
-          { label: "Markets", value: META.countryCount, icon: Database },
-          { label: "Years covered", value: META.years.join(", "), icon: Database },
-          { label: "Provisional dates", value: provisionalCount, icon: AlertTriangle },
-          { label: "Last research update", value: META.lastResearchUpdate, icon: RefreshCw },
+          { label: t.sources.sEvents, value: EVENTS.length, icon: Database },
+          { label: t.sources.sMarkets, value: META.countryCount, icon: Database },
+          { label: t.sources.sYears, value: META.years.join(", "), icon: Database },
+          { label: t.sources.sProv, value: provisionalCount, icon: AlertTriangle },
+          { label: t.sources.sUpdated, value: META.lastResearchUpdate, icon: RefreshCw },
         ].map((s) => (
           <div key={s.label} className="card p-4">
             <p className="label">{s.label}</p>
@@ -88,19 +90,19 @@ export default function SourcesPage() {
 
       {/* Validation */}
       <div className="card p-5">
-        <h3 className="font-serif-d mb-2 text-lg font-semibold">Data validation</h3>
+        <h3 className="font-serif-d mb-2 text-lg font-semibold">{t.sources.validation}</h3>
         <div className="flex flex-wrap gap-2 text-sm">
           <span className="chip" style={{ borderColor: "#2F9E6E", color: "#2F9E6E" }}>
-            <CheckCircle2 size={13} /> {errors.length} errors
+            <CheckCircle2 size={13} /> {errors.length} {t.sources.errors}
           </span>
           <span className="chip" style={{ borderColor: "#C98A2B", color: "#C98A2B" }}>
-            <AlertTriangle size={13} /> {warnings.length} warnings
+            <AlertTriangle size={13} /> {warnings.length} {t.sources.warnings}
           </span>
         </div>
         {warnings.length > 0 && (
           <details className="mt-3 text-sm">
             <summary className="cursor-pointer font-medium" style={{ color: "var(--steel-deep)" }}>
-              View warnings ({warnings.length})
+              {t.sources.viewWarnings(warnings.length)}
             </summary>
             <ul className="mt-2 grid max-h-48 gap-1 overflow-y-auto text-xs" style={{ color: "var(--muted)" }}>
               {warnings.slice(0, 50).map((w, i) => (
@@ -113,10 +115,9 @@ export default function SourcesPage() {
 
       {/* Adobe contributor guidelines */}
       <section>
-        <h3 className="font-serif-d mb-3 text-xl font-semibold">Adobe Stock contributor guidelines</h3>
+        <h3 className="font-serif-d mb-3 text-xl font-semibold">{t.sources.guidelines}</h3>
         <p className="mb-4 text-sm" style={{ color: "var(--muted)" }}>
-          Researched from official Adobe documentation on {META.lastResearchUpdate}. Always re-check
-          Adobe's docs — policies change.
+          {t.sources.guidelinesSub(META.lastResearchUpdate)}
         </p>
         <div className="grid gap-3 md:grid-cols-2">
           {CONTRIBUTOR_FACTS.map((sec) => (
@@ -141,7 +142,7 @@ export default function SourcesPage() {
 
       {/* Event sources */}
       <section>
-        <h3 className="font-serif-d mb-3 text-xl font-semibold">Event date sources</h3>
+        <h3 className="font-serif-d mb-3 text-xl font-semibold">{t.sources.eventSources}</h3>
         <div className="card p-4">
           {uniqueSources.length === 0 ? (
             <p className="text-sm" style={{ color: "var(--muted)" }}>
@@ -164,7 +165,7 @@ export default function SourcesPage() {
 
       {/* Freshness */}
       <div className="card p-5">
-        <h3 className="font-serif-d mb-2 text-lg font-semibold">Data freshness & update workflow</h3>
+        <h3 className="font-serif-d mb-2 text-lg font-semibold">{t.sources.freshness}</h3>
         <ul className="grid gap-1.5 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
           <li>· <strong style={{ color: "var(--text)" }}>Last research update: {META.lastResearchUpdate}.</strong> Re-verify lunar/religious dates yearly — they shift with moon sightings.</li>
           <li>· Dates marked <strong style={{ color: "var(--text)" }}>provisional</strong> are estimates shown honestly; confirmed dates come from official calendars or certain calendar rules.</li>
@@ -175,26 +176,25 @@ export default function SourcesPage() {
 
       {/* Admin: export / import */}
       <div className="card p-5">
-        <h3 className="font-serif-d mb-1 text-lg font-semibold">Dataset admin</h3>
+        <h3 className="font-serif-d mb-1 text-lg font-semibold">{t.sources.admin}</h3>
         <p className="mb-4 text-sm" style={{ color: "var(--muted)" }}>
-          Export the full dataset, or validate a JSON import before staging it. Imports are validated
-          here first — applying an import means replacing <code>src/data/events.json</code> and redeploying.
+          {t.sources.adminSub}
         </p>
         <div className="flex flex-wrap gap-2">
           <button
             className="btn btn-ghost !text-xs"
             onClick={() => download("stockseason-events.json", JSON.stringify(EVENTS, null, 1), "application/json")}
           >
-            <FileJson size={14} /> Export JSON
+            <FileJson size={14} /> {t.sources.exportJson}
           </button>
           <button
             className="btn btn-ghost !text-xs"
             onClick={() => download("stockseason-events.csv", eventsToCSV(), "text/csv")}
           >
-            <FileSpreadsheet size={14} /> Export CSV
+            <FileSpreadsheet size={14} /> {t.sources.exportCsv}
           </button>
           <button className="btn btn-ghost !text-xs" onClick={() => fileRef.current?.click()}>
-            <Upload size={14} /> Validate JSON import
+            <Upload size={14} /> {t.sources.validateImport}
           </button>
           <input
             ref={fileRef}
@@ -212,14 +212,14 @@ export default function SourcesPage() {
         {importResult && (
           <div className="rise mt-4 rounded-xl border p-4" style={{ borderColor: "var(--line)", background: "var(--surface2)" }}>
             <p className="flex items-center gap-2 text-sm font-semibold">
-              <Download size={14} /> {importResult.name} — {importResult.count} events
+              <Download size={14} /> {t.sources.importSummary(importResult.name, importResult.count)}
             </p>
             <div className="mt-2 flex flex-wrap gap-2 text-xs">
               <span className="chip" style={{ borderColor: "#2F9E6E", color: "#2F9E6E" }}>
-                {importResult.issues.filter((i) => i.level === "error").length} errors
+                {importResult.issues.filter((i) => i.level === "error").length} {t.sources.errors}
               </span>
               <span className="chip" style={{ borderColor: "#C98A2B", color: "#C98A2B" }}>
-                {importResult.issues.filter((i) => i.level === "warning").length} warnings
+                {importResult.issues.filter((i) => i.level === "warning").length} {t.sources.warnings}
               </span>
             </div>
             {importResult.issues.length > 0 && (
@@ -231,7 +231,7 @@ export default function SourcesPage() {
             )}
             {importResult.issues.filter((i) => i.level === "error").length === 0 && importResult.count > 0 && (
               <p className="mt-2 text-xs" style={{ color: "var(--muted)" }}>
-                Valid. To apply: save as <code>src/data/events.json</code>, run <code>npm run build</code>, and redeploy.
+                {t.sources.valid}
               </p>
             )}
           </div>

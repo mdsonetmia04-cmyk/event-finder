@@ -261,3 +261,266 @@ select.input {
     display: none !important;
   }
 }
+
+/* ---------- Bengali language mode ---------- */
+html.lang-bn body {
+  font-family: "Hind Siliguri", Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+html.lang-bn .font-serif-d {
+  font-family: "Hind Siliguri", Inter, system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+/* ---------- Hero (fresh, elegant, minimal) ---------- */
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(1100px 340px at 50% -80px, color-mix(in srgb, var(--gold) 16%, transparent), transparent),
+    var(--surface);
+  padding: 3.5rem 1.5rem 2.75rem;
+  text-align: center;
+}
+@media (min-width: 640px) {
+  .hero { padding: 4.5rem 2.5rem 3.25rem; }
+}
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--gold) 10%, var(--surface));
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+}
+html.lang-bn .hero-eyebrow { letter-spacing: 0; }
+.hero-title {
+  font-family: Fraunces, Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.06;
+  font-size: 2.5rem;
+  margin-top: 1.25rem;
+  text-wrap: balance;
+}
+html.lang-bn .hero-title { font-family: "Hind Siliguri", sans-serif; }
+@media (min-width: 640px) {
+  .hero-title { font-size: 3.6rem; }
+}
+.hero-title .accent {
+  font-style: italic;
+  color: var(--gold-deep);
+  white-space: nowrap;
+}
+.hero-sub {
+  margin: 1rem auto 0;
+  max-width: 42rem;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.hero-cta {
+  margin-top: 1.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+.hero-stats {
+  margin: 2.25rem auto 0;
+  max-width: 44rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+@media (min-width: 640px) {
+  .hero-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.hero-stat {
+  background: var(--surface);
+  padding: 1rem 0.75rem;
+}
+.hero-stat b {
+  font-family: Fraunces, Georgia, serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--gold-deep);
+  font-variant-numeric: tabular-nums;
+}
+html.lang-bn .hero-stat b { font-family: "Hind Siliguri", sans-serif; }
+.hero-stat span {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+/* ---------- Separated sections ---------- */
+.section {
+  padding-top: 0.5rem;
+}
+.section-head {
+  margin-bottom: 1.1rem;
+  max-width: 46rem;
+}
+.section-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+  margin-bottom: 0.45rem;
+}
+html.lang-bn .section-eyebrow { letter-spacing: 0.02em; }
+.section-eyebrow::before {
+  content: "";
+  width: 1.6rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--gold);
+}
+.section-title {
+  font-family: Fraunces, Georgia, "Times New Roman", serif;
+  font-size: 1.65rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+html.lang-bn .section-title { font-family: "Hind Siliguri", sans-serif; }
+.section-sub {
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--muted);
+}
+.section-divide {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 0.25rem 0 0;
+  opacity: 0.7;
+}
+
+/* ---------- FAQ ---------- */
+.faq-item {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.faq-item summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary .faq-plus {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold-deep);
+  transition: transform 0.2s ease;
+}
+.faq-item[open] summary .faq-plus { transform: rotate(45deg); }
+.faq-item .faq-a {
+  padding: 0 1.15rem 1.1rem;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+/* ---------- Checklist ---------- */
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.check-item:hover { border-color: var(--gold); }
+.check-item.done {
+  border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
+  background: color-mix(in srgb, var(--ok) 6%, var(--surface));
+}
+.check-box {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: 7px;
+  border: 1.5px solid var(--line);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  transition: all 0.15s ease;
+}
+.check-item.done .check-box {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+}
+.check-item span:last-child {
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+.check-item.done span:last-child {
+  color: var(--muted);
+}
+
+/* ---------- Step cards (How it works) ---------- */
+.step-card {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 1.5rem 1.35rem 1.35rem;
+}
+.step-num {
+  font-family: Fraunces, Georgia, serif;
+  font-size: 2.6rem;
+  font-weight: 600;
+  line-height: 1;
+  color: color-mix(in srgb, var(--gold) 55%, transparent);
+}
+html.lang-bn .step-num { font-family: "Hind Siliguri", sans-serif; }
+.step-time {
+  display: inline-block;
+  margin-top: 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+}
+html.lang-bn .step-time { letter-spacing: 0; }

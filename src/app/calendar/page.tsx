@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, SlidersHorizontal } from "lucide-react";
 import {
   addDays,
   addMonths,
@@ -9,6 +9,7 @@ import {
   endOfMonth,
   endOfWeek,
   format,
+  getDaysInMonth,
   isSameDay,
   isSameMonth,
   startOfMonth,
@@ -18,10 +19,10 @@ import {
 } from "date-fns";
 import { bn } from "date-fns/locale";
 import EventModal from "@/components/EventModal";
+import { Expand, Pressable } from "@/components/motion";
 import { EmptyState, SectionHeader } from "@/components/ui";
 import { useLang } from "@/i18n/LanguageContext";
 import {
-  CATEGORY_COLOR,
   CATEGORY_LABEL,
   COUNTRIES,
   EVENTS,
@@ -68,7 +69,6 @@ function buildOccurrences(): CalOcc[] {
       });
     }
   }
-  // fill planning windows properly
   for (const o of out) {
     const full = toOccurrence(o.event, today);
     if (full && full.date === o.date) {
@@ -97,6 +97,7 @@ export default function CalendarPage() {
   const [view, setView] = useState<View>("month");
   const [cursor, setCursor] = useState<Date>(() => new Date());
   const [selected, setSelected] = useState<CalOcc | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   const [query, setQuery] = useState("");
   const [country, setCountry] = useState("");
@@ -153,7 +154,7 @@ export default function CalendarPage() {
   const resetFilters = () => {
     setQuery(""); setCountry(""); setRegion(""); setCategory(""); setStatus(""); setPriority("");
   };
-  const hasFilters = query || country || region || category || status || priority;
+  const activeCount = [query, country, region, category, status, priority].filter(Boolean).length;
 
   return (
     <div className="flex flex-col gap-5">
@@ -162,7 +163,7 @@ export default function CalendarPage() {
         subtitle={t.cal.sub(filtered.length)}
       />
 
-      {/* Controls */}
+      {/* Controls: one clean bar */}
       <div className="card flex flex-wrap items-center gap-2 p-3">
         <div className="flex gap-1">
           <button className="btn btn-ghost !px-2.5 !py-1.5" onClick={() => nav(-1)} aria-label="Previous"><ChevronLeft size={16} /></button>
@@ -170,75 +171,99 @@ export default function CalendarPage() {
           <button className="btn btn-ghost !px-2.5 !py-1.5" onClick={() => nav(1)} aria-label="Next"><ChevronRight size={16} /></button>
         </div>
         <h2 className="font-serif-d px-2 text-xl font-semibold">{title}</h2>
-        <div className="ml-auto flex gap-1">
-          {(["month", "week", "day", "year"] as View[]).map((v) => (
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <label className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--muted)" }} />
+            <input
+              className="input !w-44 !pl-9 !py-1.5 !text-xs"
+              placeholder={t.cal.searchPh}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </label>
+          <div className="flex gap-1">
+            {(["month", "week", "day", "year"] as View[]).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`btn !px-3 !py-1.5 !text-xs capitalize ${view === v ? "btn-active" : "btn-ghost"}`}
+              >
+                {t.cal[v]}
+              </button>
+            ))}
+          </div>
+          <Pressable>
             <button
-              key={v}
-              onClick={() => setView(v)}
-              className={`btn !px-3 !py-1.5 !text-xs capitalize ${view === v ? "btn-active" : "btn-ghost"}`}
+              className={`btn !px-3 !py-1.5 !text-xs ${showFilters ? "btn-active" : "btn-ghost"}`}
+              onClick={() => setShowFilters((s) => !s)}
+              aria-expanded={showFilters}
             >
-              {t.cal[v]}
+              <SlidersHorizontal size={13} /> {t.cal.filters}
+              {activeCount > 0 && <span className="chip !px-1.5 !py-0 !text-[10px] tabular-nums">{activeCount}</span>}
             </button>
-          ))}
+          </Pressable>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="card flex flex-wrap items-center gap-2 p-3">
-        <label className="relative flex-1 min-w-[180px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--muted)" }} />
-          <input className="input !pl-9" placeholder={t.cal.searchPh} value={query} onChange={(e) => setQuery(e.target.value)} />
-        </label>
-        <select className="input !w-auto" value={country} onChange={(e) => setCountry(e.target.value)} aria-label={t.cal.allCountries}>
-          <option value="">{t.cal.allCountries}</option>
-          {COUNTRIES.map((c) => (
-            <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
-          ))}
-        </select>
-        <select className="input !w-auto" value={region} onChange={(e) => setRegion(e.target.value)} aria-label={t.cal.allRegions}>
-          <option value="">{t.cal.allRegions}</option>
-          {REGIONS.map((r) => (
-            <option key={r} value={r}>{r}</option>
-          ))}
-        </select>
-        <select className="input !w-auto" value={category} onChange={(e) => setCategory(e.target.value)} aria-label={t.cal.allTypes}>
-          <option value="">{t.cal.allTypes}</option>
-          {ALL_CATEGORIES.map((c) => (
-            <option key={c} value={c}>{t.category[c] ?? CATEGORY_LABEL[c]}</option>
-          ))}
-        </select>
-        <select className="input !w-auto" value={status} onChange={(e) => setStatus(e.target.value)} aria-label={t.cal.allStatuses}>
-          <option value="">{t.cal.allStatuses}</option>
-          {ALL_STATUSES.map((s) => (
-            <option key={s} value={s}>{t.status[s] ?? s}</option>
-          ))}
-        </select>
-        <select className="input !w-auto" value={priority} onChange={(e) => setPriority(e.target.value)} aria-label={t.cal.allPriorities}>
-          <option value="">{t.cal.allPriorities}</option>
-          {ALL_PRIORITIES.map((p) => (
-            <option key={p} value={p} className="capitalize">{t.priority[p] ?? p}</option>
-          ))}
-        </select>
-        {hasFilters && (
-          <button className="btn btn-ghost !px-3 !py-1.5 !text-xs" onClick={resetFilters}>
-            {t.cal.clear}
-          </button>
-        )}
-      </div>
+      {/* Filters: collapsible */}
+      <Expand open={showFilters}>
+        <div className="card flex flex-wrap items-center gap-2 p-3">
+          <select className="input !w-auto !text-xs" value={country} onChange={(e) => setCountry(e.target.value)} aria-label={t.cal.allCountries}>
+            <option value="">{t.cal.allCountries}</option>
+            {COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
+            ))}
+          </select>
+          <select className="input !w-auto !text-xs" value={region} onChange={(e) => setRegion(e.target.value)} aria-label={t.cal.allRegions}>
+            <option value="">{t.cal.allRegions}</option>
+            {REGIONS.map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+          <select className="input !w-auto !text-xs" value={category} onChange={(e) => setCategory(e.target.value)} aria-label={t.cal.allTypes}>
+            <option value="">{t.cal.allTypes}</option>
+            {ALL_CATEGORIES.map((c) => (
+              <option key={c} value={c}>{t.category[c] ?? CATEGORY_LABEL[c]}</option>
+            ))}
+          </select>
+          <select className="input !w-auto !text-xs" value={status} onChange={(e) => setStatus(e.target.value)} aria-label={t.cal.allStatuses}>
+            <option value="">{t.cal.allStatuses}</option>
+            {ALL_STATUSES.map((s) => (
+              <option key={s} value={s}>{t.status[s] ?? s}</option>
+            ))}
+          </select>
+          <select className="input !w-auto !text-xs" value={priority} onChange={(e) => setPriority(e.target.value)} aria-label={t.cal.allPriorities}>
+            <option value="">{t.cal.allPriorities}</option>
+            {ALL_PRIORITIES.map((p) => (
+              <option key={p} value={p} className="capitalize">{t.priority[p] ?? p}</option>
+            ))}
+          </select>
+          {activeCount > 0 && (
+            <button className="btn btn-ghost !px-3 !py-1.5 !text-xs" onClick={resetFilters}>
+              {t.cal.clear} ({t.cal.activeFilters(activeCount)})
+            </button>
+          )}
+        </div>
+      </Expand>
 
       {/* Views */}
-      {view === "month" && <MonthView cursor={cursor} occOnDay={occOnDay} onSelect={setSelected} onDayClick={(d) => { setCursor(d); setView("day"); }} />}
+      {view === "month" && (
+        <>
+          <MonthView cursor={cursor} occOnDay={occOnDay} onDayClick={(d) => { setCursor(d); setView("day"); }} />
+          <MonthTimeline cursor={cursor} occs={filtered} onSelect={setSelected} />
+        </>
+      )}
       {view === "week" && <WeekView cursor={cursor} occOnDay={occOnDay} onSelect={setSelected} />}
       {view === "day" && <DayView cursor={cursor} occOnDay={occOnDay} onSelect={setSelected} />}
       {view === "year" && <YearView cursor={cursor} occOnDay={occOnDay} onMonthClick={(m) => { setCursor(m); setView("month"); }} />}
 
-      {/* Legend */}
-      <div className="card flex flex-wrap gap-x-4 gap-y-1.5 p-3 text-xs" style={{ color: "var(--muted)" }}>
-        {ALL_CATEGORIES.map((c) => (
-          <span key={c} className="inline-flex items-center gap-1.5">
-            <span className="dot" style={{ background: CATEGORY_COLOR[c] }} /> {t.category[c] ?? CATEGORY_LABEL[c]}
-          </span>
-        ))}
+      {/* Legend: minimal */}
+      <div className="flex flex-wrap gap-x-5 gap-y-1.5 px-1 text-xs" style={{ color: "var(--muted)" }}>
+        <span className="inline-flex items-center gap-1.5"><span className="cal-dot" /> {t.cal.legendEvent}</span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="inline-block h-[14px] w-[14px] rounded-full" style={{ border: "2px solid var(--gold)" }} /> {t.cal.today}
+        </span>
+        <span className="tl-key"><i className="k-win" /> {t.cal.uploadWindow}</span>
       </div>
 
       <EventModal occ={selected} onClose={() => setSelected(null)} />
@@ -246,12 +271,11 @@ export default function CalendarPage() {
   );
 }
 
-/* ---------------- Month ---------------- */
+/* ---------------- Month: quiet dot grid ---------------- */
 
-function MonthView({ cursor, occOnDay, onSelect, onDayClick }: {
+function MonthView({ cursor, occOnDay, onDayClick }: {
   cursor: Date;
   occOnDay: (iso: string) => CalOcc[];
-  onSelect: (o: CalOcc) => void;
   onDayClick: (d: Date) => void;
 }) {
   const { t } = useLang();
@@ -274,35 +298,108 @@ function MonthView({ cursor, occOnDay, onSelect, onDayClick }: {
           const occs = occOnDay(iso);
           const outside = !isSameMonth(d, cursor);
           return (
-            <div key={iso} className={`cal-day ${outside ? "outside" : ""} ${iso === todayStr ? "today" : ""}`}>
-              <button
-                onClick={() => onDayClick(d)}
-                className={`mb-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold hover:opacity-70 ${isSameDay(d, new Date()) ? "text-white" : ""}`}
-                style={isSameDay(d, new Date()) ? { background: "var(--gold)" } : { color: "var(--muted)" }}
-              >
-                {format(d, "d")}
-              </button>
-              <div className="flex flex-col gap-1">
-                {occs.slice(0, 3).map((o) => (
-                  <button
-                    key={`${o.event.id}-${o.year}`}
-                    onClick={() => onSelect(o)}
-                    className="truncate rounded-md px-1.5 py-0.5 text-left text-[11px] font-medium hover:opacity-80"
-                    style={{ background: `${CATEGORY_COLOR[o.event.category]}22`, color: "var(--text)", borderLeft: `3px solid ${CATEGORY_COLOR[o.event.category]}` }}
-                    title={`${o.event.name} · ${o.date}`}
-                  >
-                    {o.event.name}
-                  </button>
+            <button
+              key={iso}
+              onClick={() => onDayClick(d)}
+              className={`cal-day ${outside ? "outside" : ""} ${iso === todayStr ? "today" : ""}`}
+              aria-label={`${format(d, "MMMM d")}, ${occs.length} events`}
+            >
+              <span className="cal-daynum">{format(d, "d")}</span>
+              <span className="cal-dots">
+                {occs.slice(0, 4).map((o) => (
+                  <span key={`${o.event.id}-${o.year}`} className="cal-dot" />
                 ))}
-                {occs.length > 3 && (
-                  <span className="px-1 text-[10px]" style={{ color: "var(--muted)" }}>
-                    {t.cal.more(occs.length - 3)}
-                  </span>
+                {occs.length > 4 && <span className="cal-more">+{occs.length - 4}</span>}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- Month timeline: the visual ---------------- */
+
+function MonthTimeline({ cursor, occs, onSelect }: {
+  cursor: Date;
+  occs: CalOcc[];
+  onSelect: (o: CalOcc) => void;
+}) {
+  const { t } = useLang();
+  const monthStart = startOfMonth(cursor);
+  const monthEnd = endOfMonth(cursor);
+  const dim = getDaysInMonth(cursor);
+  const startISO = toISO(monthStart);
+  const endISO = toISO(monthEnd);
+  const todayISOstr = toISO(new Date());
+
+  const rows = occs
+    .filter((o) => inRange(o, startISO, endISO))
+    .sort((a, b) => (a.rangeStart < b.rangeStart ? -1 : 1))
+    .slice(0, 8);
+
+  if (rows.length === 0) return null;
+
+  const clampDay = (iso: string) => Math.min(Math.max(daysBetween(startISO, iso), 0), dim - 1);
+  const span = (sISO: string, eISO: string) => {
+    const s = clampDay(sISO);
+    const e = clampDay(eISO);
+    return { left: `${(s / dim) * 100}%`, width: `${Math.max(((e - s + 1) / dim) * 100, 1.2)}%` };
+  };
+  const ticks = [1, 8, 15, 22, dim].filter((v, i, a) => a.indexOf(v) === i);
+
+  return (
+    <div className="card p-4 sm:p-5">
+      <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+        <div>
+          <h3 className="font-serif-d text-lg font-semibold">{t.cal.timelineT}</h3>
+          <p className="text-xs" style={{ color: "var(--muted)" }}>{t.cal.timelineSub}</p>
+        </div>
+        <div className="flex gap-4">
+          <span className="tl-key"><i className="k-bar" /> {t.cal.legendEvent}</span>
+          <span className="tl-key"><i className="k-win" /> {t.cal.uploadWindow}</span>
+        </div>
+      </div>
+      <div>
+        {rows.map((o) => {
+          const bar = span(o.rangeStart, o.rangeEnd);
+          const win = inRange(o, startISO, endISO) && o.submissionStart && o.submissionDeadline
+            ? span(
+                o.submissionStart < startISO ? startISO : o.submissionStart,
+                o.submissionDeadline > endISO ? endISO : o.submissionDeadline
+              )
+            : null;
+          const showWin = win && o.submissionStart <= endISO && o.submissionDeadline >= startISO;
+          return (
+            <div className="tl-row" key={`${o.event.id}-${o.year}`}>
+              <button onClick={() => onSelect(o)} className="tl-name truncate text-left hover:underline" title={o.event.name}>
+                {o.event.name}
+              </button>
+              <div className="tl-track">
+                {showWin && <span className="tl-win" style={{ left: win.left, width: win.width }} />}
+                <button
+                  onClick={() => onSelect(o)}
+                  className="tl-bar"
+                  style={{ left: bar.left, width: bar.width }}
+                  title={`${o.event.name}: ${o.rangeStart} → ${o.rangeEnd}`}
+                  aria-label={o.event.name}
+                />
+                {todayISOstr >= startISO && todayISOstr <= endISO && (
+                  <span className="tl-today" style={{ left: `${(clampDay(todayISOstr) / dim) * 100}%` }} />
                 )}
               </div>
             </div>
           );
         })}
+      </div>
+      <div className="tl-row" aria-hidden="true">
+        <span />
+        <div className="tl-axis">
+          {ticks.map((d) => (
+            <span key={d} className="tl-tick" style={{ left: `${((d - 1) / dim) * 100}%` }}>{d}</span>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -323,10 +420,11 @@ function WeekView({ cursor, occOnDay, onSelect }: {
       {days.map((d) => {
         const iso = toISO(d);
         const occs = occOnDay(iso);
+        const isToday = isSameDay(d, new Date());
         return (
           <div key={iso} className="min-h-[220px] p-2.5" style={{ background: "var(--surface)" }}>
             <p className="label !text-[10px]">{format(d, "EEE")}</p>
-            <p className={`font-serif-d text-lg font-semibold ${isSameDay(d, new Date()) ? "" : ""}`} style={isSameDay(d, new Date()) ? { color: "var(--gold-deep)" } : {}}>
+            <p className="font-serif-d text-lg font-semibold" style={isToday ? { color: "var(--gold-deep)" } : {}}>
               {format(d, "d")}
             </p>
             <div className="mt-2 flex flex-col gap-1.5">
@@ -335,8 +433,8 @@ function WeekView({ cursor, occOnDay, onSelect }: {
                 <button
                   key={`${o.event.id}-${o.year}`}
                   onClick={() => onSelect(o)}
-                  className="rounded-lg border-l-[3px] p-2 text-left text-[11px] hover:opacity-80"
-                  style={{ borderColor: CATEGORY_COLOR[o.event.category], background: "var(--surface2)" }}
+                  className="rounded-lg p-2 text-left text-[11px] hover:opacity-80"
+                  style={{ background: "var(--surface2)", borderLeft: "3px solid var(--gold)" }}
                 >
                   <span className="font-semibold leading-tight">{o.event.name}</span>
                   <span className="mt-0.5 block" style={{ color: "var(--muted)" }}>{t.status[o.status] ?? o.status}</span>
@@ -367,8 +465,8 @@ function DayView({ cursor, occOnDay, onSelect }: {
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {occs.map((o) => (
         <button key={`${o.event.id}-${o.year}`} onClick={() => onSelect(o)} className="card card-hover p-4 text-left">
-          <p className="flex items-center gap-2 text-[11px] font-bold" style={{ color: CATEGORY_COLOR[o.event.category] }}>
-            <span className="dot" style={{ background: CATEGORY_COLOR[o.event.category] }} />
+          <p className="flex items-center gap-2 text-[11px] font-bold">
+            <span className="cal-dot" />
             {(t.category[o.event.category] ?? CATEGORY_LABEL[o.event.category]).toUpperCase()} · {t.status[o.status] ?? o.status}
           </p>
           <p className="font-serif-d mt-1.5 text-[17px] font-semibold leading-snug">{o.event.name}</p>
@@ -382,7 +480,7 @@ function DayView({ cursor, occOnDay, onSelect }: {
   );
 }
 
-/* ---------------- Year ---------------- */
+/* ---------------- Year: single-hue heatmap ---------------- */
 
 function YearView({ cursor, occOnDay, onMonthClick }: {
   cursor: Date;
@@ -409,20 +507,18 @@ function YearView({ cursor, occOnDay, onMonthClick }: {
               {days.map((d) => {
                 const iso = toISO(d);
                 const n = isSameMonth(d, monthDate) ? occOnDay(iso).length : 0;
-                const top = n > 0 ? occOnDay(iso)[0] : null;
                 return (
                   <span
                     key={iso}
                     className="flex aspect-square items-center justify-center rounded-[4px] text-[9px]"
                     style={{
-                      background: n > 0 && top ? `${CATEGORY_COLOR[top.event.category]}33` : "transparent",
-                      border: n > 0 ? `1px solid ${CATEGORY_COLOR[top!.event.category]}66` : "1px solid transparent",
-                      color: "var(--muted)",
-                      opacity: isSameMonth(d, monthDate) ? 1 : 0.25,
+                      background: n > 0 ? "var(--gold)" : "transparent",
+                      opacity: n > 0 ? 0.18 + Math.min(n, 4) * 0.2 : 1,
+                      color: n > 2 ? "#fff" : "var(--muted)",
                     }}
                     title={n > 0 ? `${n} events` : undefined}
                   >
-                    {format(d, "d")}
+                    <span style={{ opacity: isSameMonth(d, monthDate) ? 1 : 0.3 }}>{format(d, "d")}</span>
                   </span>
                 );
               })}

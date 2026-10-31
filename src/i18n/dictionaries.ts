@@ -278,6 +278,11 @@ const en = {
     noEventsH: "Try another day, or clear filters.",
     more: (n: number) => `+${n} more`,
     uploadWindow: "Upload window",
+    timelineT: "This month, at a glance",
+    timelineSub: "Event bars in gold. Pale bars show the upload window.",
+    filters: "Filters",
+    legendEvent: "Event day",
+    activeFilters: (n: number) => `${n} active`,
   },
   markets: {
     title: "Global Market Intelligence",
@@ -745,6 +750,11 @@ export const bn: Dict = {
     noEventsH: "অন্য দিন চেষ্টা করুন, বা ফিল্টার মুছুন।",
     more: (n: number) => `আরও ${n}টি`,
     uploadWindow: "আপলোড উইন্ডো",
+    timelineT: "এই মাস, এক নজরে",
+    timelineSub: "সোনালি বার ইভেন্ট। হালকা বার আপলোডের সময়।",
+    filters: "ফিল্টার",
+    legendEvent: "ইভেন্টের দিন",
+    activeFilters: (n: number) => `${n}টি সক্রিয়`,
   },
   markets: {
     title: "বৈশ্বিক বাজার ইন্টেলিজেন্স",

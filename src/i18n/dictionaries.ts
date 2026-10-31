@@ -43,6 +43,8 @@ const en = {
     today: "Today",
     past: "90 days back",
     future: "180 days ahead",
+    daysTo: "days to",
+    urgentWeek: (n: number) => `${n} windows close this week`,
   },
   quick: {
     eyebrow: "Start here",
@@ -515,6 +517,8 @@ export const bn: Dict = {
     today: "আজ",
     past: "৯০ দিন আগে",
     future: "১৮০ দিন পরে",
+    daysTo: "দিন বাকি",
+    urgentWeek: (n: number) => `এই সপ্তাহে ${n}টি উইন্ডো বন্ধ হচ্ছে`,
   },
   quick: {
     eyebrow: "এখান থেকে শুরু",

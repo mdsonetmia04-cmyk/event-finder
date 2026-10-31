@@ -8,6 +8,7 @@ import DateSelector from "@/components/DateSelector";
 import { EventCard, OpportunityCard } from "@/components/cards";
 import { CategoryBarChart, StageDonutChart } from "@/components/charts";
 import { LiveClock, Marquee, NumberTicker, Pressable, usePointerParallax } from "@/components/motion";
+import YearDial from "@/components/YearDial";
 import { Deadlines, Faq, HowItWorks, Section, UploadChecklist } from "@/components/sections";
 import { EmptyState } from "@/components/ui";
 import { useDaysLabel, useLang } from "@/i18n/LanguageContext";
@@ -22,56 +23,6 @@ import type { EventStatus } from "@/types/event";
 
 const BOARD_STATUSES: EventStatus[] = ["RESEARCH NOW", "CREATE NOW", "UPLOAD NOW", "HIGH PRIORITY", "LAST CHANCE"];
 const DAY_MS = 86_400_000;
-
-/* Signature move: scrub the planning date, the whole page follows. */
-function TimeScrubber({ date, onChange }: { date: string; onChange: (d: string) => void }) {
-  const { t } = useLang();
-  const today = todayISO();
-  const offset = Math.round((Date.parse(date) - Date.parse(today)) / DAY_MS);
-  const shift = (days: number) => {
-    const [y, m, d] = today.split("-").map(Number);
-    const dt = new Date(y, m - 1, d + days);
-    const iso = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
-    onChange(iso);
-  };
-  return (
-    <div className="scrubber">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div>
-          <h2 className="font-serif-d text-lg font-semibold">{t.dash.scrubT}</h2>
-          <p className="text-sm" style={{ color: "var(--muted)" }}>{t.dash.scrubH}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold tabular-nums">{formatLong(date)}</span>
-          {offset !== 0 && (
-            <Pressable>
-              <button className="btn btn-ghost !px-3 !py-1.5 !text-xs" onClick={() => onChange(today)}>
-                {t.dash.today}
-              </button>
-            </Pressable>
-          )}
-        </div>
-      </div>
-      <input
-        type="range"
-        min={-90}
-        max={180}
-        step={1}
-        value={offset}
-        onChange={(e) => shift(Number(e.target.value))}
-        className="scrub-range"
-        aria-label={t.dash.scrubT}
-      />
-      <div className="flex justify-between text-[11px]" style={{ color: "var(--muted)" }}>
-        <span>{t.dash.past}</span>
-        <span className="font-semibold" style={{ color: offset === 0 ? "var(--gold-deep)" : undefined }}>
-          {t.dash.today}
-        </span>
-        <span>{t.dash.future}</span>
-      </div>
-    </div>
-  );
-}
 
 export default function DashboardPage() {
   const [date, setDate] = useState(todayISO());
@@ -163,37 +114,41 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-16 md:gap-24">
-      {/* ---------- Title row: the screen's question, answered first ---------- */}
-      <section onMouseMove={parallax.onMove} onMouseLeave={parallax.onLeave}>
-        <motion.div style={{ x: parallax.x, y: parallax.y }}>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="max-w-2xl">
-              <h1 className="font-serif-d text-3xl font-semibold tracking-tight sm:text-4xl">
-                Sweet Smart Calendar
-              </h1>
-              <p className="mt-2 text-[15px] leading-relaxed" style={{ color: "var(--muted)" }}>
-                {focus
-                  ? t.dash.finding(focus.event.name, formatMonthDay(focus.submissionDeadline), daysLabel(focusDlDays))
-                  : t.dash.findingIdle}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="inline-flex items-center gap-2 text-xs tabular-nums" style={{ color: "var(--muted)" }}>
-                <span className="live-dot" aria-hidden="true" />
-                Dhaka <LiveClock />
-              </span>
+      {/* ---------- Hero: the Year Dial ---------- */}
+      <section className="dial-hero" onMouseMove={parallax.onMove} onMouseLeave={parallax.onLeave}>
+        <motion.div style={{ x: parallax.x, y: parallax.y }} className="min-w-0">
+          <div className="max-w-xl">
+            <h1 className="font-serif-d text-4xl font-semibold tracking-tight sm:text-5xl">
+              Sweet Smart Calendar
+            </h1>
+            <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "var(--muted)" }}>
+              {focus
+                ? t.dash.finding(focus.event.name, formatMonthDay(focus.submissionDeadline), daysLabel(focusDlDays))
+                : t.dash.findingIdle}
+            </p>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
               <Pressable>
                 <Link href="/opportunities" className="btn btn-gold">
                   {t.hero.cta1} <ArrowRight size={16} />
                 </Link>
               </Pressable>
+              <Pressable>
+                <Link href="/calendar" className="btn btn-ghost">
+                  {t.hero.cta2}
+                </Link>
+              </Pressable>
+              <span className="inline-flex items-center gap-2 text-xs tabular-nums" style={{ color: "var(--muted)" }}>
+                <span className="live-dot" aria-hidden="true" />
+                Dhaka <LiveClock />
+              </span>
             </div>
+            <p className="mt-5 text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
+              {t.dash.scrubH}
+            </p>
           </div>
         </motion.div>
+        <YearDial date={date} onChange={setDate} />
       </section>
-
-      {/* ---------- Signature move: time scrubber ---------- */}
-      <TimeScrubber date={date} onChange={setDate} />
 
       {/* ---------- KPI strip: type, not tiles ---------- */}
       <section aria-label="Totals">

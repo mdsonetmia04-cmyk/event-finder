@@ -42,6 +42,19 @@ export default function ContactPage() {
           </a>
         </div>
 
+        <div className="mt-4 rounded-xl p-4" style={{ background: "var(--surface2)" }}>
+          <p className="label mb-1">{t.contact.website}</p>
+          <a
+            href="https://mdsonetmia.vercel.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lg font-semibold underline decoration-1 underline-offset-4 hover:opacity-80"
+            style={{ color: "var(--gold-deep)" }}
+          >
+            mdsonetmia.vercel.app
+          </a>
+        </div>
+
         <div className="mt-6 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
           <p className="mb-2 font-semibold" style={{ color: "var(--text)" }}>
             {t.contact.whatToSend}

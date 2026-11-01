@@ -420,6 +420,7 @@ const en = {
     sub: "Questions, corrections or partnership inquiries about Sweet Smart Calendar.",
     creatorOf: "Creator of Sweet Smart Calendar",
     whatsapp: "WhatsApp",
+    website: "Website",
     chatOn: "Chat on WhatsApp",
     whatToSend: "What to send",
     items: [
@@ -951,6 +952,7 @@ export const bn: Dict = {
     sub: "Sweet Smart Calendar নিয়ে প্রশ্ন, সংশোধন বা পার্টনারশিপের প্রস্তাব।",
     creatorOf: "Sweet Smart Calendar-এর নির্মাতা",
     whatsapp: "হোয়াটসঅ্যাপ",
+    website: "ওয়েবসাইট",
     chatOn: "হোয়াটসঅ্যাপে চ্যাট করুন",
     whatToSend: "যা পাঠাবেন",
     items: [

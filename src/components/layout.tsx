@@ -129,7 +129,7 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Primary">
+        <nav className="hidden items-center gap-0.5 xl:flex" aria-label="Primary">
           {NAV.map((n) => {
             const active = pathname === n.href || (n.href !== "/" && pathname.startsWith(n.href));
             return (
@@ -165,7 +165,7 @@ export function Header() {
             </button>
           )}
           <button
-            className="icon-circle lg:hidden"
+            className="icon-circle xl:hidden"
             onClick={() => setOpen((o) => !o)}
             aria-label="Toggle menu"
           >
@@ -175,7 +175,7 @@ export function Header() {
       </div>
 
       {open && (
-        <nav className="card mx-auto mt-2 max-w-7xl px-3 py-3 lg:hidden" aria-label="Mobile">
+        <nav className="card mx-auto mt-2 max-w-7xl px-3 py-3 xl:hidden" aria-label="Mobile">
           <div className="grid gap-1">
             {NAV.map((n) => {
               const Icon = n.icon;

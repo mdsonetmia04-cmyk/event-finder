@@ -1048,14 +1048,11 @@ html.lang-bn .ws-num { font-family: "SolaimanLipi", sans-serif; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ---------- Reference hero: curves + chess art + dial ---------- */
+/* ---------- Reference hero: open layout, floating chess, curves ---------- */
 .hero-ref {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 28px;
-  background: var(--surface);
-  padding: clamp(1.4rem, 4vw, 3.25rem);
+  padding: clamp(1.5rem, 4vw, 3rem) clamp(0.5rem, 2vw, 2rem) clamp(2.5rem, 6vw, 4.5rem);
 }
 .hero-curves {
   position: absolute;
@@ -1072,7 +1069,7 @@ html.lang-bn .ws-num { font-family: "SolaimanLipi", sans-serif; }
 }
 @media (min-width: 1024px) {
   .hero-grid {
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr) 340px;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr) 340px;
     gap: 1.5rem;
   }
 }
@@ -1094,24 +1091,30 @@ html.lang-bn .ws-num { font-family: "SolaimanLipi", sans-serif; }
 html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spacing: 0; }
 .hero-art {
   position: relative;
-  border-radius: 24px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  aspect-ratio: 4 / 4.6;
-  max-height: 420px;
   width: 100%;
-  background: var(--bg2);
+  max-width: 400px;
+  margin: 0 auto;
 }
-.hero-art img {
+.hero-swoosh {
+  position: absolute;
+  inset: -6% -10%;
+  width: 120%;
+  height: 112%;
+  pointer-events: none;
+}
+.hero-art-img {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top center;
+  height: auto;
   display: block;
+  filter: drop-shadow(0 26px 34px rgba(60, 45, 15, 0.28));
+}
+.dark .hero-art-img {
+  filter: drop-shadow(0 26px 34px rgba(0, 0, 0, 0.55));
 }
 @media (max-width: 1023px) {
-  .hero-art { aspect-ratio: 16 / 9; max-height: 300px; }
-  .hero-art img { object-position: center 20%; }
+  .hero-art { max-width: 320px; }
 }
 
 /* ---------- Floating pill navigation ---------- */

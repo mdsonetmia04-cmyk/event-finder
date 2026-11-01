@@ -157,12 +157,17 @@ export default function DashboardPage() {
             </p>
           </motion.div>
           <div className="hero-art">
+            <svg className="hero-swoosh" viewBox="0 0 400 420" aria-hidden="true">
+              <path d="M 62 332 A 160 178 0 1 1 348 88" fill="none" stroke="var(--gold-2)" strokeWidth="13" strokeLinecap="round" opacity="0.5" />
+              <path d="M 62 332 A 160 178 0 1 1 348 88" fill="none" stroke="var(--gold-soft)" strokeWidth="5" strokeLinecap="round" opacity="0.7" />
+            </svg>
             <Image
-              src="/images/hero-chess.png"
+              src="/images/hero-chess-cutout.png"
               alt="Chess strategy"
-              width={736}
-              height={1302}
+              width={594}
+              height={652}
               priority
+              className="hero-art-img"
             />
           </div>
           <YearDial date={date} onChange={setDate} />

@@ -6,9 +6,11 @@ import {
   CalendarDays,
   Heart,
   Home,
+  LogOut,
   Mail,
   Menu,
   Moon,
+  ShieldCheck,
   Sparkles,
   Sun,
   Globe2,
@@ -27,6 +29,7 @@ import {
 import { KEYS } from "@/lib/store";
 import { CONTACT, META } from "@/lib/data";
 import { useLang } from "@/i18n/LanguageContext";
+import { useAuth } from "./AuthContext";
 import type { Dict } from "@/i18n/dictionaries";
 import LanguageToggle from "./LanguageToggle";
 
@@ -104,7 +107,10 @@ export function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { t } = useLang();
-  const NAV = navItems(t);
+  const { session, logout } = useAuth();
+  const NAV = session?.role === "super_admin"
+    ? [...navItems(t), { href: "/admin", label: t.nav.admin, icon: ShieldCheck }]
+    : navItems(t);
 
   return (
     <header className="sticky top-0 z-40 border-b no-print" style={{ borderColor: "var(--line)", background: "color-mix(in srgb, var(--bg) 88%, transparent)", backdropFilter: "blur(12px)" }}>
@@ -140,8 +146,24 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {session && (
+            <span className="chip hidden !py-1.5 sm:inline-flex" title={session.whatsapp}>
+              {session.role === "super_admin" ? <ShieldCheck size={12} /> : null}
+              <span className="max-w-[110px] truncate font-semibold">{session.name}</span>
+            </span>
+          )}
           <LanguageToggle />
           <ThemeToggle />
+          {session && (
+            <button
+              className="btn btn-ghost !px-3 !py-2"
+              onClick={logout}
+              title={t.auth.logout}
+              aria-label={t.auth.logout}
+            >
+              <LogOut size={16} />
+            </button>
+          )}
           <button
             className="btn btn-ghost !px-3 !py-2 lg:hidden"
             onClick={() => setOpen((o) => !o)}

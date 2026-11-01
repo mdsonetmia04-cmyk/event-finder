@@ -234,7 +234,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           status: "pending",
         });
         if (pErr) {
-          lastAuthDebug = `insert: ${pErr.code} ${pErr.message}`; // DEBUG-REG
+          lastAuthDebug = `${lastAuthDebug} | insert: ${pErr.code} ${pErr.message}`; // DEBUG-REG
           // Profile insert failed (e.g. RLS): clean up the auth user record attempt.
           await supabase.auth.signOut();
           return "signup_failed";

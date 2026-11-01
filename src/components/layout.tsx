@@ -15,6 +15,7 @@ import {
   Sun,
   Globe2,
   ClipboardList,
+  Leaf,
   X,
   FlaskConical,
 } from "lucide-react";
@@ -98,6 +99,7 @@ function navItems(t: Dict) {
     { href: "/opportunities", label: t.nav.opportunities, icon: Sparkles },
     { href: "/markets", label: t.nav.markets, icon: Globe2 },
     { href: "/planner", label: t.nav.planner, icon: ClipboardList },
+    { href: "/evergreen", label: t.nav.evergreen, icon: Leaf },
     { href: "/sources", label: t.nav.sources, icon: FlaskConical },
     { href: "/contact", label: t.nav.contact, icon: Mail },
   ];

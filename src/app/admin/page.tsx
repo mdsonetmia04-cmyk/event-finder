@@ -20,6 +20,7 @@ function UserRow({
   onRemove: () => void;
 }) {
   const { t, lang } = useLang();
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
   const date = new Date(user.created_at).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-US", {
     day: "numeric",
     month: "short",
@@ -66,11 +67,21 @@ function UserRow({
             className="btn btn-ghost !px-2 !py-1.5"
             title={t.admin.remove}
             aria-label={t.admin.remove}
+            style={confirmingRemove ? { border: "1px solid #b3261e", color: "#b3261e" } : undefined}
             onClick={() => {
-              if (confirm(lang === "bn" ? "এই ব্যবহারকারী মুছে ফেলবেন?" : "Remove this user?")) onRemove();
+              if (confirmingRemove) {
+                setConfirmingRemove(false);
+                onRemove();
+              } else {
+                setConfirmingRemove(true);
+                setTimeout(() => setConfirmingRemove(false), 5000);
+              }
             }}
           >
             <Trash2 size={13} />
+            {confirmingRemove && (
+              <span className="!text-xs font-bold">{t.admin.sure}</span>
+            )}
           </button>
         </div>
       )}

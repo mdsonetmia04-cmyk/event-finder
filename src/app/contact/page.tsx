@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { MessageCircle } from "lucide-react";
 import { CONTACT, META } from "@/lib/data";
 import { SectionHeader } from "@/components/ui";
@@ -16,10 +17,17 @@ export default function ContactPage() {
       <div className="card p-6 sm:p-8">
         <div className="flex items-center gap-4">
           <span
-            className="font-serif-d flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-bold"
-            style={{ background: "var(--gold)", color: "#1a1405" }}
+            className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl"
+            style={{ background: "var(--surface2)" }}
           >
-            SM
+            <Image
+              src="/images/sonet-profile.png"
+              alt={CONTACT.name}
+              fill
+              sizes="80px"
+              className="object-cover"
+              priority
+            />
           </span>
           <div>
             <h2 className="font-serif-d text-2xl font-semibold">{CONTACT.name}</h2>

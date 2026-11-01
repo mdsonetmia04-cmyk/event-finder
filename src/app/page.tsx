@@ -162,12 +162,20 @@ export default function DashboardPage() {
               <path d="M 62 332 A 160 178 0 1 1 348 88" fill="none" stroke="var(--gold-soft)" strokeWidth="5" strokeLinecap="round" opacity="0.7" />
             </svg>
             <Image
-              src="/images/hero-chess-cutout.png"
+              src="/images/hero-chess-ref-light.png"
               alt="Chess strategy"
+              width={680}
+              height={580}
+              priority
+              className="hero-art-img hero-art-img-light"
+            />
+            <Image
+              src="/images/hero-chess-cutout.png"
+              alt=""
+              aria-hidden="true"
               width={594}
               height={652}
-              priority
-              className="hero-art-img"
+              className="hero-art-img hero-art-img-dark"
             />
           </div>
           <YearDial date={date} onChange={setDate} />

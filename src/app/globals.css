@@ -1113,6 +1113,12 @@ html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spaci
 .dark .hero-art-img {
   filter: drop-shadow(0 26px 34px rgba(0, 0, 0, 0.55));
 }
+/* Light theme: reference artwork (swoosh baked in) — dark theme: B&W cutout */
+.hero-art-img-dark { display: none; }
+.dark .hero-art-img-dark { display: block; }
+.dark .hero-art-img-light { display: none; }
+.hero-swoosh { display: none; }
+.dark .hero-swoosh { display: block; }
 @media (max-width: 1023px) {
   .hero-art { max-width: 320px; }
 }

@@ -38,7 +38,7 @@ import LanguageToggle from "./LanguageToggle";
 
 type Theme = "dark" | "light";
 const ThemeCtx = createContext<{ theme: Theme; toggle: () => void }>({
-  theme: "dark",
+  theme: "light",
   toggle: () => {},
 });
 
@@ -47,12 +47,12 @@ export function useTheme() {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("light");
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem(KEYS.theme) as Theme | null;
-    const initial = saved === "light" || saved === "dark" ? saved : "dark";
+    const initial = saved === "light" || saved === "dark" ? saved : "light";
     setTheme(initial);
     document.documentElement.classList.toggle("dark", initial === "dark");
     setReady(true);
@@ -81,7 +81,7 @@ function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="btn btn-ghost !px-3 !py-2"
+      className="icon-circle"
       aria-label={dark ? t.theme.toLight : t.theme.toDark}
       title={dark ? t.theme.lightTitle : t.theme.darkTitle}
     >
@@ -115,31 +115,29 @@ export function Header() {
     : navItems(t);
 
   return (
-    <header className="sticky top-0 z-40 border-b no-print" style={{ borderColor: "var(--line)", background: "color-mix(in srgb, var(--bg) 88%, transparent)", backdropFilter: "blur(12px)" }}>
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <Link href="/" className="flex items-center gap-2.5">
+    <header className="sticky top-3 z-40 no-print px-3 sm:px-4">
+      <div className="nav-pill mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2 sm:px-4">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "var(--gold)" }}>
-            <CalendarDays size={19} color="#1a1405" strokeWidth={2.4} />
+            <CalendarDays size={19} className="gold-contrast-icon" strokeWidth={2.4} />
           </span>
           <span className="leading-tight">
-            <span className="font-serif-d block text-[17px] font-semibold tracking-tight">
+            <span className="font-serif-d block text-[16px] font-semibold tracking-tight">
               Sweet Smart Calendar
             </span>
             <span className="label !text-[10px] hidden sm:block">Plan Smarter · Upload Earlier</span>
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex" aria-label="Primary">
+        <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Primary">
           {NAV.map((n) => {
             const active = pathname === n.href || (n.href !== "/" && pathname.startsWith(n.href));
             return (
               <Link
                 key={n.href}
                 href={n.href}
-                className={`rounded-lg px-3 py-2 text-[13.5px] font-medium transition-colors ${
-                  active ? "btn-active !rounded-lg" : "hover:opacity-70"
-                }`}
-                style={active ? {} : { color: "var(--muted)" }}
+                className={`nav-link${active ? " active" : ""}`}
+                aria-current={active ? "page" : undefined}
               >
                 {n.label}
               </Link>
@@ -149,7 +147,7 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           {session && (
-            <span className="chip hidden !py-1.5 sm:inline-flex" title={session.whatsapp}>
+            <span className="chip hidden !py-1.5 md:inline-flex" title={session.whatsapp}>
               {session.role === "super_admin" ? <ShieldCheck size={12} /> : null}
               <span className="max-w-[110px] truncate font-semibold">{session.name}</span>
             </span>
@@ -158,7 +156,7 @@ export function Header() {
           <ThemeToggle />
           {session && (
             <button
-              className="btn btn-ghost !px-3 !py-2"
+              className="icon-circle"
               onClick={logout}
               title={t.auth.logout}
               aria-label={t.auth.logout}
@@ -167,7 +165,7 @@ export function Header() {
             </button>
           )}
           <button
-            className="btn btn-ghost !px-3 !py-2 lg:hidden"
+            className="icon-circle lg:hidden"
             onClick={() => setOpen((o) => !o)}
             aria-label="Toggle menu"
           >
@@ -177,7 +175,7 @@ export function Header() {
       </div>
 
       {open && (
-        <nav className="border-t px-4 py-3 lg:hidden" style={{ borderColor: "var(--line)" }} aria-label="Mobile">
+        <nav className="card mx-auto mt-2 max-w-7xl px-3 py-3 lg:hidden" aria-label="Mobile">
           <div className="grid gap-1">
             {NAV.map((n) => {
               const Icon = n.icon;
@@ -187,8 +185,7 @@ export function Header() {
                   key={n.href}
                   href={n.href}
                   onClick={() => setOpen(false)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${active ? "btn-active" : ""}`}
-                  style={active ? {} : { color: "var(--muted)" }}
+                  className={`nav-link flex items-center gap-3 !text-sm !font-medium${active ? " active" : ""}`}
                 >
                   <Icon size={16} /> {n.label}
                 </Link>

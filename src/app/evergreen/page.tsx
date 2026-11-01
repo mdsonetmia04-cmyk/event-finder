@@ -197,8 +197,8 @@ export default function EvergreenPage() {
                   <span className="absolute left-[19px] top-10 h-[calc(100%-2.5rem)] w-px" style={{ background: "var(--line)" }} aria-hidden="true" />
                 )}
                 <span
-                  className="font-serif-d z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[15px] font-bold"
-                  style={{ background: "var(--gold)", color: "#1a1405" }}
+                  className="font-serif-d gold-contrast-text z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[15px] font-bold"
+                  style={{ background: "var(--gold)" }}
                 >
                   {i + 1}
                 </span>

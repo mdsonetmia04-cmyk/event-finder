@@ -11,36 +11,46 @@
   font-display: swap;
 }
 
-/* ---------- Design tokens: cream white default ---------- */
+/* ---------- Design tokens: Cream & Champagne Gold (Light) ---------- */
 :root {
-  --bg: #FAF5E9;
-  --bg2: #F0E9D4;
-  --surface: #FFFDF7;
-  --surface2: #F4EDDA;
-  --text: #231A0B;
-  --muted: #847451;
-  --line: #E8DBBE;
-  --gold: #C9971F;
-  --gold-deep: #97711A;
-  --steel: #4d8dce;
-  --steel-deep: #2f6396;
-  --ok: #2f9e6e;
-  --warn: #c98a2b;
-  --bad: #c0524d;
+  --bg: #FBF7F0;
+  --bg2: #F5EBDD;
+  --surface: #FFFCF7;
+  --card: #FFFDF9;
+  --surface2: #F2E8D8;
+  --text: #211A14;
+  --muted: #71675C;
+  --line: #E9D9C1;
+  --gold: #A66A19;
+  --gold-2: #C18A3A;
+  --gold-soft: #EBD4AC;
+  --gold-deep: #A66A19;
+  --steel: #A66A19;
+  --steel-deep: #7C4F10;
+  --ok: #26834A;
+  --warn: #A66A19;
+  --bad: #C44D45;
 }
 
+/* ---------- Design tokens: Charcoal & Champagne Gold (Dark) ---------- */
 .dark {
-  --bg: #0b1020;
-  --bg2: #141c2e;
-  --surface: #111a30;
-  --surface2: #16203a;
-  --text: #eef1f7;
-  --muted: #8b95ab;
-  --line: #232f4d;
-  --gold: #d6a84f;
-  --gold-deep: #e9c987;
-  --steel: #6ba3dc;
-  --steel-deep: #8fb8e4;
+  --bg: #151311;
+  --bg2: #1C1916;
+  --surface: #211D19;
+  --card: #25201B;
+  --surface2: #30271F;
+  --text: #F7F0E6;
+  --muted: #BDB1A1;
+  --line: #55402A;
+  --gold: #D9A044;
+  --gold-2: #B77A28;
+  --gold-soft: #E9C17A;
+  --gold-deep: #E9C17A;
+  --steel: #D9A044;
+  --steel-deep: #E9C17A;
+  --ok: #8BCB78;
+  --warn: #D9A044;
+  --bad: #E17C70;
 }
 
 html {
@@ -60,9 +70,13 @@ body {
 
 /* ---------- Components ---------- */
 .card {
-  background: var(--surface);
+  background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(33, 26, 20, 0.04);
+}
+.dark .card {
+  box-shadow: none;
 }
 
 .card-hover {
@@ -92,13 +106,14 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 10px;
+  border-radius: 999px;
   font-weight: 600;
   font-size: 0.875rem;
-  padding: 0.6rem 1.1rem;
+  padding: 0.65rem 1.25rem;
   transition: all 0.16s ease;
   cursor: pointer;
   border: 1px solid transparent;
+  white-space: nowrap;
 }
 .btn:disabled {
   opacity: 0.5;
@@ -106,7 +121,10 @@ body {
 }
 .btn-gold {
   background: var(--gold);
-  color: #1a1405;
+  color: #FFF9EC;
+}
+.dark .btn-gold {
+  color: #201405;
 }
 .btn-gold:hover:not(:disabled) {
   filter: brightness(1.06);
@@ -128,16 +146,19 @@ body {
   background: var(--surface2);
 }
 .btn-active {
-  background: var(--text);
-  color: var(--bg);
+  background: var(--gold);
+  color: #FFF9EC;
+}
+.dark .btn-active {
+  color: #201405;
 }
 
 .input {
   background: var(--surface);
   border: 1px solid var(--line);
   color: var(--text);
-  border-radius: 10px;
-  padding: 0.55rem 0.8rem;
+  border-radius: 14px;
+  padding: 0.6rem 0.9rem;
   font-size: 0.875rem;
   width: 100%;
 }
@@ -222,7 +243,7 @@ select.input {
 .cal-day {
   min-height: 86px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: 14px;
   background: var(--surface);
   padding: 7px 8px;
   overflow: hidden;
@@ -257,7 +278,10 @@ button.cal-day:hover {
 }
 .cal-day.today .cal-daynum {
   background: var(--gold);
-  color: #fff;
+  color: #FFF9EC;
+}
+.dark .cal-day.today .cal-daynum {
+  color: #201405;
 }
 .cal-dots {
   display: flex;
@@ -359,7 +383,7 @@ button.cal-day:hover {
 .progress > div {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--gold), var(--gold-deep));
+  background: var(--gold);
   transition: width 0.3s ease;
 }
 
@@ -414,14 +438,14 @@ html.lang-bn .font-serif-d {
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: #2f9e6e;
-  box-shadow: 0 0 0 0 rgba(47, 158, 110, 0.55);
+  background: var(--ok);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 55%, transparent);
   animation: live-ping 2s ease-out infinite;
 }
 @keyframes live-ping {
-  0% { box-shadow: 0 0 0 0 rgba(47, 158, 110, 0.55); }
-  70% { box-shadow: 0 0 0 9px rgba(47, 158, 110, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(47, 158, 110, 0); }
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 55%, transparent); }
+  70% { box-shadow: 0 0 0 9px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
 
 /* ---------- Year Dial hero ---------- */
@@ -494,24 +518,27 @@ html.lang-bn .dial-num { font-family: "SolaimanLipi", sans-serif; }
   font-weight: 600;
 }
 
-/* ---------- KPI strip: type, not tiles ---------- */
+/* ---------- KPI strip: stat cards with dividers ---------- */
 .kpi-strip {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--surface);
+  border-radius: 22px;
+  background: var(--card);
   overflow: hidden;
+  box-shadow: 0 1px 2px rgba(33, 26, 20, 0.04);
 }
+.dark .kpi-strip { box-shadow: none; }
 @media (min-width: 768px) {
   .kpi-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 .kpi-cell {
-  padding: 1.15rem 1.25rem 1.25rem;
+  padding: 1.25rem 1.35rem 1.35rem;
   border-left: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  align-items: flex-start;
+  gap: 0.3rem;
   min-width: 0;
 }
 .kpi-cell:nth-child(odd) { border-left: 0; }
@@ -522,15 +549,33 @@ html.lang-bn .dial-num { font-family: "SolaimanLipi", sans-serif; }
   .kpi-cell:first-child { border-left: 0; }
 }
 .kpi-label {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   color: var(--muted);
 }
 .kpi-value {
-  font-size: 1.7rem;
+  font-family: Fraunces, Georgia, "Times New Roman", serif;
+  font-size: 2.1rem;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
   font-variant-numeric: tabular-nums;
   color: var(--text);
+}
+html.lang-bn .kpi-value { font-family: "SolaimanLipi", sans-serif; }
+.kpi-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.15rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--gold-deep);
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 22%, transparent);
+  border-radius: 999px;
+  padding: 0.18rem 0.6rem;
+  white-space: nowrap;
 }
 .kpi-answer {
   font-size: 1.02rem;
@@ -821,7 +866,7 @@ html.lang-bn .kanban-card-title { font-family: "SolaimanLipi", sans-serif; }
   font-size: 13px;
   font-weight: 800;
   color: var(--gold-deep);
-  background: rgba(201, 151, 31, 0.12);
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
   border-radius: 999px;
   padding: 2px 10px;
   flex-shrink: 0;
@@ -899,7 +944,7 @@ html.lang-bn .ws-num { font-family: "SolaimanLipi", sans-serif; }
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(420px 160px at 88% 50%, rgba(201, 151, 31, 0.10), transparent 70%);
+  background: radial-gradient(420px 160px at 88% 50%, color-mix(in srgb, var(--gold) 10%, transparent), transparent 70%);
 }
 .planner-hero h2 {
   font-size: clamp(1.5rem, 3.6vw, 2.05rem);
@@ -972,8 +1017,8 @@ html.lang-bn .ws-num { font-family: "SolaimanLipi", sans-serif; }
   margin-top: 0.8rem;
   font-size: 13px;
   font-weight: 600;
-  color: #C0524D;
-  background: rgba(192, 82, 77, 0.10);
+  color: var(--bad);
+  background: color-mix(in srgb, var(--bad) 10%, transparent);
   border-radius: 10px;
   padding: 0.6rem 0.8rem;
 }
@@ -988,7 +1033,7 @@ html.lang-bn .ws-num { font-family: "SolaimanLipi", sans-serif; }
   width: 52px;
   height: 52px;
   border-radius: 16px;
-  background: rgba(201, 151, 31, 0.14);
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
   color: var(--gold-deep);
   margin-bottom: 0.9rem;
 }
@@ -1002,3 +1047,136 @@ html.lang-bn .ws-num { font-family: "SolaimanLipi", sans-serif; }
   display: inline-block;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Reference hero: curves + chess art + dial ---------- */
+.hero-ref {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background: var(--surface);
+  padding: clamp(1.4rem, 4vw, 3.25rem);
+}
+.hero-curves {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.hero-grid {
+  position: relative;
+  display: grid;
+  gap: 2rem;
+  align-items: center;
+}
+@media (min-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr) 340px;
+    gap: 1.5rem;
+  }
+}
+.hero-dash {
+  width: 52px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--gold-2);
+  margin-bottom: 1.1rem;
+}
+.hero-title {
+  font-family: Fraunces, Georgia, "Times New Roman", serif;
+  font-size: clamp(2.4rem, 5.2vw, 3.9rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.04;
+  color: var(--text);
+}
+html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spacing: 0; }
+.hero-art {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  aspect-ratio: 4 / 4.6;
+  max-height: 420px;
+  width: 100%;
+  background: var(--bg2);
+}
+.hero-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+@media (max-width: 1023px) {
+  .hero-art { aspect-ratio: 16 / 9; max-height: 300px; }
+  .hero-art img { object-position: center 20%; }
+}
+
+/* ---------- Floating pill navigation ---------- */
+.nav-pill {
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 999px;
+  box-shadow: 0 12px 32px -20px rgba(60, 45, 15, 0.35);
+}
+.dark .nav-pill {
+  box-shadow: 0 12px 32px -20px rgba(0, 0, 0, 0.7);
+}
+@media (max-width: 640px) {
+  .nav-pill { border-radius: 24px; }
+}
+.nav-link {
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--muted);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.nav-link:hover {
+  color: var(--text);
+  background: var(--surface2);
+}
+.nav-link.active {
+  background: var(--gold);
+  color: #FFF9EC;
+  font-weight: 600;
+}
+.dark .nav-link.active {
+  color: #201405;
+}
+.icon-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+.icon-circle:hover { background: var(--surface2); }
+
+/* ---------- Language toggle active segment ---------- */
+.lang-toggle-active {
+  background: var(--gold);
+  color: #FFF9EC;
+}
+.dark .lang-toggle-active {
+  color: #201405;
+}
+
+/* ---------- Theme-aware contrast on gold backgrounds ---------- */
+.gold-contrast-text { color: #FFF9EC; }
+.dark .gold-contrast-text { color: #201405; }
+.gold-contrast-icon { color: #FFF9EC; }
+.dark .gold-contrast-icon { color: #201405; }

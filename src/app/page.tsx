@@ -13,7 +13,7 @@ import YearDial from "@/components/YearDial";
 import { Deadlines, Faq, HowItWorks, Section, UploadChecklist } from "@/components/sections";
 import { EmptyState } from "@/components/ui";
 import { useDaysLabel, useLang } from "@/i18n/LanguageContext";
-import { ASSET_CATEGORIES, COUNTRIES, EVENTS, META, countryByCode } from "@/lib/data";
+import { ASSET_CATEGORIES, COUNTRIES, EVENTS, META, REGIONS, countryByCode } from "@/lib/data";
 import { formatLong, formatMonthDay, todayISO } from "@/lib/date-engine";
 import {
   getActionGroups,
@@ -106,42 +106,37 @@ export default function DashboardPage() {
     },
   ];
 
+  const confirmedCount = useMemo(() => EVENTS.filter((e) => e.dateStatus === "confirmed").length, []);
+  const yearSpan = useMemo(() => {
+    const ys = [...new Set(EVENTS.flatMap((e) => Object.keys(e.dates)))].sort();
+    return ys.length > 1 ? `${ys[0]}–${ys[ys.length - 1]}` : (ys[0] ?? "");
+  }, []);
   const stats = [
-    { v: EVENTS.length, l: t.hero.statEvents },
-    { v: COUNTRIES.length, l: t.hero.statMarkets },
-    { v: META.years.length, l: t.hero.statYears },
-    { v: BOARD_STATUSES.length, l: t.hero.statStages },
+    { v: EVENTS.length, l: t.hero.statEvents, d: `${confirmedCount} confirmed · ${EVENTS.length - confirmedCount} provisional` },
+    { v: COUNTRIES.length, l: t.hero.statMarkets, d: `${REGIONS.length} regions` },
+    { v: META.years.length, l: t.hero.statYears, d: yearSpan },
+    { v: BOARD_STATUSES.length, l: t.hero.statStages, d: "research to upload" },
   ];
 
   return (
     <div className="flex flex-col gap-16 md:gap-24">
-      {/* ---------- Hero image ---------- */}
-      <section aria-label="Hero" className="-mb-6 md:-mb-10">
-        <div className="relative overflow-hidden rounded-3xl" style={{ border: "1px solid var(--line)" }}>
-          <Image
-            src="/images/hero-chess.png"
-            alt="Chess strategy"
-            width={736}
-            height={1302}
-            priority
-            className="h-[240px] w-full object-cover object-top sm:h-[320px] md:h-[400px]"
-          />
-        </div>
-      </section>
-
-      {/* ---------- Hero: the Year Dial ---------- */}
-      <section className="dial-hero" onMouseMove={parallax.onMove} onMouseLeave={parallax.onLeave}>
-        <motion.div style={{ x: parallax.x, y: parallax.y }} className="min-w-0">
-          <div className="max-w-xl">
-            <h1 className="font-serif-d text-4xl font-semibold tracking-tight sm:text-5xl">
-              Sweet Smart Calendar
-            </h1>
-            <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "var(--muted)" }}>
+      {/* ---------- Hero ---------- */}
+      <section className="hero-ref" aria-label="Hero" onMouseMove={parallax.onMove} onMouseLeave={parallax.onLeave}>
+        <svg className="hero-curves" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+          <path d="M-40 470 C 220 370, 430 560, 710 455 S 1080 370, 1260 465 L1260 640 L-40 640 Z" fill="var(--gold-soft)" opacity="0.38" />
+          <path d="M-40 535 C 260 455, 490 600, 770 515 S 1100 465, 1260 535 L1260 640 L-40 640 Z" fill="var(--gold-soft)" opacity="0.24" />
+          <path d="M-40 595 C 300 525, 570 640, 850 575 S 1120 555, 1260 595 L1260 640 L-40 640 Z" fill="var(--gold)" opacity="0.12" />
+        </svg>
+        <div className="hero-grid">
+          <motion.div style={{ x: parallax.x, y: parallax.y }} className="min-w-0">
+            <div className="hero-dash" aria-hidden="true" />
+            <h1 className="hero-title">Sweet Smart Calendar</h1>
+            <p className="mt-4 max-w-xl text-[15px] leading-relaxed" style={{ color: "var(--muted)" }}>
               {focus
                 ? t.dash.finding(focus.event.name, formatMonthDay(focus.submissionDeadline), daysLabel(focusDlDays))
                 : t.dash.findingIdle}
             </p>
-            <div className="mt-5 flex flex-wrap items-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-3">
               <Pressable>
                 <Link href="/opportunities" className="btn btn-gold">
                   {t.hero.cta1} <ArrowRight size={16} />
@@ -160,12 +155,21 @@ export default function DashboardPage() {
             <p className="mt-5 text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
               {t.dash.scrubH}
             </p>
+          </motion.div>
+          <div className="hero-art">
+            <Image
+              src="/images/hero-chess.png"
+              alt="Chess strategy"
+              width={736}
+              height={1302}
+              priority
+            />
           </div>
-        </motion.div>
-        <YearDial date={date} onChange={setDate} />
+          <YearDial date={date} onChange={setDate} />
+        </div>
       </section>
 
-      {/* ---------- KPI strip: type, not tiles ---------- */}
+      {/* ---------- KPI strip ---------- */}
       <section aria-label="Totals">
         <div className="kpi-strip">
           {stats.map((s) => (
@@ -174,6 +178,7 @@ export default function DashboardPage() {
               <span className="kpi-value">
                 <NumberTicker value={s.v} />
               </span>
+              <span className="kpi-delta">{s.d}</span>
             </div>
           ))}
         </div>

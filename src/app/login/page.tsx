@@ -57,7 +57,7 @@ export default function LoginPage() {
     <div className="auth-screen">
       <div className="auth-card">
         <span className="flex h-12 w-12 items-center justify-center rounded-2xl" style={{ background: "var(--gold)" }}>
-          <CalendarDays size={24} color="#1a1405" strokeWidth={2.4} />
+          <CalendarDays size={24} className="gold-contrast-icon" strokeWidth={2.4} />
         </span>
         <h1 className="font-serif-d mt-4 text-[26px] font-semibold tracking-tight">
           Sweet Smart Calendar

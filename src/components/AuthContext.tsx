@@ -222,7 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const tok = sessCheck.session?.access_token;
           let sub = "?";
           if (tok) { try { sub = JSON.parse(atob(tok.split(".")[1])).sub?.slice(0, 8) ?? "?"; } catch {} }
-          lastAuthDebug = `sess:${tok ? "yes" : "NO"} sub:${sub} uid:${userId.slice(0, 8)}`;
+          lastAuthDebug = `respSess:${data.session ? "yes" : "NO"} sess:${tok ? "yes" : "NO"} sub:${sub} uid:${userId.slice(0, 8)}`;
         } catch (e: any) {
           lastAuthDebug = `sess-check-throw: ${e?.message}`;
         }

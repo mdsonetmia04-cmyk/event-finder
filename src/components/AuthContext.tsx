@@ -216,6 +216,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           lastAuthDebug = "signUp: no user id"; // DEBUG-REG
           return "signup_failed";
         }
+        // DEBUG-REG: is there a session, and does its sub match the new user?
+        try {
+          const { data: sessCheck } = await supabase.auth.getSession();
+          const tok = sessCheck.session?.access_token;
+          let sub = "?";
+          if (tok) { try { sub = JSON.parse(atob(tok.split(".")[1])).sub?.slice(0, 8) ?? "?"; } catch {} }
+          lastAuthDebug = `sess:${tok ? "yes" : "NO"} sub:${sub} uid:${userId.slice(0, 8)}`;
+        } catch (e: any) {
+          lastAuthDebug = `sess-check-throw: ${e?.message}`;
+        }
         const { error: pErr } = await supabase.from("profiles").insert({
           id: userId,
           name: nm,

@@ -7,7 +7,7 @@ import { useLang } from "@/i18n/LanguageContext";
 
 export default function LoginPage() {
   const { t, lang } = useLang();
-  const { login, register } = useAuth();
+  const { login, register, configured } = useAuth();
   const [tab, setTab] = useState<"login" | "register">("login");
   const [name, setName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
@@ -24,6 +24,7 @@ export default function LoginPage() {
       case "exists": return t.auth.errExists;
       case "no_user": return t.auth.errNoUser;
       case "wrong_password": return t.auth.errWrongPw;
+      case "not_configured": return t.auth.notConfigured;
       default: return "";
     }
   };
@@ -72,6 +73,8 @@ export default function LoginPage() {
               <LogIn size={15} /> {t.auth.backToLogin}
             </button>
           </div>
+        ) : !configured ? (
+          <p className="auth-error" role="alert">{t.auth.notConfigured}</p>
         ) : (
           <>
             <div className="auth-tabs" role="tablist">

@@ -1,19 +1,17 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import {
-  ensureSeeded,
-  hashPassword,
+  getSupabase,
+  isSupabaseConfigured,
   isValidWhatsapp,
-  loadSessionId,
-  newUserId,
   normalizeWhatsapp,
-  saveSessionId,
-  saveUsers,
-  type AuthUser,
-} from "@/lib/auth";
+  syntheticEmail,
+  type Profile,
+} from "@/lib/supabase";
 
 export type AuthError =
+  | "not_configured"
   | "invalid_whatsapp"
   | "password_short"
   | "name_required"
@@ -24,8 +22,9 @@ export type AuthError =
 
 interface AuthCtx {
   ready: boolean;
-  users: AuthUser[];
-  session: AuthUser | null;
+  configured: boolean;
+  users: Profile[];
+  session: Profile | null;
   login: (whatsapp: string, password: string) => Promise<AuthError>;
   register: (name: string, whatsapp: string, password: string) => Promise<AuthError>;
   logout: () => void;
@@ -33,110 +32,198 @@ interface AuthCtx {
   reject: (id: string) => void;
   removeUser: (id: string) => void;
   changePassword: (newPassword: string) => Promise<AuthError>;
+  refresh: () => Promise<void>;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
 
+async function fetchOwnProfile(supabase: NonNullable<ReturnType<typeof getSupabase>>, userId: string): Promise<Profile | null> {
+  const { data } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+  return (data as Profile | null) ?? null;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [users, setUsers] = useState<AuthUser[]>([]);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [users, setUsers] = useState<Profile[]>([]);
+  const [session, setSession] = useState<Profile | null>(null);
   const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    setUsers(ensureSeeded());
-    setSessionId(loadSessionId());
-    setReady(true);
+  const loadAll = useCallback(async (isAdmin: boolean) => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    if (isAdmin) {
+      const { data } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
+      setUsers((data as Profile[]) ?? []);
+    } else {
+      setUsers([]);
+    }
   }, []);
 
-  const persist = useCallback((next: AuthUser[]) => {
-    setUsers(next);
-    saveUsers(next);
-  }, []);
-
-  const session = useMemo(
-    () => users.find((u) => u.id === sessionId) ?? null,
-    [users, sessionId]
+  const syncFromSession = useCallback(
+    async (userId: string | null) => {
+      const supabase = getSupabase();
+      if (!supabase || !userId) {
+        setSession(null);
+        setUsers([]);
+        return;
+      }
+      const profile = await fetchOwnProfile(supabase, userId);
+      if (!profile) {
+        // Account deleted by admin (or profile missing): sign out.
+        await supabase.auth.signOut();
+        setSession(null);
+        setUsers([]);
+        return;
+      }
+      setSession(profile);
+      await loadAll(profile.role === "super_admin");
+    },
+    [loadAll]
   );
+
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) {
+      setReady(true);
+      return;
+    }
+    let mounted = true;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!mounted) return;
+      await syncFromSession(data.session?.user.id ?? null);
+      setReady(true);
+    })();
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, sess) => {
+      if (!mounted) return;
+      await syncFromSession(sess?.user.id ?? null);
+    });
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [syncFromSession]);
+
+  const refresh = useCallback(async () => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const { data } = await supabase.auth.getSession();
+    await syncFromSession(data.session?.user.id ?? null);
+  }, [syncFromSession]);
 
   const login = useCallback(
     async (whatsapp: string, password: string): Promise<AuthError> => {
+      const supabase = getSupabase();
+      if (!supabase) return "not_configured";
       const wa = normalizeWhatsapp(whatsapp);
       if (!isValidWhatsapp(wa)) return "invalid_whatsapp";
-      const user = users.find((u) => u.whatsapp === wa);
-      if (!user) return "no_user";
-      const hash = await hashPassword(wa, password);
-      if (hash !== user.passwordHash) return "wrong_password";
-      setSessionId(user.id);
-      saveSessionId(user.id);
+      // Distinguish "no account" from "wrong password" without leaking the table.
+      const { data: registered } = await supabase.rpc("whatsapp_registered", { wa });
+      if (!registered) return "no_user";
+      const { error } = await supabase.auth.signInWithPassword({
+        email: syntheticEmail(wa),
+        password,
+      });
+      if (error) return "wrong_password";
+      await refresh();
       return null;
     },
-    [users]
+    [refresh]
   );
 
   const register = useCallback(
     async (name: string, whatsapp: string, password: string): Promise<AuthError> => {
+      const supabase = getSupabase();
+      if (!supabase) return "not_configured";
       const nm = name.trim();
       const wa = normalizeWhatsapp(whatsapp);
       if (!nm) return "name_required";
       if (!isValidWhatsapp(wa)) return "invalid_whatsapp";
       if (password.length < 6) return "password_short";
-      if (users.some((u) => u.whatsapp === wa)) return "exists";
-      const hash = await hashPassword(wa, password);
-      const user: AuthUser = {
-        id: newUserId(),
+      const { data: registered } = await supabase.rpc("whatsapp_registered", { wa });
+      if (registered) return "exists";
+      const { data, error } = await supabase.auth.signUp({
+        email: syntheticEmail(wa),
+        password,
+        options: { data: { name: nm, whatsapp: wa } },
+      });
+      if (error) {
+        if (/already registered|already exists/i.test(error.message)) return "exists";
+        return "wrong_password";
+      }
+      const userId = data.user?.id;
+      if (!userId) return "wrong_password";
+      const { error: pErr } = await supabase.from("profiles").insert({
+        id: userId,
         name: nm,
         whatsapp: wa,
-        passwordHash: hash,
         role: "student",
         status: "pending",
-        createdAt: new Date().toISOString(),
-      };
-      persist([user, ...users]);
+      });
+      if (pErr) {
+        // Profile insert failed (e.g. RLS): clean up the auth user record attempt.
+        await supabase.auth.signOut();
+        return "wrong_password";
+      }
+      await refresh();
       return null;
     },
-    [users, persist]
+    [refresh]
   );
 
   const logout = useCallback(() => {
-    setSessionId(null);
-    saveSessionId(null);
+    const supabase = getSupabase();
+    if (supabase) void supabase.auth.signOut();
+    setSession(null);
+    setUsers([]);
   }, []);
 
   const setStatus = useCallback(
-    (id: string, status: AuthUser["status"]) => {
-      persist(users.map((u) => (u.id === id ? { ...u, status } : u)));
+    async (id: string, status: Profile["status"]) => {
+      const supabase = getSupabase();
+      if (!supabase) return;
+      await supabase.from("profiles").update({ status }).eq("id", id);
+      await loadAll(true);
     },
-    [users, persist]
+    [loadAll]
   );
 
-  const approve = useCallback((id: string) => setStatus(id, "approved"), [setStatus]);
-  const reject = useCallback((id: string) => setStatus(id, "rejected"), [setStatus]);
+  const approve = useCallback((id: string) => void setStatus(id, "approved"), [setStatus]);
+  const reject = useCallback((id: string) => void setStatus(id, "rejected"), [setStatus]);
 
   const removeUser = useCallback(
-    (id: string) => {
-      persist(users.filter((u) => u.id !== id));
-      if (sessionId === id) {
-        setSessionId(null);
-        saveSessionId(null);
-      }
+    async (id: string) => {
+      const supabase = getSupabase();
+      if (!supabase) return;
+      await supabase.from("profiles").delete().eq("id", id);
+      await loadAll(true);
     },
-    [users, persist, sessionId]
+    [loadAll]
   );
 
-  const changePassword = useCallback(
-    async (newPassword: string): Promise<AuthError> => {
-      if (!session) return "no_user";
-      if (newPassword.length < 6) return "password_short";
-      const hash = await hashPassword(session.whatsapp, newPassword);
-      persist(users.map((u) => (u.id === session.id ? { ...u, passwordHash: hash } : u)));
-      return null;
-    },
-    [session, users, persist]
-  );
+  const changePassword = useCallback(async (newPassword: string): Promise<AuthError> => {
+    const supabase = getSupabase();
+    if (!supabase) return "not_configured";
+    if (newPassword.length < 6) return "password_short";
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    return error ? "wrong_password" : null;
+  }, []);
 
   return (
     <Ctx.Provider
-      value={{ ready, users, session, login, register, logout, approve, reject, removeUser, changePassword }}
+      value={{
+        ready,
+        configured: isSupabaseConfigured,
+        users,
+        session,
+        login,
+        register,
+        logout,
+        approve,
+        reject,
+        removeUser,
+        changePassword,
+        refresh,
+      }}
     >
       {children}
     </Ctx.Provider>

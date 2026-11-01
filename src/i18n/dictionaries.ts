@@ -44,6 +44,7 @@ const en = {
     rejectedH: "This account was not approved by the admin, so it cannot use Sweet Smart Calendar.",
     regDoneT: "Registration sent!",
     regDoneH: "Your account is now waiting for admin approval. You can log in after it is approved.",
+    notConfigured: "Login is not connected yet. The site owner needs to add the Supabase keys first.",
   },
   admin: {
     title: "Admin Panel",
@@ -574,6 +575,7 @@ export const bn: Dict = {
     rejectedH: "এই অ্যাকাউন্ট অ্যাডমিন অনুমোদন করেননি, তাই Sweet Smart Calendar ব্যবহার করা যাবে না।",
     regDoneT: "রেজিস্ট্রেশন পাঠানো হয়েছে!",
     regDoneH: "আপনার অ্যাকাউন্ট এখন অ্যাডমিনের অনুমোদনের অপেক্ষায়। অনুমোদনের পর লগ ইন করতে পারবেন।",
+    notConfigured: "লগইন এখনো সংযুক্ত হয়নি। সাইটের মালিককে প্রথমে Supabase keys যোগ করতে হবে।",
   },
   admin: {
     title: "অ্যাডমিন প্যানেল",

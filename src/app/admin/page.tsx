@@ -6,7 +6,7 @@ import { BadgeCheck, KeyRound, ShieldCheck, Trash2, XCircle } from "lucide-react
 import { useAuth } from "@/components/AuthContext";
 import { EmptyState, SectionHeader } from "@/components/ui";
 import { useLang } from "@/i18n/LanguageContext";
-import type { AuthUser } from "@/lib/auth";
+import type { Profile } from "@/lib/supabase";
 
 function UserRow({
   user,
@@ -14,13 +14,13 @@ function UserRow({
   onReject,
   onRemove,
 }: {
-  user: AuthUser;
+  user: Profile;
   onApprove: () => void;
   onReject: () => void;
   onRemove: () => void;
 }) {
   const { t, lang } = useLang();
-  const date = new Date(user.createdAt).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-US", {
+  const date = new Date(user.created_at).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-US", {
     day: "numeric",
     month: "short",
     year: "numeric",

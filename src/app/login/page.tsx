@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CalendarDays, LogIn, UserPlus } from "lucide-react";
 import { useAuth, type AuthError } from "@/components/AuthContext";
+import { lastAuthDebug } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 
 export default function LoginPage() {
@@ -24,7 +25,7 @@ export default function LoginPage() {
       case "exists": return t.auth.errExists;
       case "no_user": return t.auth.errNoUser;
       case "wrong_password": return t.auth.errWrongPw;
-      case "signup_failed": return t.auth.errSignup;
+      case "signup_failed": return `${t.auth.errSignup}${lastAuthDebug ? ` [${lastAuthDebug}]` : ""}`; // DEBUG-REG
       case "not_configured": return t.auth.notConfigured;
       default: return "";
     }

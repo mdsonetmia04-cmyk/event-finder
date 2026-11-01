@@ -21,6 +21,9 @@ export type AuthError =
   | "signup_failed"
   | null;
 
+/** Temporary debug: last detailed registration failure (removed after fix verified). */
+export let lastAuthDebug = "";
+
 interface AuthCtx {
   ready: boolean;
   configured: boolean;
@@ -205,10 +208,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             return "exists";
           }
+          lastAuthDebug = `signUp: ${error.message}`; // DEBUG-REG
           return "signup_failed";
         }
         const userId = data.user?.id;
-        if (!userId) return "signup_failed";
+        if (!userId) {
+          lastAuthDebug = "signUp: no user id"; // DEBUG-REG
+          return "signup_failed";
+        }
         const { error: pErr } = await supabase.from("profiles").insert({
           id: userId,
           name: nm,
@@ -217,6 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           status: "pending",
         });
         if (pErr) {
+          lastAuthDebug = `insert: ${pErr.code} ${pErr.message}`; // DEBUG-REG
           // Profile insert failed (e.g. RLS): clean up the auth user record attempt.
           await supabase.auth.signOut();
           return "signup_failed";

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
@@ -114,6 +115,20 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-16 md:gap-24">
+      {/* ---------- Hero image ---------- */}
+      <section aria-label="Hero" className="-mb-6 md:-mb-10">
+        <div className="relative overflow-hidden rounded-3xl" style={{ border: "1px solid var(--line)" }}>
+          <Image
+            src="/images/hero-chess.png"
+            alt="Chess strategy"
+            width={736}
+            height={1302}
+            priority
+            className="h-[240px] w-full object-cover object-top sm:h-[320px] md:h-[400px]"
+          />
+        </div>
+      </section>
+
       {/* ---------- Hero: the Year Dial ---------- */}
       <section className="dial-hero" onMouseMove={parallax.onMove} onMouseLeave={parallax.onLeave}>
         <motion.div style={{ x: parallax.x, y: parallax.y }} className="min-w-0">

@@ -4,7 +4,10 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import {
   getSupabase,
   isSupabaseConfigured,
+  isSignupInProgress,
   isValidWhatsapp,
+  markSignupEnd,
+  markSignupStart,
   normalizeWhatsapp,
   syntheticEmail,
   type Profile,
@@ -20,9 +23,6 @@ export type AuthError =
   | "wrong_password"
   | "signup_failed"
   | null;
-
-/** Temporary debug: last detailed registration failure (removed after fix verified). */
-export let lastAuthDebug = "";
 
 interface AuthCtx {
   ready: boolean;
@@ -114,8 +114,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const profile = await fetchOwnProfile(supabase, userId);
       if (!profile) {
         // A fresh sign-up's profile row is inserted just after the SIGNED_IN
-        // event; keep the session while register() finishes its work.
-        if (signingUpRef.current) return;
+        // event; keep the session while register() finishes its work. The
+        // localStorage flag covers other open tabs (Supabase broadcasts auth
+        // events cross-tab, and storage is shared).
+        if (signingUpRef.current || isSignupInProgress()) return;
         // Account deleted by admin (or profile missing): sign out.
         await supabase.auth.signOut();
         setSession(null);
@@ -190,8 +192,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: registered } = await supabase.rpc("whatsapp_registered", { wa });
       if (registered) return "exists";
       // Guard the fresh session: the auth-state listener must not sign it out
-      // before the profile row below is inserted (see signingUpRef).
+      // before the profile row below is inserted (see signingUpRef + the
+      // cross-tab flag in lib/supabase.ts).
       signingUpRef.current = true;
+      markSignupStart();
       try {
         const { data, error } = await supabase.auth.signUp({
           email: syntheticEmail(wa),
@@ -208,24 +212,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             return "exists";
           }
-          lastAuthDebug = `signUp: ${error.message}`; // DEBUG-REG
           return "signup_failed";
         }
         const userId = data.user?.id;
-        if (!userId) {
-          lastAuthDebug = "signUp: no user id"; // DEBUG-REG
-          return "signup_failed";
-        }
-        // DEBUG-REG: is there a session, and does its sub match the new user?
-        try {
-          const { data: sessCheck } = await supabase.auth.getSession();
-          const tok = sessCheck.session?.access_token;
-          let sub = "?";
-          if (tok) { try { sub = JSON.parse(atob(tok.split(".")[1])).sub?.slice(0, 8) ?? "?"; } catch {} }
-          lastAuthDebug = `respSess:${data.session ? "yes" : "NO"} sess:${tok ? "yes" : "NO"} sub:${sub} uid:${userId.slice(0, 8)}`;
-        } catch (e: any) {
-          lastAuthDebug = `sess-check-throw: ${e?.message}`;
-        }
+        if (!userId) return "signup_failed";
         const { error: pErr } = await supabase.from("profiles").insert({
           id: userId,
           name: nm,
@@ -234,7 +224,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           status: "pending",
         });
         if (pErr) {
-          lastAuthDebug = `${lastAuthDebug} | insert: ${pErr.code} ${pErr.message}`; // DEBUG-REG
           // Profile insert failed (e.g. RLS): clean up the auth user record attempt.
           await supabase.auth.signOut();
           return "signup_failed";
@@ -243,6 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return null;
       } finally {
         signingUpRef.current = false;
+        markSignupEnd();
       }
     },
     [refresh]

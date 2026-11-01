@@ -56,3 +56,39 @@ export function isValidWhatsapp(s: string): boolean {
 export function normalizeWhatsapp(s: string): string {
   return s.trim();
 }
+
+/**
+ * Cross-tab registration guard. Supabase broadcasts auth events to every open
+ * tab of the site; a second tab must not treat a fresh sign-up's not-yet-
+ * inserted profile as a deleted account and sign the session out from the
+ * shared storage. register() sets this flag (localStorage = shared across
+ * tabs, synchronous) for the duration of the sign-up + profile insert.
+ */
+const SIGNUP_FLAG_KEY = "ssi-signup-in-progress";
+const SIGNUP_FLAG_TTL_MS = 60_000;
+
+export function markSignupStart(): void {
+  try {
+    localStorage.setItem(SIGNUP_FLAG_KEY, String(Date.now()));
+  } catch {
+    /* storage unavailable: the in-memory ref still guards this tab */
+  }
+}
+
+export function markSignupEnd(): void {
+  try {
+    localStorage.removeItem(SIGNUP_FLAG_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function isSignupInProgress(): boolean {
+  try {
+    const raw = localStorage.getItem(SIGNUP_FLAG_KEY);
+    if (!raw) return false;
+    return Date.now() - parseInt(raw, 10) < SIGNUP_FLAG_TTL_MS;
+  } catch {
+    return false;
+  }
+}

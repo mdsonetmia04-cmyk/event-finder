@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   getSupabase,
   isSupabaseConfigured,
@@ -18,6 +18,7 @@ export type AuthError =
   | "exists"
   | "no_user"
   | "wrong_password"
+  | "signup_failed"
   | null;
 
 interface AuthCtx {
@@ -42,10 +43,51 @@ async function fetchOwnProfile(supabase: NonNullable<ReturnType<typeof getSupaba
   return (data as Profile | null) ?? null;
 }
 
+/**
+ * Heal an orphan auth account: signUp said "already registered" but no profile
+ * row exists (e.g. an earlier registration was interrupted before the insert).
+ * If the given password unlocks that account, finish creating its profile.
+ * Returns "ok" when healed, "no" otherwise (session left signed out).
+ */
+async function healOrphanProfile(
+  supabase: NonNullable<ReturnType<typeof getSupabase>>,
+  wa: string,
+  name: string,
+  password: string
+): Promise<"ok" | "no"> {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: syntheticEmail(wa),
+    password,
+  });
+  if (error || !data.user) return "no";
+  const existing = await fetchOwnProfile(supabase, data.user.id);
+  if (existing) {
+    // Genuinely taken by someone else: do not stay signed in as them.
+    await supabase.auth.signOut();
+    return "no";
+  }
+  const { error: pErr } = await supabase.from("profiles").insert({
+    id: data.user.id,
+    name,
+    whatsapp: wa,
+    role: "student",
+    status: "pending",
+  });
+  if (pErr) {
+    await supabase.auth.signOut();
+    return "no";
+  }
+  return "ok";
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<Profile[]>([]);
   const [session, setSession] = useState<Profile | null>(null);
   const [ready, setReady] = useState(false);
+  // True while register() is running. Supabase fires SIGNED_IN as soon as
+  // signUp succeeds — before the profile row is inserted — and the listener
+  // below must NOT treat that as a deleted account and sign out.
+  const signingUpRef = useRef(false);
 
   const loadAll = useCallback(async (isAdmin: boolean) => {
     const supabase = getSupabase();
@@ -68,6 +110,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       const profile = await fetchOwnProfile(supabase, userId);
       if (!profile) {
+        // A fresh sign-up's profile row is inserted just after the SIGNED_IN
+        // event; keep the session while register() finishes its work.
+        if (signingUpRef.current) return;
         // Account deleted by admin (or profile missing): sign out.
         await supabase.auth.signOut();
         setSession(null);
@@ -141,31 +186,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (password.length < 6) return "password_short";
       const { data: registered } = await supabase.rpc("whatsapp_registered", { wa });
       if (registered) return "exists";
-      const { data, error } = await supabase.auth.signUp({
-        email: syntheticEmail(wa),
-        password,
-        options: { data: { name: nm, whatsapp: wa } },
-      });
-      if (error) {
-        if (/already registered|already exists/i.test(error.message)) return "exists";
-        return "wrong_password";
+      // Guard the fresh session: the auth-state listener must not sign it out
+      // before the profile row below is inserted (see signingUpRef).
+      signingUpRef.current = true;
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email: syntheticEmail(wa),
+          password,
+          options: { data: { name: nm, whatsapp: wa } },
+        });
+        if (error) {
+          if (/already registered|already exists/i.test(error.message)) {
+            // Orphan from an interrupted registration? Finish it when possible.
+            const healed = await healOrphanProfile(supabase, wa, nm, password);
+            if (healed === "ok") {
+              await refresh();
+              return null;
+            }
+            return "exists";
+          }
+          return "signup_failed";
+        }
+        const userId = data.user?.id;
+        if (!userId) return "signup_failed";
+        const { error: pErr } = await supabase.from("profiles").insert({
+          id: userId,
+          name: nm,
+          whatsapp: wa,
+          role: "student",
+          status: "pending",
+        });
+        if (pErr) {
+          // Profile insert failed (e.g. RLS): clean up the auth user record attempt.
+          await supabase.auth.signOut();
+          return "signup_failed";
+        }
+        await refresh();
+        return null;
+      } finally {
+        signingUpRef.current = false;
       }
-      const userId = data.user?.id;
-      if (!userId) return "wrong_password";
-      const { error: pErr } = await supabase.from("profiles").insert({
-        id: userId,
-        name: nm,
-        whatsapp: wa,
-        role: "student",
-        status: "pending",
-      });
-      if (pErr) {
-        // Profile insert failed (e.g. RLS): clean up the auth user record attempt.
-        await supabase.auth.signOut();
-        return "wrong_password";
-      }
-      await refresh();
-      return null;
     },
     [refresh]
   );
@@ -194,7 +254,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (id: string) => {
       const supabase = getSupabase();
       if (!supabase) return;
-      await supabase.from("profiles").delete().eq("id", id);
+      // Full removal: the admin_delete_user RPC deletes the auth user too
+      // (profile cascades), so the number can register again cleanly.
+      const { error } = await supabase.rpc("admin_delete_user", { target_id: id });
+      if (error) {
+        // Fallback: remove the profile row at least.
+        await supabase.from("profiles").delete().eq("id", id);
+      }
       await loadAll(true);
     },
     [loadAll]

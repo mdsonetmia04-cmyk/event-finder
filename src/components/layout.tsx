@@ -102,8 +102,8 @@ function navItems(t: Dict) {
     { href: "/markets", label: t.nav.markets, icon: Globe2 },
     { href: "/planner", label: t.nav.planner, icon: ClipboardList },
     { href: "/evergreen", label: t.nav.evergreen, icon: Leaf },
-    { href: "/announcements", label: "🔔", icon: Megaphone },
     { href: "/contact", label: t.nav.contact, icon: Mail },
+    { href: "/announcements", label: "🔔", icon: Megaphone },
   ];
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BellRing } from "lucide-react";
+import { BellDot, BellRing } from "lucide-react";
 import { SectionHeader, EmptyState } from "@/components/ui";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
@@ -20,7 +20,7 @@ export default function AnnouncementsPage() {
     }
     supabase
       .from("admin_notifications")
-      .select("id, title, body, created_at")
+      .select("id, title, body, created_at, user_id")
       .eq("active", true)
       .order("created_at", { ascending: false })
       .limit(50)
@@ -52,6 +52,11 @@ export default function AnnouncementsPage() {
                 </span>
                 <div className="min-w-0">
                   <h2 className="font-serif-d text-lg font-semibold leading-snug">{n.title}</h2>
+                  {n.user_id && (
+                    <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold" style={{ color: "var(--gold-deep)" }}>
+                      <BellDot size={13} /> {t.alert.private}
+                    </p>
+                  )}
                   <p className="text-xs tabular-nums" style={{ color: "var(--muted)" }}>
                     {new Date(n.created_at).toLocaleString(lang === "bn" ? "bn-BD" : "en-US", {
                       day: "numeric",

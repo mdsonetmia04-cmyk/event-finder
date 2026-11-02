@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BadgeCheck, BellRing, KeyRound, MessageCircle, ShieldCheck, Trash2, X, XCircle } from "lucide-react";
+import { BadgeCheck, BellDot, BellRing, KeyRound, MessageCircle, ShieldCheck, Trash2, X, XCircle } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { AdminInbox } from "@/components/AdminChat";
 import { getSupabase } from "@/lib/supabase";
@@ -17,12 +17,16 @@ function UserRow({
   onReject,
   onRemove,
   onChat,
+  onInfo,
+  onAlert,
 }: {
   user: Profile;
   onApprove: () => void;
   onReject: () => void;
   onRemove: () => void;
   onChat: () => void;
+  onInfo: () => void;
+  onAlert: () => void;
 }) {
   const { t, lang } = useLang();
   const [confirmingRemove, setConfirmingRemove] = useState(false);
@@ -44,7 +48,14 @@ function UserRow({
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
             </span>
           )}
-          <span className="truncate">{user.name}</span>
+          <button
+            className="truncate text-left underline-offset-4 hover:underline"
+            style={{ textDecorationColor: "var(--gold-1)" }}
+            title={t.alert.infoTitle}
+            onClick={onInfo}
+          >
+            {user.name}
+          </button>
           {user.role === "super_admin" && (
             <span className="chip ml-2 !border-0 !text-[10px] font-bold" style={{ background: "rgba(201,151,31,.16)", color: "var(--gold-deep)" }}>
               <ShieldCheck size={11} /> {t.admin.superAdmin}
@@ -97,6 +108,14 @@ function UserRow({
             onClick={onChat}
           >
             <MessageCircle size={13} />
+          </button>
+          <button
+            className="btn btn-ghost !px-2 !py-1.5"
+            title={`${t.alert.btnTitle} — ${user.name}`}
+            aria-label={`${t.alert.btn}: ${user.name}`}
+            onClick={onAlert}
+          >
+            <BellDot size={13} />
           </button>
           {user.status === "pending" && (
             <>
@@ -151,11 +170,15 @@ function UserListModal({
   users,
   onClose,
   onChat,
+  onInfo,
+  onAlert,
 }: {
   mode: "all" | "live";
   users: Profile[];
   onClose: () => void;
   onChat: (id: string) => void;
+  onInfo: (user: Profile) => void;
+  onAlert: (user: Profile) => void;
 }) {
   const { t, lang } = useLang();
   const list = mode === "live" ? users.filter((u) => isLiveNow(u.last_seen)) : users;
@@ -199,20 +222,37 @@ function UserListModal({
                   </span>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{u.name}</p>
+                  <button
+                    className="block max-w-full truncate text-left text-sm font-semibold underline-offset-4 hover:underline"
+                    style={{ textDecorationColor: "var(--gold-1)" }}
+                    title={t.alert.infoTitle}
+                    onClick={() => onInfo(u)}
+                  >
+                    {u.name}
+                  </button>
                   <p className="text-xs tabular-nums" style={{ color: "var(--muted)" }}>
                     {u.whatsapp} · {u.status} · ⏱ {formatUsage(u.total_seconds, lang)}
                   </p>
                 </div>
                 {u.role !== "super_admin" && (
-                  <button
-                    className="btn btn-ghost !px-2.5 !py-2"
-                    title={t.chat.title}
-                    aria-label={`${t.chat.title}: ${u.name}`}
-                    onClick={() => onChat(u.id)}
-                  >
-                    <MessageCircle size={15} />
-                  </button>
+                  <>
+                    <button
+                      className="btn btn-ghost !px-2.5 !py-2"
+                      title={t.chat.title}
+                      aria-label={`${t.chat.title}: ${u.name}`}
+                      onClick={() => onChat(u.id)}
+                    >
+                      <MessageCircle size={15} />
+                    </button>
+                    <button
+                      className="btn btn-ghost !px-2.5 !py-2"
+                      title={`${t.alert.btnTitle} — ${u.name}`}
+                      aria-label={`${t.alert.btn}: ${u.name}`}
+                      onClick={() => onAlert(u)}
+                    >
+                      <BellDot size={15} />
+                    </button>
+                  </>
                 )}
               </div>
             ))
@@ -229,10 +269,201 @@ interface AdminNotification {
   body: string;
   created_at: string;
   active: boolean;
+  user_id: string | null;
+}
+
+/** Full student info popup — opened by clicking a student's name anywhere
+    in the admin panel (user rows or the registered/live lists). */
+function UserInfoModal({ user, onClose }: { user: Profile; onClose: () => void }) {
+  const { t, lang } = useLang();
+  const dateFmt = (d: string | null | undefined) =>
+    d
+      ? new Date(d).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-US", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })
+      : null;
+  const genderText = user.gender
+    ? user.gender === "male"
+      ? t.profile.gMale
+      : user.gender === "female"
+        ? t.profile.gFemale
+        : user.gender === "other"
+          ? t.profile.gOther
+          : user.gender
+    : null;
+  const rows: [string, string][] = [
+    [t.profile.name, user.name],
+    [t.profile.whatsapp, user.whatsapp],
+    [t.profile.gmail, user.gmail],
+    [t.profile.fullName, user.full_name],
+    [t.profile.mobile, user.mobile_number],
+    [t.profile.dob, user.date_of_birth],
+    [t.profile.district, user.district],
+    [t.profile.education, user.last_education],
+    [t.profile.skills, user.skills_interests],
+    [t.profile.teamNo, user.team_number],
+    [t.profile.gender, genderText],
+    [t.profile.blood, user.blood_group],
+    [t.profile.fbLink, user.facebook_link],
+  ].filter(([, v]) => Boolean(v)) as [string, string][];
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="card w-full max-w-md p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg font-bold text-white"
+              style={{ background: "linear-gradient(135deg, var(--gold-2), var(--gold-1))" }}
+            >
+              {(user.name || "?").charAt(0).toUpperCase()}
+            </span>
+            <div className="min-w-0">
+              <h2 className="font-serif-d truncate text-xl font-semibold">{user.name}</h2>
+              <p className="flex items-center gap-2 text-xs" style={{ color: "var(--muted)" }}>
+                {isLiveNow(user.last_seen) && (
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+                  </span>
+                )}
+                {user.role === "super_admin" ? t.admin.superAdmin : user.status}
+                {" · "}
+                {t.admin.usageTime}: {formatUsage(user.total_seconds, lang)}
+              </p>
+            </div>
+          </div>
+          <button className="btn btn-ghost !px-2.5 !py-2" onClick={onClose} aria-label={t.auth.close}>
+            <X size={16} />
+          </button>
+        </div>
+        <dl className="mt-4 grid gap-2">
+          {rows.map(([label, value]) => (
+            <div key={label} className="flex items-start gap-3 rounded-xl px-3 py-2" style={{ background: "var(--surface2)" }}>
+              <dt className="w-28 shrink-0 text-xs" style={{ color: "var(--muted)" }}>
+                {label}
+              </dt>
+              <dd className="min-w-0 flex-1 break-words text-sm font-medium">
+                {label === t.profile.fbLink ? (
+                  <a href={value} target="_blank" rel="noopener noreferrer" className="underline">
+                    {value}
+                  </a>
+                ) : (
+                  value
+                )}
+              </dd>
+            </div>
+          ))}
+          <div className="flex items-start gap-3 rounded-xl px-3 py-2" style={{ background: "var(--surface2)" }}>
+            <dt className="w-28 shrink-0 text-xs" style={{ color: "var(--muted)" }}>
+              {t.admin.approvedT}
+            </dt>
+            <dd className="min-w-0 flex-1 text-sm font-medium tabular-nums">{dateFmt(user.created_at)}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  );
+}
+
+/** Private alert composer — sends a notification that ONLY the chosen
+    student sees, shown to them like an announcement on top. */
+function AlertComposer({ user, onClose }: { user: Profile; onClose: () => void }) {
+  const { t } = useLang();
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
+
+  const send = async () => {
+    const supabase = getSupabase();
+    if (!supabase || state !== "idle" || !title.trim() || !body.trim()) return;
+    setState("sending");
+    const { error } = await supabase.from("admin_notifications").insert({
+      title: title.trim().slice(0, 200),
+      body: body.trim().slice(0, 2000),
+      user_id: user.id,
+      active: true,
+    });
+    if (error) {
+      setState("idle");
+      return;
+    }
+    setState("sent");
+    setTimeout(onClose, 1500);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="card w-full max-w-md p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <h2 className="font-serif-d flex items-center gap-2 text-xl font-semibold">
+            <span
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white"
+              style={{ background: "linear-gradient(135deg, var(--gold-2), var(--gold-1))" }}
+            >
+              <BellDot size={18} />
+            </span>
+            {t.alert.composerT(user.name)}
+          </h2>
+          <button className="btn btn-ghost !px-2.5 !py-2" onClick={onClose} aria-label={t.auth.close}>
+            <X size={16} />
+          </button>
+        </div>
+        {state === "sent" ? (
+          <p className="mt-6 rounded-xl p-4 text-center text-sm font-semibold" style={{ background: "var(--surface2)", color: "#2F9E6E" }}>
+            ✓ {t.alert.sent}
+          </p>
+        ) : (
+          <div className="mt-4 grid gap-2.5">
+            <input
+              className="input"
+              placeholder={t.alert.titlePh}
+              value={title}
+              maxLength={200}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+            <textarea
+              className="input min-h-[100px] resize-y"
+              placeholder={t.alert.bodyPh(user.name)}
+              value={body}
+              maxLength={2000}
+              onChange={(e) => setBody(e.target.value)}
+            />
+            <button
+              className="btn btn-gold"
+              onClick={send}
+              disabled={state !== "idle" || !title.trim() || !body.trim()}
+            >
+              <BellDot size={14} /> {state === "sending" ? t.alert.sending : t.alert.send}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 /** Super-admin broadcast notifications: publish a popup that every website visitor sees. */
-function AdminNotifications() {
+function AdminNotifications({ users }: { users: Profile[] }) {
   const { t, lang } = useLang();
   const [items, setItems] = useState<AdminNotification[]>([]);
   const [title, setTitle] = useState("");
@@ -307,6 +538,11 @@ function AdminNotifications() {
             <div key={n.id} className="flex items-start gap-3 rounded-xl p-3" style={{ background: "var(--surface2)" }}>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold">{n.title}</p>
+                {n.user_id && (
+                  <p className="mt-0.5 flex items-center gap-1 text-xs font-semibold" style={{ color: "var(--gold-deep)" }}>
+                    <BellDot size={12} /> {t.alert.to(users.find((u) => u.id === n.user_id)?.name ?? "…")}
+                  </p>
+                )}
                 <p className="mt-0.5 line-clamp-2 text-xs" style={{ color: "var(--muted)" }}>{n.body}</p>
                 <p className="mt-1 text-[10px] tabular-nums" style={{ color: "var(--muted)" }}>
                   {new Date(n.created_at).toLocaleString(lang === "bn" ? "bn-BD" : "en-US", {
@@ -339,6 +575,8 @@ export default function AdminPage() {
   const [, setTick] = useState(0);
   const [listView, setListView] = useState<null | "all" | "live">(null);
   const [chatUserId, setChatUserId] = useState<string | null>(null);
+  const [infoUser, setInfoUser] = useState<Profile | null>(null);
+  const [alertUser, setAlertUser] = useState<Profile | null>(null);
   const inboxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -409,7 +647,15 @@ export default function AdminPage() {
           users={users}
           onClose={() => setListView(null)}
           onChat={openChat}
+          onInfo={setInfoUser}
+          onAlert={setAlertUser}
         />
+      )}
+      {infoUser && (
+        <UserInfoModal user={infoUser} onClose={() => setInfoUser(null)} />
+      )}
+      {alertUser && (
+        <AlertComposer user={alertUser} onClose={() => setAlertUser(null)} />
       )}
 
       {/* Pending approvals */}
@@ -422,7 +668,7 @@ export default function AdminPage() {
         ) : (
           <div className="grid gap-2.5">
             {pending.map((u) => (
-              <UserRow key={u.id} user={u} onApprove={() => approve(u.id)} onReject={() => reject(u.id)} onRemove={() => removeUser(u.id)} onChat={() => openChat(u.id)} />
+              <UserRow key={u.id} user={u} onApprove={() => approve(u.id)} onReject={() => reject(u.id)} onRemove={() => removeUser(u.id)} onChat={() => openChat(u.id)} onInfo={() => setInfoUser(u)} onAlert={() => setAlertUser(u)} />
             ))}
           </div>
         )}
@@ -435,7 +681,7 @@ export default function AdminPage() {
         </h2>
         <div className="grid gap-2.5">
           {approved.map((u) => (
-            <UserRow key={u.id} user={u} onApprove={() => approve(u.id)} onReject={() => reject(u.id)} onRemove={() => removeUser(u.id)} onChat={() => openChat(u.id)} />
+            <UserRow key={u.id} user={u} onApprove={() => approve(u.id)} onReject={() => reject(u.id)} onRemove={() => removeUser(u.id)} onChat={() => openChat(u.id)} onInfo={() => setInfoUser(u)} onAlert={() => setAlertUser(u)} />
           ))}
         </div>
       </section>
@@ -448,7 +694,7 @@ export default function AdminPage() {
           </h2>
           <div className="grid gap-2.5">
             {rejected.map((u) => (
-              <UserRow key={u.id} user={u} onApprove={() => approve(u.id)} onReject={() => reject(u.id)} onRemove={() => removeUser(u.id)} onChat={() => openChat(u.id)} />
+              <UserRow key={u.id} user={u} onApprove={() => approve(u.id)} onReject={() => reject(u.id)} onRemove={() => removeUser(u.id)} onChat={() => openChat(u.id)} onInfo={() => setInfoUser(u)} onAlert={() => setAlertUser(u)} />
             ))}
           </div>
         </section>
@@ -467,7 +713,7 @@ export default function AdminPage() {
         <h2 className="font-serif-d mb-3 text-lg font-semibold">
           {t.notif.adminT}
         </h2>
-        <AdminNotifications />
+        <AdminNotifications users={users} />
       </section>
 
       {/* Change admin password */}

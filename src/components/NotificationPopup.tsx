@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { BellRing, X } from "lucide-react";
+import { BellDot, BellRing, X } from "lucide-react";
 import { useAuth } from "./AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
@@ -11,6 +11,7 @@ export interface SiteNotification {
   title: string;
   body: string;
   created_at: string;
+  user_id?: string | null;
 }
 
 const DISMISSED_KEY = "ssi-notif-dismissed";
@@ -25,7 +26,9 @@ function getDismissed(): string[] {
 
 /** Site-wide popup: shows the newest active admin notification the visitor
     hasn't dismissed yet. Only logged-in (registered) users see it — guests
-    on the landing page do not. */
+    on the landing page do not. This also shows PRIVATE alerts addressed only
+    to the current user (a row whose user_id matches their profile id); the
+    read policy guarantees no one else can see those rows. */
 export function NotificationPopup() {
   const { t } = useLang();
   const { session } = useAuth();
@@ -42,7 +45,7 @@ export function NotificationPopup() {
     if (!supabase) return;
     const { data } = await supabase
       .from("admin_notifications")
-      .select("id, title, body, created_at")
+      .select("id, title, body, created_at, user_id")
       .eq("active", true)
       .order("created_at", { ascending: false })
       .limit(10);
@@ -67,7 +70,7 @@ export function NotificationPopup() {
           if (n.active) {
             const dismissed = getDismissed();
             if (!dismissed.includes(n.id)) {
-              setCurrent({ id: n.id, title: n.title, body: n.body, created_at: n.created_at });
+              setCurrent({ id: n.id, title: n.title, body: n.body, created_at: n.created_at, user_id: n.user_id });
             }
           }
         }
@@ -121,6 +124,11 @@ export function NotificationPopup() {
           </button>
         </div>
         <h2 className="font-serif-d mt-3 text-xl font-semibold">{current.title}</h2>
+        {current.user_id && (
+          <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold" style={{ color: "var(--gold-deep)" }}>
+            <BellDot size={13} /> {t.alert.private}
+          </p>
+        )}
         <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
           {current.body}
         </p>

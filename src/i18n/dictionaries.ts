@@ -500,6 +500,7 @@ const en = {
     whatsapp: "WhatsApp",
     website: "Website",
     chatOn: "Chat on WhatsApp",
+    personalWebsite: "Personal Website",
     chatAdminT: "Chat with Admin",
     chatAdminD: "Message the super admin right here on the website — they will see it and reply to you here.",
     chatAdminBtn: "Open chat",
@@ -520,6 +521,7 @@ const en = {
     emptyStudent: "No messages yet — say hello! The super admin will reply here.",
     noThreads: "No messages yet.",
     pickThread: "Select a conversation to read and reply.",
+    loginRequired: "Log in to chat with the admin directly on the website.",
   },
   sources: {
     title: "Research Sources & Data Admin",
@@ -1169,6 +1171,7 @@ export const bn: Dict = {
     whatsapp: "হোয়াটসঅ্যাপ",
     website: "ওয়েবসাইট",
     chatOn: "হোয়াটসঅ্যাপে চ্যাট করুন",
+    personalWebsite: "পার্সোনাল ওয়েবসাইট",
     chatAdminT: "অ্যাডমিনের সাথে চ্যাট",
     chatAdminD: "সরাসরি এই ওয়েবসাইটেই সুপার অ্যাডমিনকে মেসেজ করুন — তিনি দেখবেন এবং এখানেই উত্তর দেবেন।",
     chatAdminBtn: "চ্যাট খুলুন",
@@ -1189,6 +1192,7 @@ export const bn: Dict = {
     emptyStudent: "এখনো কোনো মেসেজ নেই — হ্যালো বলুন! সুপার অ্যাডমিন এখানেই উত্তর দেবেন।",
     noThreads: "এখনো কোনো মেসেজ নেই।",
     pickThread: "পড়তে ও উত্তর দিতে একটি কথোপকথন বেছে নিন।",
+    loginRequired: "ওয়েবসাইটেই অ্যাডমিনের সাথে চ্যাট করতে লগ ইন করুন।",
   },
   sources: {
     title: "গবেষণা উৎস ও ডেটা অ্যাডমিন",

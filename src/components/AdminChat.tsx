@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MessageCircle, SendHorizonal, X } from "lucide-react";
+import { MessageCircle, SendHorizonal } from "lucide-react";
 import { useAuth } from "./AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase, type Profile } from "@/lib/supabase";
@@ -111,8 +111,9 @@ export function ChatThread({
   );
 }
 
-/** Student-facing "Chat with Admin" popup. Opens on the website; the super admin reads and replies from the admin panel. */
-export function AdminChatModal({ onClose }: { onClose: () => void }) {
+/** Student-facing "Chat with Admin" panel, embedded directly on the contact page.
+    Students write here; the super admin reads and replies from the admin panel. */
+export function StudentChatBox() {
   const { t } = useLang();
   const { session } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -163,40 +164,22 @@ export function AdminChatModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label={t.chat.title}
+      className="card flex h-[440px] flex-col overflow-hidden !p-0"
     >
       <div
-        className="card flex h-[70vh] w-full max-w-md flex-col overflow-hidden !p-0"
-        onClick={(e) => e.stopPropagation()}
+        className="flex items-center gap-2 px-4 py-3"
+        style={{ background: "linear-gradient(135deg, var(--gold-2), var(--gold-1))", color: "#fff" }}
       >
-        <div
-          className="flex items-center justify-between px-4 py-3"
-          style={{ background: "linear-gradient(135deg, var(--gold-2), var(--gold-1))", color: "#fff" }}
-        >
-          <p className="flex items-center gap-2 font-semibold">
-            <MessageCircle size={18} /> {t.chat.title}
-          </p>
-          <button
-            onClick={onClose}
-            aria-label={t.auth.close}
-            className="rounded-full p-1.5 transition hover:bg-white/20"
-          >
-            <X size={16} />
-          </button>
-        </div>
-        <ChatThread
-          messages={messages}
-          onSend={send}
-          sending={sending}
-          isAdminView={false}
-          emptyHint={t.chat.emptyStudent}
-        />
+        <MessageCircle size={18} />
+        <p className="font-semibold">{t.chat.title}</p>
       </div>
+      <ChatThread
+        messages={messages}
+        onSend={send}
+        sending={sending}
+        isAdminView={false}
+        emptyHint={t.chat.emptyStudent}
+      />
     </div>
   );
 }

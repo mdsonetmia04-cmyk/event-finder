@@ -1,28 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Globe, MessageCircle, MessagesSquare } from "lucide-react";
 import { CONTACT, META } from "@/lib/data";
 import { SectionHeader } from "@/components/ui";
-import { AdminChatModal } from "@/components/AdminChat";
+import { StudentChatBox } from "@/components/AdminChat";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 
 export default function ContactPage() {
   const { t } = useLang();
   const { session } = useAuth();
-  const router = useRouter();
-  const [chatOpen, setChatOpen] = useState(false);
-
-  const openChat = () => {
-    if (!session) {
-      router.push("/login");
-      return;
-    }
-    setChatOpen(true);
-  };
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
@@ -54,7 +43,7 @@ export default function ContactPage() {
         </p>
 
         {/* WhatsApp: number hidden, just the chat button */}
-        <div className="mt-6 flex flex-col items-center gap-3">
+        <div className="mt-6 flex flex-col items-center gap-4">
           <a
             href={CONTACT.whatsappLink}
             target="_blank"
@@ -64,36 +53,16 @@ export default function ContactPage() {
             <MessageCircle size={18} /> {t.contact.chatOn}
           </a>
 
-          {/* Website: icon only */}
+          {/* Personal Website: text link */}
           <a
             href="https://mdsonetmia.vercel.app"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label={t.contact.website}
-            title={t.contact.website}
-            className="group flex h-14 w-14 items-center justify-center rounded-full transition-transform hover:scale-110"
-            style={{
-              color: "#fff",
-              background: "linear-gradient(135deg, var(--gold-2), var(--gold-1))",
-              boxShadow: "0 6px 18px rgba(166,106,25,0.35)",
-            }}
+            className="flex items-center gap-2 text-base font-semibold underline decoration-1 underline-offset-4 hover:opacity-80"
+            style={{ color: "var(--gold-deep)" }}
           >
-            <Globe size={24} />
+            <Globe size={18} /> {t.contact.personalWebsite}
           </a>
-        </div>
-
-        {/* Chat with Admin: opens an in-website chatbox */}
-        <div className="mt-6 rounded-2xl p-5" style={{ background: "var(--surface2)" }}>
-          <p className="flex items-center justify-center gap-2 font-semibold">
-            <MessagesSquare size={18} style={{ color: "var(--gold-deep)" }} />
-            {t.contact.chatAdminT}
-          </p>
-          <p className="mx-auto mt-1 max-w-sm text-sm" style={{ color: "var(--muted)" }}>
-            {t.contact.chatAdminD}
-          </p>
-          <button className="btn btn-gold mt-4" onClick={openChat}>
-            <MessagesSquare size={16} /> {t.contact.chatAdminBtn}
-          </button>
         </div>
 
         <div className="mt-6 text-left text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
@@ -108,11 +77,32 @@ export default function ContactPage() {
         </div>
       </div>
 
+      {/* Chat with Admin: chatbox embedded directly on the page */}
+      <section>
+        <h2 className="font-serif-d mb-3 flex items-center gap-2 text-lg font-semibold">
+          <MessagesSquare size={18} style={{ color: "var(--gold-deep)" }} />
+          {t.contact.chatAdminT}
+        </h2>
+        <p className="mb-3 text-sm" style={{ color: "var(--muted)" }}>
+          {t.contact.chatAdminD}
+        </p>
+        {session ? (
+          <StudentChatBox />
+        ) : (
+          <div className="card p-6 text-center">
+            <p className="text-sm" style={{ color: "var(--muted)" }}>
+              {t.chat.loginRequired}
+            </p>
+            <Link href="/login" className="btn btn-gold mt-4">
+              {t.auth.loginTab}
+            </Link>
+          </div>
+        )}
+      </section>
+
       <p className="rounded-xl border px-4 py-3 text-xs leading-relaxed" style={{ borderColor: "var(--line)", color: "var(--muted)" }}>
         {META.disclaimer}
       </p>
-
-      {chatOpen && <AdminChatModal onClose={() => setChatOpen(false)} />}
     </div>
   );
 }

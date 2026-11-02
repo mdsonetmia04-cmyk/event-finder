@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { BellRing, X } from "lucide-react";
+import { useAuth } from "./AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
 
@@ -23,9 +24,11 @@ function getDismissed(): string[] {
 }
 
 /** Site-wide popup: shows the newest active admin notification the visitor
-    hasn't dismissed yet. Visible to everyone, including logged-out guests. */
+    hasn't dismissed yet. Only logged-in (registered) users see it — guests
+    on the landing page do not. */
 export function NotificationPopup() {
   const { t } = useLang();
+  const { session } = useAuth();
   const [current, setCurrent] = useState<SiteNotification | null>(null);
 
   const pickNewest = useCallback((list: SiteNotification[]) => {
@@ -47,6 +50,10 @@ export function NotificationPopup() {
   }, [pickNewest]);
 
   useEffect(() => {
+    if (!session) {
+      setCurrent(null);
+      return;
+    }
     load();
     const supabase = getSupabase();
     if (!supabase) return;
@@ -69,7 +76,7 @@ export function NotificationPopup() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [load]);
+  }, [load, session?.id]);
 
   const dismiss = () => {
     if (!current) return;
@@ -83,7 +90,7 @@ export function NotificationPopup() {
     setCurrent(null);
   };
 
-  if (!current) return null;
+  if (!session || !current) return null;
 
   return (
     <div

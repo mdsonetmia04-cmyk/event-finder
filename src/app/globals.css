@@ -1190,3 +1190,14 @@ html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spaci
 .dark .gold-contrast-text { color: #201405; }
 .gold-contrast-icon { color: #FFF9EC; }
 .dark .gold-contrast-icon { color: #201405; }
+
+/* ---------- Chat: dotted backdrop + slide-in bubbles ---------- */
+.chat-bg {
+  background-image: radial-gradient(rgba(201, 151, 31, 0.08) 1px, transparent 1.5px);
+  background-size: 20px 20px;
+}
+@keyframes chat-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+.chat-msg { animation: chat-in 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2); }

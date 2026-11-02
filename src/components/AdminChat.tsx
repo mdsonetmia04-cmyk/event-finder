@@ -16,26 +16,51 @@ export interface ChatMessage {
 
 function fmtTime(iso: string, lang: string) {
   return new Date(iso).toLocaleString(lang === "bn" ? "bn-BD" : "en-US", {
-    day: "numeric",
-    month: "short",
     hour: "numeric",
     minute: "2-digit",
   });
 }
 
-/** Shared message bubble list + composer, used by both the student chatbox and the admin inbox. */
+function dayKey(iso: string) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function dayLabel(iso: string, lang: string, t: { today: string; yesterday: string }) {
+  const d = new Date(iso);
+  const now = new Date();
+  const startOf = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((startOf(now) - startOf(d)) / 86400000);
+  if (diff <= 0) return t.today;
+  if (diff === 1) return t.yesterday;
+  return d.toLocaleDateString(lang === "bn" ? "bn-BD" : "en-US", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+/** Shared message bubble list + composer, used by both the student chatbox and the admin inbox.
+    Premium look: day dividers, peer avatars with name badges, gold own-bubbles
+    with sent ticks, slide-in animation on new messages. */
 export function ChatThread({
   messages,
   onSend,
   sending,
   isAdminView,
   emptyHint,
+  peerName,
+  peerInitial,
+  peerIsAdmin,
 }: {
   messages: ChatMessage[];
   onSend: (body: string) => Promise<void>;
   sending: boolean;
   isAdminView: boolean;
   emptyHint: string;
+  peerName?: string;
+  peerInitial?: string;
+  peerIsAdmin?: boolean;
 }) {
   const { t, lang } = useLang();
   const [draft, setDraft] = useState("");
@@ -74,41 +99,112 @@ export function ChatThread({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div ref={listRef} className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-4">
+      <div ref={listRef} className="chat-bg flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-4">
         {messages.length === 0 && (
-          <p className="my-auto text-center text-sm" style={{ color: "var(--muted)" }}>
-            {emptyHint}
-          </p>
+          <div className="m-auto flex max-w-[240px] flex-col items-center gap-2 text-center">
+            <span
+              className="flex h-12 w-12 items-center justify-center rounded-full text-xl"
+              style={{ background: "rgba(201,151,31,.14)" }}
+            >
+              💬
+            </span>
+            <p className="text-[13px] leading-relaxed" style={{ color: "var(--muted)" }}>
+              {t.chat.startConvo}
+            </p>
+          </div>
         )}
-        {messages.map((m) => {
+        {messages.map((m, i) => {
           // In the student view the student's own messages sit on the right;
           // in the admin view the admin's replies sit on the right.
           const mine = isAdminView ? m.sender === "admin" : m.sender === "user";
+          const prev = messages[i - 1];
+          const newDay = !prev || dayKey(m.created_at) !== dayKey(prev.created_at);
+          const newGroup = !prev || prev.sender !== m.sender || newDay;
+          const optimistic = m.id.startsWith("temp-");
           return (
-            <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-              <div
-                className="max-w-[80%] rounded-2xl px-3.5 py-2 text-sm leading-relaxed"
-                style={
-                  mine
-                    ? { background: "linear-gradient(135deg, var(--gold-2), var(--gold-1))", color: "#fff", borderBottomRightRadius: 6 }
-                    : { background: "var(--surface2)", color: "var(--text)", borderBottomLeftRadius: 6 }
-                }
-              >
-                <p className="whitespace-pre-wrap break-words">{m.body}</p>
-                <p
-                  className="mt-1 text-right text-[10px] tabular-nums"
-                  style={{ color: mine ? "rgba(255,255,255,.75)" : "var(--muted)" }}
-                >
-                  {fmtTime(m.created_at, lang)}
-                </p>
+            <div key={m.id}>
+              {newDay && (
+                <div className="my-2 flex justify-center">
+                  <span
+                    className="rounded-full px-3 py-1 text-[11px] font-bold"
+                    style={{ background: "var(--surface2)", color: "var(--muted)", border: "1px solid var(--line)" }}
+                  >
+                    {dayLabel(m.created_at, lang, t.chat)}
+                  </span>
+                </div>
+              )}
+              <div className={`chat-msg flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
+                {!mine && (
+                  <span
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                    style={
+                      newGroup
+                        ? peerIsAdmin
+                          ? { background: "linear-gradient(135deg, var(--gold-2), var(--gold-1))" }
+                          : { background: "linear-gradient(135deg, #8a6d3b, #5c4a26)" }
+                        : { visibility: "hidden" }
+                    }
+                    aria-hidden="true"
+                  >
+                    {peerInitial ?? "•"}
+                  </span>
+                )}
+                <div className={`max-w-[78%] ${mine ? "items-end" : "items-start"} flex flex-col`}>
+                  {!mine && newGroup && peerName && (
+                    <p className="mb-0.5 ml-1 flex items-center gap-1 text-[11px] font-bold" style={{ color: "var(--muted)" }}>
+                      {peerName}
+                      {peerIsAdmin && (
+                        <span
+                          className="rounded-full px-1.5 py-px text-[9px] font-bold uppercase tracking-wide text-white"
+                          style={{ background: "var(--gold-deep)" }}
+                        >
+                          {t.chat.adminBadge}
+                        </span>
+                      )}
+                    </p>
+                  )}
+                  <div
+                    className="px-3.5 py-2 text-sm leading-relaxed"
+                    style={
+                      mine
+                        ? {
+                            background: "linear-gradient(135deg, var(--gold-2), var(--gold-1))",
+                            color: "#fff",
+                            borderRadius: 18,
+                            borderBottomRightRadius: 6,
+                            boxShadow: "0 2px 8px rgba(166,106,25,.25)",
+                          }
+                        : {
+                            background: "var(--surface2)",
+                            color: "var(--text)",
+                            borderRadius: 18,
+                            borderBottomLeftRadius: 6,
+                            border: "1px solid var(--line)",
+                          }
+                    }
+                  >
+                    <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                  </div>
+                  <p
+                    className="mt-0.5 flex items-center gap-1 px-1 text-[10px] tabular-nums"
+                    style={{ color: "var(--muted)" }}
+                  >
+                    {fmtTime(m.created_at, lang)}
+                    {mine && (
+                      <span title={optimistic ? t.chat.sending : t.chat.sent} aria-label={optimistic ? t.chat.sending : t.chat.sent}>
+                        {optimistic ? "🕐" : "✓✓"}
+                      </span>
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
           );
         })}
       </div>
-      <div className="flex items-center gap-2 border-t p-3" style={{ borderColor: "var(--line)" }}>
+      <div className="flex items-center gap-2 border-t p-3" style={{ borderColor: "var(--line)", background: "var(--surface)" }}>
         <input
-          className="input flex-1"
+          className="input !rounded-full flex-1"
           placeholder={t.chat.placeholder}
           value={draft}
           maxLength={2000}
@@ -118,9 +214,9 @@ export function ChatThread({
           }}
         />
         <button
-          className="btn btn-gold !px-3.5"
+          className="btn btn-gold !rounded-full !px-4"
           onClick={send}
-          disabled={sending || !draft.trim()}
+          disabled={sending || busyRef.current || !draft.trim()}
           aria-label={t.chat.send}
         >
           <SendHorizonal size={16} />
@@ -208,11 +304,21 @@ export function StudentChatBox() {
       className="card flex h-[440px] flex-col overflow-hidden !p-0"
     >
       <div
-        className="flex items-center gap-2 px-4 py-3"
+        className="flex items-center gap-3 px-4 py-3"
         style={{ background: "linear-gradient(135deg, var(--gold-2), var(--gold-1))", color: "#fff" }}
       >
-        <MessageCircle size={18} />
-        <p className="font-semibold">{t.chat.title}</p>
+        <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/25 text-lg font-bold">
+          S
+          <span
+            className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2"
+            style={{ background: "#22c55e", borderColor: "var(--gold-1)" }}
+          />
+        </span>
+        <div className="min-w-0">
+          <p className="truncate font-semibold">{t.chat.title}</p>
+          <p className="text-xs opacity-90">{t.chat.onlineNow}</p>
+        </div>
+        <MessageCircle size={18} className="ml-auto shrink-0 opacity-80" />
       </div>
       <ChatThread
         messages={messages}
@@ -220,6 +326,9 @@ export function StudentChatBox() {
         sending={sending}
         isAdminView={false}
         emptyHint={t.chat.emptyStudent}
+        peerName={t.chat.adminBadge}
+        peerInitial="S"
+        peerIsAdmin
       />
     </div>
   );
@@ -388,6 +497,8 @@ export function AdminInbox({ focusUserId }: { focusUserId?: string | null }) {
               sending={sending}
               isAdminView
               emptyHint={t.chat.emptyStudent}
+              peerName={profiles[active.userId]?.name ?? t.chat.adminBadge}
+              peerInitial={(profiles[active.userId]?.name ?? "?").charAt(0).toUpperCase()}
             />
           </>
         ) : (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MessageCircle, SendHorizonal } from "lucide-react";
+import { Check, MessageCircle, SendHorizonal, Trash2, X } from "lucide-react";
 import { useAuth } from "./AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase, type Profile } from "@/lib/supabase";
@@ -52,6 +52,8 @@ export function ChatThread({
   peerName,
   peerInitial,
   peerIsAdmin,
+  onDeleteMessage,
+  canDeleteAny,
 }: {
   messages: ChatMessage[];
   onSend: (body: string) => Promise<void>;
@@ -61,9 +63,12 @@ export function ChatThread({
   peerName?: string;
   peerInitial?: string;
   peerIsAdmin?: boolean;
+  onDeleteMessage?: (id: string) => Promise<void>;
+  canDeleteAny?: boolean;
 }) {
   const { t, lang } = useLang();
   const [draft, setDraft] = useState("");
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const firstLoad = useRef(true);
   // Synchronous re-entry guard: the `sending` prop updates async via the
@@ -121,6 +126,43 @@ export function ChatThread({
           const newDay = !prev || dayKey(m.created_at) !== dayKey(prev.created_at);
           const newGroup = !prev || prev.sender !== m.sender || newDay;
           const optimistic = m.id.startsWith("temp-");
+          const canDelete = !optimistic && !!onDeleteMessage && (mine || !!canDeleteAny);
+          const confirming = confirmId === m.id;
+          const deleteBtn = canDelete ? (
+            confirming ? (
+              <span className="flex shrink-0 items-center gap-1">
+                <button
+                  onClick={async () => {
+                    setConfirmId(null);
+                    await onDeleteMessage!(m.id);
+                  }}
+                  className="flex h-6 w-6 items-center justify-center rounded-full text-white"
+                  style={{ background: "#b3261e" }}
+                  title={t.chat.delete}
+                  aria-label={t.chat.delete}
+                >
+                  <Check size={13} />
+                </button>
+                <button
+                  onClick={() => setConfirmId(null)}
+                  className="flex h-6 w-6 items-center justify-center rounded-full"
+                  style={{ background: "var(--surface2)", color: "var(--muted)", border: "1px solid var(--line)" }}
+                  aria-label="Cancel"
+                >
+                  <X size={13} />
+                </button>
+              </span>
+            ) : (
+              <button
+                onClick={() => setConfirmId(m.id)}
+                className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                title={t.chat.deleteMsg}
+                aria-label={t.chat.deleteMsg}
+              >
+                <Trash2 size={14} style={{ color: "var(--muted)" }} />
+              </button>
+            )
+          ) : null;
           return (
             <div key={m.id}>
               {newDay && (
@@ -133,7 +175,7 @@ export function ChatThread({
                   </span>
                 </div>
               )}
-              <div className={`chat-msg flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
+              <div className={`chat-msg group flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
                 {!mine && (
                   <span
                     className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
@@ -149,6 +191,7 @@ export function ChatThread({
                     {peerInitial ?? "•"}
                   </span>
                 )}
+                {mine && deleteBtn}
                 <div className={`max-w-[78%] ${mine ? "items-end" : "items-start"} flex flex-col`}>
                   {!mine && newGroup && peerName && (
                     <p className="mb-0.5 ml-1 flex items-center gap-1 text-[11px] font-bold" style={{ color: "var(--muted)" }}>
@@ -197,6 +240,7 @@ export function ChatThread({
                     )}
                   </p>
                 </div>
+                {!mine && deleteBtn}
               </div>
             </div>
           );
@@ -262,11 +306,30 @@ export function StudentChatBox() {
           setMessages((prev) => (prev.some((m) => m.id === nm.id) ? prev : [...prev, nm]));
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "admin_messages", filter: `user_id=eq.${session.id}` },
+        (payload) => {
+          const oldId = (payload.old as { id?: string })?.id;
+          if (oldId) setMessages((prev) => prev.filter((m) => m.id !== oldId));
+        }
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [session, load]);
+
+  const deleteMessage = useCallback(
+    async (id: string) => {
+      const supabase = getSupabase();
+      if (!supabase) return;
+      setMessages((prev) => prev.filter((m) => m.id !== id));
+      const { error } = await supabase.from("admin_messages").delete().eq("id", id);
+      if (error) load();
+    },
+    [load]
+  );
 
   const send = async (body: string) => {
     const supabase = getSupabase();
@@ -329,6 +392,7 @@ export function StudentChatBox() {
         peerName={t.chat.adminBadge}
         peerInitial="S"
         peerIsAdmin
+        onDeleteMessage={deleteMessage}
       />
     </div>
   );
@@ -342,6 +406,7 @@ export function AdminInbox({ focusUserId }: { focusUserId?: string | null }) {
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [activeId, setActiveId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const load = useCallback(async () => {
     const supabase = getSupabase();
@@ -374,6 +439,10 @@ export function AdminInbox({ focusUserId }: { focusUserId?: string | null }) {
           setMessages((prev) => (prev.some((m) => m.id === nm.id) ? prev : [...prev, nm]));
         }
       )
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "admin_messages" }, (payload) => {
+        const oldId = (payload.old as { id?: string })?.id;
+        if (oldId) setMessages((prev) => prev.filter((m) => m.id !== oldId));
+      })
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -435,6 +504,24 @@ export function AdminInbox({ focusUserId }: { focusUserId?: string | null }) {
     setSending(false);
   };
 
+  const deleteMessage = useCallback(async (id: string) => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    setMessages((prev) => prev.filter((m) => m.id !== id));
+    const { error } = await supabase.from("admin_messages").delete().eq("id", id);
+    if (error) load();
+  }, [load]);
+
+  const deleteConversation = useCallback(async () => {
+    const supabase = getSupabase();
+    if (!supabase || !activeId) return;
+    const uid = activeId;
+    setConfirmClear(false);
+    setMessages((prev) => prev.filter((m) => m.user_id !== uid));
+    setActiveId(null);
+    await supabase.from("admin_messages").delete().eq("user_id", uid);
+  }, [activeId]);
+
   if (threads.length === 0) {
     return (
       <p className="text-sm" style={{ color: "var(--muted)" }}>
@@ -452,7 +539,10 @@ export function AdminInbox({ focusUserId }: { focusUserId?: string | null }) {
           return (
             <button
               key={th.userId}
-              onClick={() => setActiveId(th.userId)}
+              onClick={() => {
+                setActiveId(th.userId);
+                setConfirmClear(false);
+              }}
               className="flex w-full items-center gap-3 border-b px-4 py-3 text-left transition hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
               style={{
                 borderColor: "var(--line)",
@@ -485,11 +575,48 @@ export function AdminInbox({ focusUserId }: { focusUserId?: string | null }) {
       <div className="flex min-h-[420px] flex-col">
         {active ? (
           <>
-            <div className="border-b px-4 py-3" style={{ borderColor: "var(--line)" }}>
-              <p className="text-sm font-semibold">{profiles[active.userId]?.name}</p>
-              <p className="text-xs tabular-nums" style={{ color: "var(--muted)" }}>
-                {profiles[active.userId]?.whatsapp}
-              </p>
+            <div className="flex items-center border-b px-4 py-3" style={{ borderColor: "var(--line)" }}>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{profiles[active.userId]?.name}</p>
+                <p className="text-xs tabular-nums" style={{ color: "var(--muted)" }}>
+                  {profiles[active.userId]?.whatsapp}
+                </p>
+              </div>
+              <div className="ml-auto shrink-0">
+                {confirmClear ? (
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-semibold" style={{ color: "#b3261e" }}>
+                      {t.chat.deleteConvoQ}
+                    </span>
+                    <button
+                      onClick={deleteConversation}
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-white"
+                      style={{ background: "#b3261e" }}
+                      title={t.chat.delete}
+                      aria-label={t.chat.delete}
+                    >
+                      <Check size={14} />
+                    </button>
+                    <button
+                      onClick={() => setConfirmClear(false)}
+                      className="flex h-7 w-7 items-center justify-center rounded-full"
+                      style={{ background: "var(--surface2)", color: "var(--muted)", border: "1px solid var(--line)" }}
+                      aria-label="Cancel"
+                    >
+                      <X size={14} />
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => setConfirmClear(true)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full transition hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                    title={t.chat.deleteConvo}
+                    aria-label={t.chat.deleteConvo}
+                  >
+                    <Trash2 size={15} style={{ color: "var(--muted)" }} />
+                  </button>
+                )}
+              </div>
             </div>
             <ChatThread
               messages={active.list}
@@ -499,6 +626,8 @@ export function AdminInbox({ focusUserId }: { focusUserId?: string | null }) {
               emptyHint={t.chat.emptyStudent}
               peerName={profiles[active.userId]?.name ?? t.chat.adminBadge}
               peerInitial={(profiles[active.userId]?.name ?? "?").charAt(0).toUpperCase()}
+              onDeleteMessage={deleteMessage}
+              canDeleteAny
             />
           </>
         ) : (

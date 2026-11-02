@@ -550,6 +550,10 @@ const en = {
     sent: "Sent",
     sending: "Sending…",
     startConvo: "Start the conversation — your messages and the admin's replies stay here.",
+    delete: "Delete",
+    deleteMsg: "Delete message",
+    deleteConvo: "Delete conversation",
+    deleteConvoQ: "Delete this whole conversation?",
   },
   notif: {
     title: "Announcement",
@@ -1264,6 +1268,10 @@ export const bn: Dict = {
     sent: "পাঠানো হয়েছে",
     sending: "পাঠানো হচ্ছে…",
     startConvo: "কথোপকথন শুরু করুন — আপনার মেসেজ ও অ্যাডমিনের উত্তর এখানেই থাকবে।",
+    delete: "মুছুন",
+    deleteMsg: "মেসেজ মুছুন",
+    deleteConvo: "কথোপকথন মুছুন",
+    deleteConvoQ: "পুরো কথোপকথন মুছে ফেলবেন?",
   },
   notif: {
     title: "ঘোষণা",

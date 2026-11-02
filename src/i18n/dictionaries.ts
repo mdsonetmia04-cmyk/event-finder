@@ -502,7 +502,8 @@ const en = {
   contact: {
     title: "Contact",
     sub: "Questions, corrections or partnership inquiries about Sweet Smart Calendar.",
-    creatorOf: "Creator of Sweet Smart Calendar",
+    creatorOf: "Creator of Sweet Ecosystem",
+    creatorOf2: "Mentor of Microstock Journey with Sonet · AI Educator",
     whatsapp: "WhatsApp",
     website: "Website",
     chatOn: "Chat on WhatsApp",
@@ -1194,7 +1195,8 @@ export const bn: Dict = {
   contact: {
     title: "যোগাযোগ",
     sub: "Sweet Smart Calendar নিয়ে প্রশ্ন, সংশোধন বা পার্টনারশিপের প্রস্তাব।",
-    creatorOf: "Sweet Smart Calendar-এর নির্মাতা",
+    creatorOf: "Creator of Sweet Ecosystem",
+    creatorOf2: "Mentor of Microstock Journey with Sonet · AI Educator",
     whatsapp: "হোয়াটসঅ্যাপ",
     website: "ওয়েবসাইট",
     chatOn: "হোয়াটসঅ্যাপে চ্যাট করুন",

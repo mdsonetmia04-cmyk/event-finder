@@ -39,10 +39,21 @@ export function ChatThread({
 }) {
   const { t, lang } = useLang();
   const [draft, setDraft] = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const firstLoad = useRef(true);
 
+  // Scroll the message list itself (never the whole page): on first load jump
+  // straight to the bottom, afterwards animate. This keeps the contact page
+  // from yanking visitors down to the chatbox when it opens.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = listRef.current;
+    if (!el) return;
+    if (firstLoad.current) {
+      el.scrollTop = el.scrollHeight;
+      firstLoad.current = false;
+    } else {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    }
   }, [messages.length]);
 
   const send = async () => {
@@ -54,7 +65,7 @@ export function ChatThread({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-4">
+      <div ref={listRef} className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-4">
         {messages.length === 0 && (
           <p className="my-auto text-center text-sm" style={{ color: "var(--muted)" }}>
             {emptyHint}
@@ -85,7 +96,6 @@ export function ChatThread({
             </div>
           );
         })}
-        <div ref={bottomRef} />
       </div>
       <div className="flex items-center gap-2 border-t p-3" style={{ borderColor: "var(--line)" }}>
         <input

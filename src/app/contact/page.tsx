@@ -38,8 +38,10 @@ export default function ContactPage() {
           />
         </div>
         <h2 className="font-serif-d mt-4 text-3xl font-semibold">{CONTACT.name}</h2>
-        <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
+        <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
           {t.contact.creatorOf}
+          <br />
+          {t.contact.creatorOf2}
         </p>
 
         {/* WhatsApp: number hidden, just the chat button */}

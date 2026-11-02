@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Globe, MessageCircle, MessagesSquare } from "lucide-react";
 import { CONTACT, META } from "@/lib/data";
 import { SectionHeader } from "@/components/ui";
-import { StudentChatBox } from "@/components/AdminChat";
+import { AdminInbox, StudentChatBox } from "@/components/AdminChat";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 
@@ -83,13 +83,15 @@ export default function ContactPage() {
       <section>
         <h2 className="font-serif-d mb-3 flex items-center gap-2 text-lg font-semibold">
           <MessagesSquare size={18} style={{ color: "var(--gold-deep)" }} />
-          {t.contact.chatAdminT}
+          {session?.role === "super_admin" ? t.chat.inboxT : t.contact.chatAdminT}
         </h2>
         <p className="mb-3 text-sm" style={{ color: "var(--muted)" }}>
-          {t.contact.chatAdminD}
+          {session?.role === "super_admin" ? t.chat.pickThread : t.contact.chatAdminD}
         </p>
         {session ? (
-          <StudentChatBox />
+          // Super admin sees every thread (both sides of each conversation);
+          // students see only their own chat with the admin.
+          session.role === "super_admin" ? <AdminInbox /> : <StudentChatBox />
         ) : (
           <div className="card p-6 text-center">
             <p className="text-sm" style={{ color: "var(--muted)" }}>

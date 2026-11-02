@@ -188,7 +188,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let alive = true;
     const beat = () => {
       if (!alive) return;
-      supabase.rpc("heartbeat").then(() => {});
+      supabase.rpc("heartbeat").then(
+        () => {},
+        () => {}
+      );
     };
     beat();
     const timer = setInterval(beat, 60_000);

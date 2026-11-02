@@ -5,6 +5,8 @@ import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, GitCompareArrows, Search } from "lucide-react";
 import { EventCard } from "@/components/cards";
+import { CountryFlag } from "@/components/CountryFlag";
+import { SourcesPanel } from "@/components/SourcesPanel";
 import { EmptyState, SectionHeader } from "@/components/ui";
 import { COUNTRIES, countryByCode } from "@/lib/data";
 import { formatMonthDay, todayISO } from "@/lib/date-engine";
@@ -31,6 +33,7 @@ function MarketsInner() {
   const [activeCode, setActiveCode] = useState(initial && countryByCode[initial] ? initial : "");
   const [query, setQuery] = useState("");
   const [compare, setCompare] = useState<string[]>([]);
+  const [tab, setTab] = useState<"markets" | "sources">("markets");
   const today = todayISO();
 
   const byRegion = useMemo(countriesByRegion, []);
@@ -65,10 +68,28 @@ function MarketsInner() {
     <div className="flex flex-col gap-6">
       {!active ? (
         <>
-          <SectionHeader
-            title={t.markets.title}
-            subtitle={t.markets.sub(COUNTRIES.length)}
-          />
+          <div className="flex gap-2">
+            {(
+              [
+                { id: "markets", label: t.markets.title },
+                { id: "sources", label: t.sources.title },
+              ] as const
+            ).map((tb) => (
+              <button
+                key={tb.id}
+                onClick={() => setTab(tb.id)}
+                className={`btn !text-xs ${tab === tb.id ? "btn-gold" : "btn-ghost"}`}
+              >
+                {tb.label}
+              </button>
+            ))}
+          </div>
+          {tab === "markets" ? (
+            <>
+              <SectionHeader
+                title={t.markets.title}
+                subtitle={t.markets.sub(COUNTRIES.length)}
+              />
           <div className="card flex items-center gap-2 p-3">
             <label className="relative flex-1">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--muted)" }} />
@@ -90,8 +111,8 @@ function MarketsInner() {
               <div className="grid gap-4 md:grid-cols-3">
                 {comparison.map(({ country, occurrences }) => (
                   <div key={country.code}>
-                    <p className="mb-2 text-sm font-semibold">
-                      {country.flag} {country.name}
+                    <p className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                      <CountryFlag code={country.code} emoji={country.flag} size={20} /> {country.name}
                     </p>
                     <div className="flex flex-col gap-1.5">
                       {occurrences.length === 0 && (
@@ -130,7 +151,7 @@ function MarketsInner() {
                   return (
                     <div key={c.code} className="card card-hover p-4">
                       <div className="flex items-start justify-between">
-                        <span className="text-3xl">{c.flag}</span>
+                        <CountryFlag code={c.code} emoji={c.flag} size={30} />
                         <button
                           onClick={() => toggleCompare(c.code)}
                           className={`btn !px-2.5 !py-1 !text-[11px] ${inCompare ? "btn-active" : "btn-ghost"}`}
@@ -161,6 +182,10 @@ function MarketsInner() {
           ))}
           {Object.keys(filteredRegions).length === 0 && (
             <EmptyState title={t.markets.noMarketsT} hint={t.markets.noMarketsH} />
+          )}
+            </>
+          ) : (
+            <SourcesPanel />
           )}
         </>
       ) : (
@@ -193,7 +218,7 @@ function CountryDetail({
 
       <div className="card p-5 sm:p-6">
         <div className="flex flex-wrap items-center gap-4">
-          <span className="text-5xl">{c.flag}</span>
+          <CountryFlag code={c.code} emoji={c.flag} size={44} />
           <div>
             <h2 className="font-serif-d text-2xl font-semibold">{c.name}</h2>
             <p className="text-sm" style={{ color: "var(--muted)" }}>

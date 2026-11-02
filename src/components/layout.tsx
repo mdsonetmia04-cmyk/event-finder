@@ -20,7 +20,6 @@ import {
   ClipboardList,
   Leaf,
   X,
-  FlaskConical,
 } from "lucide-react";
 import {
   createContext,
@@ -104,7 +103,6 @@ function navItems(t: Dict) {
     { href: "/planner", label: t.nav.planner, icon: ClipboardList },
     { href: "/evergreen", label: t.nav.evergreen, icon: Leaf },
     { href: "/announcements", label: "🔔", icon: Megaphone },
-    { href: "/sources", label: t.nav.sources, icon: FlaskConical },
     { href: "/contact", label: t.nav.contact, icon: Mail },
   ];
 }

@@ -28,7 +28,7 @@ function download(filename: string, content: string, mime: string) {
   URL.revokeObjectURL(url);
 }
 
-export default function SourcesPage() {
+export function SourcesPanel() {
   const issues = useMemo(() => validateEvents(), []);
   const errors = issues.filter((i) => i.level === "error");
   const warnings = issues.filter((i) => i.level === "warning");

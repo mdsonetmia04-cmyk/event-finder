@@ -169,7 +169,7 @@ export function ChatThread({
                       mine
                         ? {
                             background: "linear-gradient(135deg, var(--gold-2), var(--gold-1))",
-                            color: "#fff",
+                            color: "#000",
                             borderRadius: 18,
                             borderBottomRightRadius: 6,
                             boxShadow: "0 2px 8px rgba(166,106,25,.25)",

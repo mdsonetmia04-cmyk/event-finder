@@ -15,7 +15,6 @@ import {
   ShieldCheck,
   Sparkles,
   Sun,
-  UserRound,
   Globe2,
   ClipboardList,
   Leaf,
@@ -33,6 +32,7 @@ import { KEYS } from "@/lib/store";
 import { CONTACT, META } from "@/lib/data";
 import { useLang } from "@/i18n/LanguageContext";
 import { useAuth } from "./AuthContext";
+import { UserChip } from "./UserChip";
 import type { Dict } from "@/i18n/dictionaries";
 import LanguageToggle from "./LanguageToggle";
 
@@ -176,16 +176,7 @@ export function Header() {
               )}
             </Link>
           )}
-          {session && (
-            <Link
-              href="/profile"
-              className="chip hidden !py-1.5 transition-transform hover:scale-[1.04] md:inline-flex"
-              title={session.whatsapp}
-            >
-              {session.role === "super_admin" ? <ShieldCheck size={12} /> : <UserRound size={12} />}
-              <span className="max-w-[110px] truncate font-semibold">{session.name}</span>
-            </Link>
-          )}
+          {session && <UserChip />}
           <LanguageToggle />
           <ThemeToggle />
           {session && (
@@ -217,7 +208,7 @@ export function Header() {
                 onClick={() => setOpen(false)}
                 className={`nav-link flex items-center gap-3 !text-sm !font-medium${pathname === "/profile" ? " active" : ""}`}
               >
-                <UserRound size={16} /> {session.name}
+                <span className="text-lg leading-none">👤</span>
               </Link>
             )}
             {NAV.map((n) => {

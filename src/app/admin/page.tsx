@@ -9,6 +9,30 @@ import { EmptyState, SectionHeader } from "@/components/ui";
 import { useLang } from "@/i18n/LanguageContext";
 import type { Profile } from "@/lib/supabase";
 
+/** Seconds → "2h 15m" / "45m" / "30s" / "3d 2h". */
+export function formatUsage(totalSeconds: number | null | undefined, lang: string): string {
+  const s = Math.max(0, Math.floor(totalSeconds ?? 0));
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (lang === "bn") {
+    if (d > 0) return `${d}দিন ${h}ঘণ্টা`;
+    if (h > 0) return `${h}ঘণ্টা ${m}মিনিট`;
+    if (m > 0) return `${m}মিনিট`;
+    return `${s}সেকেন্ড`;
+  }
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m`;
+  return `${s}s`;
+}
+
+/** Considered "live now" when the last heartbeat is within 3 minutes. */
+export function isLiveNow(lastSeen: string | null | undefined): boolean {
+  if (!lastSeen) return false;
+  return Date.now() - new Date(lastSeen).getTime() < 3 * 60 * 1000;
+}
+
 function UserRow({
   user,
   onApprove,
@@ -30,8 +54,17 @@ function UserRow({
   return (
     <div className="card flex flex-wrap items-center gap-3 p-4">
       <div className="min-w-0 flex-1">
-        <p className="font-semibold leading-snug">
-          {user.name}
+        <p className="flex items-center gap-2 font-semibold leading-snug">
+          {isLiveNow(user.last_seen) && (
+            <span
+              className="relative flex h-2.5 w-2.5 shrink-0"
+              title={t.admin.liveNow}
+            >
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+            </span>
+          )}
+          <span className="truncate">{user.name}</span>
           {user.role === "super_admin" && (
             <span className="chip ml-2 !border-0 !text-[10px] font-bold" style={{ background: "rgba(201,151,31,.16)", color: "var(--gold-deep)" }}>
               <ShieldCheck size={11} /> {t.admin.superAdmin}
@@ -39,7 +72,7 @@ function UserRow({
           )}
         </p>
         <p className="mt-0.5 text-xs tabular-nums" style={{ color: "var(--muted)" }}>
-          {user.whatsapp} · {date}
+          {user.whatsapp} · {date} · ⏱ {t.admin.usageTime}: {formatUsage(user.total_seconds, lang)}
         </p>
         {(user.gmail || user.team_number || user.gender || user.blood_group || user.full_name || user.mobile_number || user.date_of_birth || user.district || user.last_education || user.skills_interests || user.facebook_link) && (
           <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs" style={{ color: "var(--muted)" }}>
@@ -124,21 +157,34 @@ function UserRow({
 }
 
 export default function AdminPage() {
-  const { ready, session, users, approve, reject, removeUser, changePassword } = useAuth();
-  const { t } = useLang();
+  const { ready, session, users, approve, reject, removeUser, changePassword, refreshUsers } = useAuth();
+  const { t, lang } = useLang();
   const router = useRouter();
   const [newPw, setNewPw] = useState("");
   const [pwMsg, setPwMsg] = useState<"ok" | "short" | null>(null);
+  const [, setTick] = useState(0);
 
   useEffect(() => {
     if (ready && session?.role !== "super_admin") router.replace("/");
   }, [ready, session, router]);
+
+  // Refresh presence data every 30s so "live now" stays current; the tick
+  // re-renders so the 3-minute live window expires without a reload.
+  useEffect(() => {
+    if (session?.role !== "super_admin") return;
+    const timer = setInterval(() => {
+      refreshUsers();
+      setTick((n) => n + 1);
+    }, 30_000);
+    return () => clearInterval(timer);
+  }, [session?.role, refreshUsers]);
 
   if (!ready || session?.role !== "super_admin") return null;
 
   const pending = users.filter((u) => u.status === "pending");
   const approved = users.filter((u) => u.status === "approved");
   const rejected = users.filter((u) => u.status === "rejected");
+  const liveCount = users.filter((u) => isLiveNow(u.last_seen)).length;
 
   const savePw = async () => {
     if (newPw.length < 6) {
@@ -153,6 +199,24 @@ export default function AdminPage() {
   return (
     <div className="flex flex-col gap-6">
       <SectionHeader title={t.admin.title} subtitle={t.admin.sub} />
+
+      {/* Registration + presence stats */}
+      <section className="grid grid-cols-2 gap-3">
+        <div className="card p-5">
+          <p className="label">{t.admin.totalRegistered}</p>
+          <p className="font-serif-d mt-1 text-4xl font-semibold tabular-nums">{users.length}</p>
+        </div>
+        <div className="card p-5">
+          <p className="label flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-500 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+            </span>
+            {t.admin.liveNow}
+          </p>
+          <p className="font-serif-d mt-1 text-4xl font-semibold tabular-nums">{liveCount}</p>
+        </div>
+      </section>
 
       {/* Pending approvals */}
       <section>

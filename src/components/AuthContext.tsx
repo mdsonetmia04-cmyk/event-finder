@@ -36,6 +36,7 @@ interface AuthCtx {
   reject: (id: string) => void;
   removeUser: (id: string) => void;
   changePassword: (newPassword: string) => Promise<AuthError>;
+  refreshUsers: () => Promise<void>;
   updateProfile: (fields: {
     gmail: string;
     team_number: string;
@@ -172,6 +173,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await supabase.auth.getSession();
     await syncFromSession(data.session?.user.id ?? null);
   }, [syncFromSession]);
+
+  /** Reload the full user list (super admin only) — used to refresh presence stats. */
+  const refreshUsers = useCallback(async () => {
+    if (session?.role === "super_admin") await loadAll(true);
+  }, [session?.role, loadAll]);
+
+  // Presence heartbeat: while logged in, tell the DB we're active every 60s.
+  // The heartbeat() RPC accumulates total_seconds (capped per beat) and stamps
+  // last_seen, which the admin panel uses for "live now" + usage time.
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase || !session) return;
+    let alive = true;
+    const beat = () => {
+      if (!alive) return;
+      supabase.rpc("heartbeat").then(() => {});
+    };
+    beat();
+    const timer = setInterval(beat, 60_000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [session?.id]);
 
   const login = useCallback(
     async (whatsapp: string, password: string): Promise<AuthError> => {
@@ -353,6 +378,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         changePassword,
         updateProfile,
         refresh,
+        refreshUsers,
       }}
     >
       {children}

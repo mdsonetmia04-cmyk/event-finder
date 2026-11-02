@@ -24,6 +24,9 @@ export interface Profile {
   team_number?: string | null;
   gender?: string | null;
   blood_group?: string | null;
+  last_seen?: string | null;
+  first_seen?: string | null;
+  total_seconds?: number | null;
   full_name?: string | null;
   mobile_number?: string | null;
   date_of_birth?: string | null;

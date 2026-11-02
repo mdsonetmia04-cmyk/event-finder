@@ -41,6 +41,10 @@ export function ChatThread({
   const [draft, setDraft] = useState("");
   const listRef = useRef<HTMLDivElement>(null);
   const firstLoad = useRef(true);
+  // Synchronous re-entry guard: the `sending` prop updates async via the
+  // parent, so rapid clicks / Enter key-repeat could fire several inserts
+  // before it flips. This ref blocks them immediately.
+  const busyRef = useRef(false);
 
   // Scroll the message list itself (never the whole page): on first load jump
   // straight to the bottom, afterwards animate. This keeps the contact page
@@ -58,9 +62,14 @@ export function ChatThread({
 
   const send = async () => {
     const body = draft.trim();
-    if (!body || sending) return;
+    if (!body || sending || busyRef.current) return;
+    busyRef.current = true;
     setDraft("");
-    await onSend(body);
+    try {
+      await onSend(body);
+    } finally {
+      busyRef.current = false;
+    }
   };
 
   return (
@@ -150,7 +159,12 @@ export function StudentChatBox() {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "admin_messages", filter: `user_id=eq.${session.id}` },
-        (payload) => setMessages((prev) => [...prev, payload.new as ChatMessage])
+        (payload) => {
+          const nm = payload.new as ChatMessage;
+          // Dedupe by id: the optimistic bubble is already swapped for the
+          // real row, and realtime can replay an event on reconnect.
+          setMessages((prev) => (prev.some((m) => m.id === nm.id) ? prev : [...prev, nm]));
+        }
       )
       .subscribe();
     return () => {
@@ -161,14 +175,31 @@ export function StudentChatBox() {
   const send = async (body: string) => {
     const supabase = getSupabase();
     if (!supabase || !session) return;
-    setSending(true);
-    await supabase.from("admin_messages").insert({
+    // Optimistic: show the message instantly so the sender never wonders
+    // whether the click worked (the old delay is what caused re-clicks).
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const optimistic: ChatMessage = {
+      id: tempId,
       user_id: session.id,
       sender: "user",
       body: body.slice(0, 2000),
-    });
-    // Optimistic reload in case realtime is not yet attached
-    await load();
+      created_at: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimistic]);
+    setSending(true);
+    const { data, error } = await supabase
+      .from("admin_messages")
+      .insert({ user_id: session.id, sender: "user", body: body.slice(0, 2000) })
+      .select()
+      .single();
+    if (!error && data) {
+      const real = data as ChatMessage;
+      // Swap the optimistic bubble for the real row; the realtime event for
+      // this insert is deduped by id below, so it never renders twice.
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? real : m)));
+    } else {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+    }
     setSending(false);
   };
 
@@ -229,7 +260,10 @@ export function AdminInbox({ focusUserId }: { focusUserId?: string | null }) {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "admin_messages" },
-        (payload) => setMessages((prev) => [...prev, payload.new as ChatMessage])
+        (payload) => {
+          const nm = payload.new as ChatMessage;
+          setMessages((prev) => (prev.some((m) => m.id === nm.id) ? prev : [...prev, nm]));
+        }
       )
       .subscribe();
     return () => {
@@ -268,13 +302,27 @@ export function AdminInbox({ focusUserId }: { focusUserId?: string | null }) {
   const reply = async (body: string) => {
     const supabase = getSupabase();
     if (!supabase || !activeId) return;
-    setSending(true);
-    await supabase.from("admin_messages").insert({
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const optimistic: ChatMessage = {
+      id: tempId,
       user_id: activeId,
       sender: "admin",
       body: body.slice(0, 2000),
-    });
-    await load();
+      created_at: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimistic]);
+    setSending(true);
+    const { data, error } = await supabase
+      .from("admin_messages")
+      .insert({ user_id: activeId, sender: "admin", body: body.slice(0, 2000) })
+      .select()
+      .single();
+    if (!error && data) {
+      const real = data as ChatMessage;
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? real : m)));
+    } else {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+    }
     setSending(false);
   };
 

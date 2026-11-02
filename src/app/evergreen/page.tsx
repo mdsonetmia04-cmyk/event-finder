@@ -26,6 +26,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { SectionHeader } from "@/components/ui";
+import { Stars } from "@/components/Stars";
 import { Pressable } from "@/components/motion";
 import { useLang } from "@/i18n/LanguageContext";
 import {
@@ -63,10 +64,10 @@ export default function EvergreenPage() {
   const [format, setFormat] = useState<"eps" | "png" | "jpg">("eps");
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: "concepts", label: t.ev.tabConcepts },
-    { id: "formats", label: t.ev.tabFormats },
-    { id: "upload", label: t.ev.tabUpload },
-    { id: "sales", label: t.ev.tabSales },
+    { id: "concepts", label: `① ${t.ev.tabConcepts}` },
+    { id: "formats", label: `② ${t.ev.tabFormats}` },
+    { id: "upload", label: `③ ${t.ev.tabUpload}` },
+    { id: "sales", label: `④ ${t.ev.tabSales}` },
     { id: "items", label: t.ev.tabItems },
     { id: "graphics", label: t.ev.tabGraphics },
   ];
@@ -105,6 +106,62 @@ export default function EvergreenPage() {
         }
       />
 
+      {/* New-user learning path */}
+      <section
+        className="card p-5 sm:p-6"
+        style={{ background: "linear-gradient(135deg, rgba(201,151,31,.10), rgba(201,151,31,.02))" }}
+      >
+        <h2 className="font-serif-d text-lg font-semibold">🧭 {t.ev.guideT}</h2>
+        <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
+          {t.ev.guideSub}
+        </p>
+        <div className="mt-4 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+          {(
+            [
+              { n: 1, tab: "concepts", title: t.ev.guideS1T, desc: t.ev.guideS1D },
+              { n: 2, tab: "formats", title: t.ev.guideS2T, desc: t.ev.guideS2D },
+              { n: 3, tab: "upload", title: t.ev.guideS3T, desc: t.ev.guideS3D },
+              { n: 4, tab: "sales", title: t.ev.guideS4T, desc: t.ev.guideS4D },
+            ] as const
+          ).map((s) => (
+            <button
+              key={s.n}
+              onClick={() => setTab(s.tab)}
+              className="card-hover rounded-2xl border p-3.5 text-left"
+              style={{ borderColor: "var(--line)", background: "var(--surface)" }}
+            >
+              <span
+                className="font-serif-d flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
+                style={{ background: "var(--gold)" }}
+              >
+                {s.n}
+              </span>
+              <p className="mt-2 text-sm font-bold">{s.title}</p>
+              <p className="mt-0.5 text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
+                {s.desc}
+              </p>
+            </button>
+          ))}
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <button onClick={() => setTab("items")} className="btn btn-ghost !text-xs">
+            📚 {t.ev.tabItems}
+          </button>
+          <button onClick={() => setTab("graphics")} className="btn btn-ghost !text-xs">
+            🎨 {t.ev.tabGraphics}
+          </button>
+          <span className="text-xs" style={{ color: "var(--muted)" }}>
+            {t.ev.guideLibD}
+          </span>
+        </div>
+        <p
+          className="mt-3 rounded-xl px-3.5 py-2.5 text-[13px] font-semibold"
+          style={{ background: "rgba(201,151,31,.12)", color: "var(--gold-deep)" }}
+        >
+          ⚖️ {t.ev.guideRule}
+        </p>
+      </section>
+
       {/* Tab bar */}
       <div className="sticky top-[57px] z-20 -mx-4 px-4 py-2 sm:-mx-6 sm:px-6" style={{ background: "color-mix(in srgb, var(--bg) 92%, transparent)", backdropFilter: "blur(10px)" }}>
         <div className="flex gap-1.5 overflow-x-auto">
@@ -139,6 +196,9 @@ export default function EvergreenPage() {
                     </span>
                     <div>
                       <h3 className="font-serif-d text-[17px] font-semibold">{c.title[lang]}</h3>
+                      <span className="mt-1 flex items-center gap-1.5 text-[11px]" style={{ color: "var(--muted)" }}>
+                        <Stars value={c.stars} size={12} /> {t.ev.salesPotential}
+                      </span>
                     </div>
                   </div>
                   <p className="mt-2.5 text-[13.5px] leading-relaxed" style={{ color: "var(--muted)" }}>
@@ -333,7 +393,12 @@ export default function EvergreenPage() {
                       <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "rgba(201,151,31,.14)", color: "var(--gold-deep)" }}>
                         <Icon size={17} />
                       </span>
-                      <h3 className="font-serif-d text-[16px] font-semibold">{g.title[lang]}</h3>
+                      <div>
+                        <h3 className="font-serif-d text-[16px] font-semibold">{g.title[lang]}</h3>
+                        <span className="mt-0.5 flex items-center gap-1.5 text-[11px]" style={{ color: "var(--muted)" }}>
+                          <Stars value={g.stars} size={11} /> {t.ev.salesPotential}
+                        </span>
+                      </div>
                       <span className="ml-auto rounded-full px-2.5 py-0.5 text-[11px] font-bold" style={{ background: "rgba(201,151,31,.14)", color: "var(--gold-deep)" }}>
                         {g.topics.length}
                       </span>
@@ -370,7 +435,10 @@ export default function EvergreenPage() {
                       <Icon size={19} />
                     </span>
                     <div>
-                      <h3 className="font-serif-d text-[17px] font-semibold">{g.title[lang]}</h3>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-serif-d text-[17px] font-semibold">{g.title[lang]}</h3>
+                        <Stars value={g.stars} size={12} />
+                      </div>
                       <p className="text-[12.5px]" style={{ color: "var(--muted)" }}>{g.blurb[lang]}</p>
                     </div>
                   </div>
@@ -389,6 +457,7 @@ export default function EvergreenPage() {
                           >
                             {el.demand === "high" ? t.ev.demandHigh : t.ev.demandMed}
                           </span>
+                          <Stars value={el.stars} size={12} />
                         </div>
                         <p className="mt-1.5 text-[13px] leading-relaxed">
                           <span className="font-bold" style={{ color: "var(--gold-deep)" }}>{t.ev.buyersUse}: </span>

@@ -9,6 +9,7 @@ import type { Bilingual } from "./evergreen";
 export interface EvergreenItemGroup {
   id: string;
   icon: string;
+  stars: number; // 1-5 sales-potential rating
   title: Bilingual;
   topics: Bilingual[]; // 27 per group = 216 total
 }
@@ -17,6 +18,7 @@ export const EVERGREEN_ITEM_GROUPS: EvergreenItemGroup[] = [
   {
     id: "business",
     icon: "Briefcase",
+    stars: 5,
     title: { en: "Business & Finance", bn: "ব্যবসা ও ফাইন্যান্স" },
     topics: [
       { en: "Business handshake close-up, isolated on white", bn: "সাদা ব্যাকগ্রাউন্ডে হ্যান্ডশেক ক্লোজ-আপ" },
@@ -51,6 +53,7 @@ export const EVERGREEN_ITEM_GROUPS: EvergreenItemGroup[] = [
   {
     id: "technology",
     icon: "Cpu",
+    stars: 5,
     title: { en: "Technology & AI", bn: "প্রযুক্তি ও এআই" },
     topics: [
       { en: "Glowing AI brain circuit illustration", bn: "জ্বলজ্বলে এআই ব্রেন সার্কিট ইলাস্ট্রেশন" },
@@ -85,6 +88,7 @@ export const EVERGREEN_ITEM_GROUPS: EvergreenItemGroup[] = [
   {
     id: "wellness",
     icon: "HeartPulse",
+    stars: 4,
     title: { en: "Health & Wellness", bn: "স্বাস্থ্য ও ওয়েলনেস" },
     topics: [
       { en: "Yoga pose at sunrise, silhouette", bn: "সূর্যোদয়ে ইয়োগা ভঙ্গি, সিলুয়েট" },
@@ -119,6 +123,7 @@ export const EVERGREEN_ITEM_GROUPS: EvergreenItemGroup[] = [
   {
     id: "people",
     icon: "Users",
+    stars: 5,
     title: { en: "People & Lifestyle", bn: "মানুষ ও লাইফস্টাইল" },
     topics: [
       { en: "Family picnic in the park", bn: "পার্কে পারিবারিক পিকনিক" },
@@ -156,6 +161,7 @@ const MORE_GROUPS: EvergreenItemGroup[] = [
   {
     id: "backgrounds",
     icon: "Layers",
+    stars: 4,
     title: { en: "Backgrounds & Textures", bn: "ব্যাকগ্রাউন্ড ও টেক্সচার" },
     topics: [
       { en: "Seamless floral pattern", bn: "সিমলেস ফ্লোরাল প্যাটার্ন" },
@@ -190,6 +196,7 @@ const MORE_GROUPS: EvergreenItemGroup[] = [
   {
     id: "icons",
     icon: "BarChart3",
+    stars: 5,
     title: { en: "Icons & Infographics", bn: "আইকন ও ইনফোগ্রাফিক" },
     topics: [
       { en: "Line icon set: business", bn: "লাইন আইকন সেট: ব্যবসা" },
@@ -224,6 +231,7 @@ const MORE_GROUPS: EvergreenItemGroup[] = [
   {
     id: "food",
     icon: "UtensilsCrossed",
+    stars: 4,
     title: { en: "Food & Drink", bn: "খাবার ও পানীয়" },
     topics: [
       { en: "Avocado toast, top view", bn: "অ্যাভোকাডো টোস্ট, উপর থেকে" },
@@ -258,6 +266,7 @@ const MORE_GROUPS: EvergreenItemGroup[] = [
   {
     id: "nature",
     icon: "Mountain",
+    stars: 3,
     title: { en: "Nature & Travel", bn: "প্রকৃতি ও ভ্রমণ" },
     topics: [
       { en: "Mountain lake reflection", bn: "পাহাড়ি হ্রদের প্রতিফলন" },
@@ -298,6 +307,7 @@ export const TOTAL_TOPICS: number = ALL_ITEM_GROUPS.reduce((n, g) => n + g.topic
 export interface GraphicalElement {
   name: Bilingual;
   demand: "high" | "medium";
+  stars: number; // 1-5 sales-potential rating
   buyers: Bilingual;
   tip: Bilingual;
 }
@@ -305,6 +315,7 @@ export interface GraphicalElement {
 export interface GraphicalElementGroup {
   id: string;
   icon: string;
+  stars: number; // 1-5 sales-potential rating
   title: Bilingual;
   blurb: Bilingual;
   elements: GraphicalElement[];
@@ -314,6 +325,7 @@ export const GRAPHICAL_ELEMENT_GROUPS: GraphicalElementGroup[] = [
   {
     id: "icons-symbols",
     icon: "Shapes",
+    stars: 5,
     title: { en: "Icons & Symbols", bn: "আইকন ও প্রতীক" },
     blurb: {
       en: "The backbone of UI, web and presentation design. Buyers license whole sets, so packs outsell singles.",
@@ -323,30 +335,35 @@ export const GRAPHICAL_ELEMENT_GROUPS: GraphicalElementGroup[] = [
       {
         name: { en: "Line icon sets (50+ icons)", bn: "লাইন আইকন সেট (৫০+ আইকন)" },
         demand: "high",
+        stars: 5,
         buyers: { en: "App designers, web agencies, pitch-deck makers", bn: "অ্যাপ ডিজাইনার, ওয়েব এজেন্সি, পিচ-ডেক নির্মাতা" },
         tip: { en: "Sell as one cohesive pack with matching stroke width — never as single icons.", bn: "মিলে যাওয়া স্ট্রোক প্রস্থসহ একটা সমন্বিত প্যাক হিসেবে বিক্রি করুন — কখনো সিঙ্গেল আইকন হিসেবে নয়।" },
       },
       {
         name: { en: "Filled / glyph icons", bn: "ফিলড / গ্লিফ আইকন" },
         demand: "high",
+        stars: 5,
         buyers: { en: "Mobile app and dashboard UI designers", bn: "মোবাইল অ্যাপ ও ড্যাশবোর্ড UI ডিজাইনার" },
         tip: { en: "Offer line + filled versions of the same set; buyers pay for the pair.", bn: "একই সেটের লাইন + ফিলড দুটো ভার্সন দিন; জোড়ার জন্য ক্রেতারা বেশি দেয়।" },
       },
       {
         name: { en: "Social media icon packs", bn: "সোশ্যাল মিডিয়া আইকন প্যাক" },
         demand: "high",
+        stars: 4,
         buyers: { en: "Marketers, bloggers, small businesses", bn: "মার্কেটার, ব্লগার, ছোট ব্যবসা" },
         tip: { en: "Refresh the pack every year with new platforms and trend colors.", bn: "প্রতি বছর নতুন প্ল্যাটফর্ম ও ট্রেন্ডি রঙ দিয়ে প্যাক হালনাগাদ করুন।" },
       },
       {
         name: { en: "Hand-drawn doodle icons", bn: "হাতে আঁকা ডুডল আইকন" },
         demand: "medium",
+        stars: 3,
         buyers: { en: "Educators, coaches, friendly consumer brands", bn: "শিক্ষক, কোচ, বন্ধুসুলভ ভোক্তা ব্র্যান্ড" },
         tip: { en: "Slightly imperfect strokes sell authenticity — don't over-clean them.", bn: "সামান্য অসম্পূর্ণ স্ট্রোকই আসল ভাব আনে — বেশি পরিষ্কার করবেন না।" },
       },
       {
         name: { en: "3D icons (clay / isometric)", bn: "থ্রিডি আইকন (ক্লে / আইসোমেট্রিক)" },
         demand: "high",
+        stars: 5,
         buyers: { en: "SaaS landing pages, tech startups", bn: "SaaS ল্যান্ডিং পেজ, টেক স্টার্টআপ" },
         tip: { en: "Trending style — keep lighting and angle identical across the whole set.", bn: "ট্রেন্ডিং স্টাইল — পুরো সেটে লাইটিং ও অ্যাঙ্গেল একদম এক রাখুন।" },
       },
@@ -355,6 +372,7 @@ export const GRAPHICAL_ELEMENT_GROUPS: GraphicalElementGroup[] = [
   {
     id: "backgrounds-patterns",
     icon: "Layers",
+    stars: 4,
     title: { en: "Backgrounds & Patterns", bn: "ব্যাকগ্রাউন্ড ও প্যাটার্ন" },
     blurb: {
       en: "Designers need fresh backdrops constantly. Seamless, tileable files are the repeat sellers.",
@@ -364,30 +382,35 @@ export const GRAPHICAL_ELEMENT_GROUPS: GraphicalElementGroup[] = [
       {
         name: { en: "Seamless patterns", bn: "সিমলেস প্যাটার্ন" },
         demand: "high",
+        stars: 5,
         buyers: { en: "Packaging, textiles, web backgrounds", bn: "প্যাকেজিং, টেক্সটাইল, ওয়েব ব্যাকগ্রাউন্ড" },
         tip: { en: "Test tiling at three zoom levels before upload — one visible seam kills sales.", bn: "আপলোডের আগে তিনটি জুম লেভেলে টাইলিং পরীক্ষা করুন — একটা দৃশ্যমান জোড়াই বিক্রি নষ্ট করে।" },
       },
       {
         name: { en: "Abstract gradient meshes", bn: "অ্যাবস্ট্রাক্ট গ্র্যাডিয়েন্ট মেশ" },
         demand: "high",
+        stars: 4,
         buyers: { en: "Hero sections, ad creatives, app screens", bn: "হিরো সেকশন, বিজ্ঞাপন, অ্যাপ স্ক্রিন" },
         tip: { en: "Trendy palettes (peach, sage, deep navy) outsell random color mixes.", bn: "ট্রেন্ডি প্যালেট (পিচ, সেজ, ডিপ নেভি) এলোমেলো রঙের মিশ্রণের চেয়ে বেশি বিক্রি হয়।" },
       },
       {
         name: { en: "Geometric backgrounds", bn: "জ্যামিতিক ব্যাকগ্রাউন্ড" },
         demand: "medium",
+        stars: 3,
         buyers: { en: "Presentations, fintech, corporate sites", bn: "প্রেজেন্টেশন, ফিনটেক, কর্পোরেট সাইট" },
         tip: { en: "Leave clear copy space on one side — buyers need room for headlines.", bn: "এক পাশে পরিষ্কার কপি স্পেস রাখুন — ক্রেতাদের হেডলাইনের জায়গা দরকার।" },
       },
       {
         name: { en: "Watercolor textures", bn: "ওয়াটারকালার টেক্সচার" },
         demand: "medium",
+        stars: 3,
         buyers: { en: "Wedding stationery, feminine brands, book covers", bn: "বিয়ের স্টেশনারি, নারীকেন্দ্রিক ব্র্যান্ড, বইয়ের প্রচ্ছদ" },
         tip: { en: "Scan real paint at 600 DPI — faked digital watercolor is easy to spot.", bn: "আসল রং ৬০০ DPI-তে স্ক্যান করুন — নকল ডিজিটাল ওয়াটারকালার সহজেই ধরা পড়ে।" },
       },
       {
         name: { en: "Dark luxury backgrounds", bn: "ডার্ক লাক্সারি ব্যাকগ্রাউন্ড" },
         demand: "high",
+        stars: 4,
         buyers: { en: "Premium brands, YouTube thumbnails, perfume ads", bn: "প্রিমিয়াম ব্র্যান্ড, ইউটিউব থাম্বনেইল, পারফিউমের বিজ্ঞাপন" },
         tip: { en: "Gold-on-black never goes out of style — build a whole series around it.", bn: "কালোর উপর সোনালি কখনো পুরনো হয় না — এটা ঘিরে পুরো সিরিজ বানান।" },
       },
@@ -396,6 +419,7 @@ export const GRAPHICAL_ELEMENT_GROUPS: GraphicalElementGroup[] = [
   {
     id: "textures-overlays",
     icon: "Sparkles",
+    stars: 4,
     title: { en: "Textures & Overlays", bn: "টেক্সচার ও ওভারলে" },
     blurb: {
       en: "The secret weapon of designers and photographers. Sold as high-res JPGs or transparent PNG packs.",
@@ -405,30 +429,35 @@ export const GRAPHICAL_ELEMENT_GROUPS: GraphicalElementGroup[] = [
       {
         name: { en: "Paper & cardboard textures", bn: "কাগজ ও কার্ডবোর্ড টেক্সচার" },
         demand: "high",
+        stars: 4,
         buyers: { en: "Mockup makers, print designers", bn: "মকআপ নির্মাতা, প্রিন্ট ডিজাইনার" },
         tip: { en: "Shoot flat with even light at 6000px+ — resolution is the selling point.", bn: "সমান আলোয় ফ্ল্যাট করে ৬০০০px+-এ তুলুন — রেজোলিউশনই বিক্রির পয়েন্ট।" },
       },
       {
         name: { en: "Grunge & distressed overlays", bn: "গ্রাঞ্জ ও ডিসট্রেসড ওভারলে" },
         demand: "medium",
+        stars: 3,
         buyers: { en: "Poster artists, merch designers", bn: "পোস্টার শিল্পী, মার্চ ডিজাইনার" },
         tip: { en: "Sell as transparent PNG packs so buyers can drop them over any artwork.", bn: "ট্রান্সপারেন্ট PNG প্যাক হিসেবে বিক্রি করুন, যাতে ক্রেতারা যেকোনো আর্টের উপর বসাতে পারে।" },
       },
       {
         name: { en: "Marble & stone textures", bn: "মার্বেল ও পাথরের টেক্সচার" },
         demand: "high",
+        stars: 4,
         buyers: { en: "Beauty brands, interior designers, wedding suites", bn: "বিউটি ব্র্যান্ড, ইন্টেরিয়র ডিজাইনার, ওয়েডিং স্যুট" },
         tip: { en: "White-and-gold marble is the perennial bestseller — start there.", bn: "সাদা-সোনালি মার্বেল চিরন্তন বেস্টসেলার — এটা দিয়েই শুরু করুন।" },
       },
       {
         name: { en: "Film grain & noise overlays", bn: "ফিল্ম গ্রেইন ও নয়েজ ওভারলে" },
         demand: "medium",
+        stars: 3,
         buyers: { en: "Photographers, video editors", bn: "ফটোগ্রাফার, ভিডিও এডিটর" },
         tip: { en: "Bundle multiple intensities (subtle → heavy) in one pack.", bn: "এক প্যাকে একাধিক তীব্রতা (হালকা → ভারী) বান্ডিল করুন।" },
       },
       {
         name: { en: "Light leaks & bokeh overlays", bn: "লাইট লিক ও বোকেহ ওভারলে" },
         demand: "medium",
+        stars: 3,
         buyers: { en: "Wedding and portrait photographers", bn: "ওয়েডিং ও পোর্ট্রেট ফটোগ্রাফার" },
         tip: { en: "Warm tones consistently outsell cool tones in this category.", bn: "এই ক্যাটাগরিতে উষ্ণ টোন ধারাবাহিকভাবে শীতল টোনের চেয়ে বেশি বিক্রি হয়।" },
       },
@@ -437,6 +466,7 @@ export const GRAPHICAL_ELEMENT_GROUPS: GraphicalElementGroup[] = [
   {
     id: "infographics-data",
     icon: "BarChart3",
+    stars: 5,
     title: { en: "Infographics & Data Visuals", bn: "ইনফোগ্রাফিক ও ডেটা ভিজ্যুয়াল" },
     blurb: {
       en: "Business content never stops. Editable vectors with clean layers command the best prices.",
@@ -446,30 +476,35 @@ export const GRAPHICAL_ELEMENT_GROUPS: GraphicalElementGroup[] = [
       {
         name: { en: "Chart & graph elements", bn: "চার্ট ও গ্রাফ এলিমেন্ট" },
         demand: "high",
+        stars: 5,
         buyers: { en: "Business reports, blogs, news media", bn: "ব্যবসায়িক রিপোর্ট, ব্লগ, সংবাদমাধ্যম" },
         tip: { en: "Keep vectors editable with clearly labeled layers — buyers customize them.", bn: "ভেক্টর এডিটেবল রাখুন, লেয়ারের স্পষ্ট নাম দিন — ক্রেতারা কাস্টমাইজ করে।" },
       },
       {
         name: { en: "Timeline templates", bn: "টাইমলাইন টেমপ্লেট" },
         demand: "high",
+        stars: 4,
         buyers: { en: "History content, project pitches, roadmaps", bn: "ইতিহাস কন্টেন্ট, প্রজেক্ট পিচ, রোডম্যাপ" },
         tip: { en: "Ship horizontal AND vertical versions — the pair doubles your sales.", bn: "হরাইজন্টাল ও ভার্টিকাল দুটো ভার্সন দিন — জোড়া বিক্রি দ্বিগুণ করে।" },
       },
       {
         name: { en: "Process & flow diagrams", bn: "প্রসেস ও ফ্লো ডায়াগ্রাম" },
         demand: "high",
+        stars: 4,
         buyers: { en: "Corporate training, SaaS onboarding", bn: "কর্পোরেট ট্রেনিং, SaaS অনবোর্ডিং" },
         tip: { en: "Numbered steps with matching icons included sell far better than bare arrows.", bn: "মিলে যাওয়া আইকনসহ নম্বর দেওয়া ধাপ, খালি তীরের চেয়ে অনেক বেশি বিক্রি হয়।" },
       },
       {
         name: { en: "Map vectors with pins", bn: "পিনসহ মানচিত্র ভেক্টর" },
         demand: "medium",
+        stars: 3,
         buyers: { en: "Travel blogs, real estate, logistics firms", bn: "ট্রাভেল ব্লগ, রিয়েল এস্টেট, লজিস্টিক্স ফার্ম" },
         tip: { en: "Build continent → country → city sets so buyers can collect the series.", bn: "মহাদেশ → দেশ → শহরের সেট বানান, যাতে ক্রেতারা সিরিজ সংগ্রহ করে।" },
       },
       {
         name: { en: "Dashboard UI kits", bn: "ড্যাশবোর্ড UI কিট" },
         demand: "high",
+        stars: 5,
         buyers: { en: "SaaS mockups, startup pitch decks", bn: "SaaS মকআপ, স্টার্টআপ পিচ ডেক" },
         tip: { en: "Include a dark-mode variant — it noticeably lifts downloads.", bn: "ডার্ক-মোড ভ্যারিয়েন্ট রাখুন — এতে ডাউনলোড স্পষ্টভাবে বাড়ে।" },
       },
@@ -478,6 +513,7 @@ export const GRAPHICAL_ELEMENT_GROUPS: GraphicalElementGroup[] = [
   {
     id: "templates-mockups",
     icon: "LayoutTemplate",
+    stars: 5,
     title: { en: "Templates & Mockups", bn: "টেমপ্লেট ও মকআপ" },
     blurb: {
       en: "Buyers pay for ready-to-edit files that save them hours. Always show a realistic preview.",
@@ -487,30 +523,35 @@ export const GRAPHICAL_ELEMENT_GROUPS: GraphicalElementGroup[] = [
       {
         name: { en: "Social media template kits", bn: "সোশ্যাল মিডিয়া টেমপ্লেট কিট" },
         demand: "high",
+        stars: 5,
         buyers: { en: "Small businesses, coaches, restaurants", bn: "ছোট ব্যবসা, কোচ, রেস্টুরেন্ট" },
         tip: { en: "Pack 1080×1350 posts + story sizes together — one purchase covers everything.", bn: "১০৮০×১৩৫০ পোস্ট + স্টোরি সাইজ একসাথে প্যাক করুন — এক কেনায় সব কভার হয়।" },
       },
       {
         name: { en: "Business card templates", bn: "বিজনেস কার্ড টেমপ্লেট" },
         demand: "high",
+        stars: 4,
         buyers: { en: "Freelancers, print shops", bn: "ফ্রিল্যান্সার, প্রিন্টের দোকান" },
         tip: { en: "Front + back + styled mockup in one file beats a card-only upload.", bn: "এক ফাইলে সামনে + পেছনে + স্টাইলড মকআপ — শুধু কার্ডের আপলোডকে হারায়।" },
       },
       {
         name: { en: "Logo badges & emblems", bn: "লোগো ব্যাজ ও এমব্লেম" },
         demand: "medium",
+        stars: 3,
         buyers: { en: "Startups, merch sellers, cafes", bn: "স্টার্টআপ, মার্চ বিক্রেতা, ক্যাফে" },
         tip: { en: "Vintage badge styles are evergreen sellers — avoid trendy gimmicks.", bn: "ভিনটেজ ব্যাজ স্টাইল চিরন্তন বিক্রেতা — ট্রেন্ডি কায়দা এড়িয়ে চলুন।" },
       },
       {
         name: { en: "Flyer & poster templates", bn: "ফ্লায়ার ও পোস্টার টেমপ্লেট" },
         demand: "medium",
+        stars: 3,
         buyers: { en: "Event organizers, restaurants, gyms", bn: "ইভেন্ট আয়োজক, রেস্টুরেন্ট, জিম" },
         tip: { en: "Make editable text areas obvious in the preview — buyers scan in seconds.", bn: "প্রিভিউতে এডিটেবল টেক্সট এরিয়া স্পষ্ট রাখুন — ক্রেতারা সেকেন্ডে স্ক্যান করে।" },
       },
       {
         name: { en: "Presentation deck templates", bn: "প্রেজেন্টেশন ডেক টেমপ্লেট" },
         demand: "high",
+        stars: 5,
         buyers: { en: "Consultants, students, corporate teams", bn: "কনসালট্যান্ট, শিক্ষার্থী, কর্পোরেট টিম" },
         tip: { en: "20+ slides with charts included — thin decks don't get licensed.", bn: "চার্টসহ ২০+ স্লাইড রাখুন — পাতলা ডেক লাইসেন্স পায় না।" },
       },
@@ -519,6 +560,7 @@ export const GRAPHICAL_ELEMENT_GROUPS: GraphicalElementGroup[] = [
   {
     id: "illustrations-decorative",
     icon: "Palette",
+    stars: 4,
     title: { en: "Illustrations & Decorative", bn: "ইলাস্ট্রেশন ও ডেকোরেটিভ" },
     blurb: {
       en: "Hand-made looks beat clip-art. Faceless characters and flat styles dodge model-release issues entirely.",
@@ -528,30 +570,35 @@ export const GRAPHICAL_ELEMENT_GROUPS: GraphicalElementGroup[] = [
       {
         name: { en: "Flat vector illustrations", bn: "ফ্ল্যাট ভেক্টর ইলাস্ট্রেশন" },
         demand: "high",
+        stars: 5,
         buyers: { en: "Blogs, apps, explainer videos", bn: "ব্লগ, অ্যাপ, এক্সপ্লেইনার ভিডিও" },
         tip: { en: "Faceless characters avoid model releases entirely — a huge production advantage.", bn: "মুখহীন ক্যারেক্টারে মডেল রিলিজ লাগেই না — এটা বিশাল প্রোডাকশন সুবিধা।" },
       },
       {
         name: { en: "Floral & botanical vectors", bn: "ফ্লোরাল ও বোটানিক্যাল ভেক্টর" },
         demand: "high",
+        stars: 4,
         buyers: { en: "Wedding stationery, packaging, fabric prints", bn: "বিয়ের স্টেশনারি, প্যাকেজিং, কাপড়ের প্রিন্ট" },
         tip: { en: "Hand-drawn florals outsell stiff clip-art styles year after year.", bn: "হাতে আঁকা ফ্লোরাল, শক্ত ক্লিপ-আর্ট স্টাইলকে বছর বছর হারায়।" },
       },
       {
         name: { en: "Borders, frames & dividers", bn: "বর্ডার, ফ্রেম ও ডিভাইডার" },
         demand: "medium",
+        stars: 3,
         buyers: { en: "Invitations, certificates, menus", bn: "আমন্ত্রণপত্র, সার্টিফিকেট, মেনু" },
         tip: { en: "Gold thin-line frames are timeless — build sets in multiple aspect ratios.", bn: "সোনালি সরু লাইনের ফ্রেম চিরন্তন — একাধিক আসপেক্ট রেশিওতে সেট বানান।" },
       },
       {
         name: { en: "Sticker & badge sheets", bn: "স্টিকার ও ব্যাজ শিট" },
         demand: "medium",
+        stars: 3,
         buyers: { en: "Planner community, social media creators", bn: "প্ল্যানার কমিউনিটি, সোশ্যাল মিডিয়া ক্রিয়েটর" },
         tip: { en: "Sell themed sheets of 12–24 stickers, not single stickers.", bn: "সিঙ্গেল স্টিকার নয়, ১২–২৪টির থিমভিত্তিক শিট বিক্রি করুন।" },
       },
       {
         name: { en: "Doodle & sketch elements", bn: "ডুডল ও স্কেচ এলিমেন্ট" },
         demand: "medium",
+        stars: 3,
         buyers: { en: "Education, kids brands, casual blogs", bn: "শিক্ষা, কিডস ব্র্যান্ড, ক্যাজুয়াল ব্লগ" },
         tip: { en: "Keep one consistent stroke width across the set for a professional feel.", bn: "প্রফেশনাল ভাবের জন্য পুরো সেটে একই স্ট্রোক প্রস্থ রাখুন।" },
       },

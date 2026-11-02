@@ -11,6 +11,7 @@ export interface Bilingual {
 export interface EvergreenCategory {
   id: string;
   icon: string;
+  stars: number; // 1-5 sales-potential rating
   title: Bilingual;
   blurb: Bilingual;
   concepts: Bilingual[];
@@ -20,6 +21,7 @@ export const EVERGREEN_CATEGORIES: EvergreenCategory[] = [
   {
     id: "business",
     icon: "Briefcase",
+    stars: 5,
     title: { en: "Business & Finance", bn: "ব্যবসা ও ফাইন্যান্স" },
     blurb: {
       en: "The highest-demand evergreen niche: companies buy visuals all year for decks, sites and ads.",
@@ -36,6 +38,7 @@ export const EVERGREEN_CATEGORIES: EvergreenCategory[] = [
   {
     id: "technology",
     icon: "Cpu",
+    stars: 5,
     title: { en: "Technology & AI", bn: "প্রযুক্তি ও এআই" },
     blurb: {
       en: "Perennial buyer demand from SaaS, blogs and tech media. Abstract concepts outsell literal gadgets.",
@@ -52,6 +55,7 @@ export const EVERGREEN_CATEGORIES: EvergreenCategory[] = [
   {
     id: "wellness",
     icon: "HeartPulse",
+    stars: 4,
     title: { en: "Health & Wellness", bn: "স্বাস্থ্য ও ওয়েলনেস" },
     blurb: {
       en: "Fitness brands, clinics and wellness blogs buy constantly. Show real, diverse, achievable bodies.",
@@ -68,6 +72,7 @@ export const EVERGREEN_CATEGORIES: EvergreenCategory[] = [
   {
     id: "people",
     icon: "Users",
+    stars: 5,
     title: { en: "People & Lifestyle", bn: "মানুষ ও লাইফস্টাইল" },
     blurb: {
       en: "Authentic diversity wins. Everyday moments with genuine emotion license again and again.",
@@ -84,6 +89,7 @@ export const EVERGREEN_CATEGORIES: EvergreenCategory[] = [
   {
     id: "backgrounds",
     icon: "Layers",
+    stars: 4,
     title: { en: "Backgrounds & Textures", bn: "ব্যাকগ্রাউন্ড ও টেক্সচার" },
     blurb: {
       en: "Designers need flexible canvases daily. Simple, clean and copy-space-friendly beats busy.",
@@ -100,6 +106,7 @@ export const EVERGREEN_CATEGORIES: EvergreenCategory[] = [
   {
     id: "icons",
     icon: "BarChart3",
+    stars: 5,
     title: { en: "Icons & Infographics", bn: "আইকন ও ইনফোগ্রাফিক" },
     blurb: {
       en: "Icon sets sell as packs. Consistent stroke, consistent grid — one style per set, 20+ icons.",
@@ -116,6 +123,7 @@ export const EVERGREEN_CATEGORIES: EvergreenCategory[] = [
   {
     id: "food",
     icon: "UtensilsCrossed",
+    stars: 4,
     title: { en: "Food & Drink", bn: "খাবার ও পানীয়" },
     blurb: {
       en: "Restaurants, blogs and packaging need appetizing shots year-round. Natural light, simple props.",
@@ -132,6 +140,7 @@ export const EVERGREEN_CATEGORIES: EvergreenCategory[] = [
   {
     id: "nature",
     icon: "Mountain",
+    stars: 3,
     title: { en: "Nature & Travel", bn: "প্রকৃতি ও ভ্রমণ" },
     blurb: {
       en: "Avoid seasonal markers (snow, autumn leaves) to stay evergreen. Generic beauty travels far.",

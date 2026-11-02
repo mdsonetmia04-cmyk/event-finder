@@ -24,6 +24,13 @@ export interface Profile {
   team_number?: string | null;
   gender?: string | null;
   blood_group?: string | null;
+  full_name?: string | null;
+  mobile_number?: string | null;
+  date_of_birth?: string | null;
+  district?: string | null;
+  last_education?: string | null;
+  skills_interests?: string | null;
+  facebook_link?: string | null;
 }
 
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";

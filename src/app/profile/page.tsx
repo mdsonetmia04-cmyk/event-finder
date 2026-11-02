@@ -20,6 +20,13 @@ export default function ProfilePage() {
   const [teamNo, setTeamNo] = useState("");
   const [gender, setGender] = useState("");
   const [blood, setBlood] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [dob, setDob] = useState("");
+  const [district, setDistrict] = useState("");
+  const [education, setEducation] = useState("");
+  const [skills, setSkills] = useState("");
+  const [fbLink, setFbLink] = useState("");
   const [msg, setMsg] = useState<"ok" | "not_ready" | "error" | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -29,6 +36,13 @@ export default function ProfilePage() {
       setTeamNo(session.team_number ?? "");
       setGender(session.gender ?? "");
       setBlood(session.blood_group ?? "");
+      setFullName(session.full_name ?? "");
+      setMobile(session.mobile_number ?? "");
+      setDob(session.date_of_birth ?? "");
+      setDistrict(session.district ?? "");
+      setEducation(session.last_education ?? "");
+      setSkills(session.skills_interests ?? "");
+      setFbLink(session.facebook_link ?? "");
     }
   }, [session?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -41,7 +55,19 @@ export default function ProfilePage() {
   const save = async () => {
     setSaving(true);
     setMsg(null);
-    const res = await updateProfile({ gmail, team_number: teamNo, gender, blood_group: blood });
+    const res = await updateProfile({
+      gmail,
+      team_number: teamNo,
+      gender,
+      blood_group: blood,
+      full_name: fullName,
+      mobile_number: mobile,
+      date_of_birth: dob,
+      district,
+      last_education: education,
+      skills_interests: skills,
+      facebook_link: fbLink,
+    });
     setMsg(res === "ok" ? "ok" : res);
     setSaving(false);
   };
@@ -75,6 +101,54 @@ export default function ProfilePage() {
         {/* Editable fields */}
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="sm:col-span-2">
+            <span className="label">{t.profile.fullName}</span>
+            <input
+              className="input mt-1"
+              placeholder={t.profile.fullNamePh}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              autoComplete="name"
+            />
+          </label>
+          <label>
+            <span className="label">{t.profile.mobile}</span>
+            <input
+              type="tel"
+              className="input mt-1"
+              placeholder={t.profile.mobilePh}
+              value={mobile}
+              onChange={(e) => setMobile(e.target.value)}
+              autoComplete="tel"
+            />
+          </label>
+          <label>
+            <span className="label">{t.profile.dob}</span>
+            <input
+              type="date"
+              className="input mt-1"
+              value={dob}
+              onChange={(e) => setDob(e.target.value)}
+            />
+          </label>
+          <label>
+            <span className="label">{t.profile.district}</span>
+            <input
+              className="input mt-1"
+              placeholder={t.profile.districtPh}
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+            />
+          </label>
+          <label>
+            <span className="label">{t.profile.education}</span>
+            <input
+              className="input mt-1"
+              placeholder={t.profile.educationPh}
+              value={education}
+              onChange={(e) => setEducation(e.target.value)}
+            />
+          </label>
+          <label className="sm:col-span-2">
             <span className="label">{t.profile.gmail}</span>
             <input
               type="email"
@@ -83,6 +157,26 @@ export default function ProfilePage() {
               value={gmail}
               onChange={(e) => setGmail(e.target.value)}
               autoComplete="email"
+            />
+          </label>
+          <label className="sm:col-span-2">
+            <span className="label">{t.profile.skills}</span>
+            <textarea
+              className="input mt-1 min-h-[84px] resize-y"
+              placeholder={t.profile.skillsPh}
+              value={skills}
+              onChange={(e) => setSkills(e.target.value)}
+            />
+          </label>
+          <label className="sm:col-span-2">
+            <span className="label">{t.profile.fbLink} <span style={{ color: "var(--muted)" }}>({t.profile.optional})</span></span>
+            <input
+              type="url"
+              className="input mt-1"
+              placeholder={t.profile.fbLinkPh}
+              value={fbLink}
+              onChange={(e) => setFbLink(e.target.value)}
+              autoComplete="url"
             />
           </label>
           <label>

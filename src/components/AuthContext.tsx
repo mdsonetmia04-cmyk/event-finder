@@ -41,6 +41,13 @@ interface AuthCtx {
     team_number: string;
     gender: string;
     blood_group: string;
+    full_name: string;
+    mobile_number: string;
+    date_of_birth: string;
+    district: string;
+    last_education: string;
+    skills_interests: string;
+    facebook_link: string;
   }) => Promise<"ok" | "not_ready" | "error">;
   refresh: () => Promise<void>;
 }
@@ -290,9 +297,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   /** Update the caller's own optional profile fields via the
       update_own_profile RPC. Returns "not_ready" when the DB migration
-      (supabase/add-profile-fields.sql) has not been run yet. */
+      (supabase/add-profile-fields-2.sql) has not been run yet. */
   const updateProfile = useCallback(
-    async (fields: { gmail: string; team_number: string; gender: string; blood_group: string }) => {
+    async (fields: {
+      gmail: string;
+      team_number: string;
+      gender: string;
+      blood_group: string;
+      full_name: string;
+      mobile_number: string;
+      date_of_birth: string;
+      district: string;
+      last_education: string;
+      skills_interests: string;
+      facebook_link: string;
+    }) => {
       const supabase = getSupabase();
       if (!supabase) return "error" as const;
       const { error } = await supabase.rpc("update_own_profile", {
@@ -300,6 +319,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         p_team_number: fields.team_number.trim(),
         p_gender: fields.gender,
         p_blood_group: fields.blood_group,
+        p_full_name: fields.full_name.trim(),
+        p_mobile_number: fields.mobile_number.trim(),
+        p_date_of_birth: fields.date_of_birth.trim(),
+        p_district: fields.district.trim(),
+        p_last_education: fields.last_education.trim(),
+        p_skills_interests: fields.skills_interests.trim(),
+        p_facebook_link: fields.facebook_link.trim(),
       });
       if (error) {
         // 42883 = undefined_function → migration not run yet

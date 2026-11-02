@@ -40,9 +40,26 @@ function UserRow({
         <p className="mt-0.5 text-xs tabular-nums" style={{ color: "var(--muted)" }}>
           {user.whatsapp} · {date}
         </p>
-        {(user.gmail || user.team_number || user.gender || user.blood_group) && (
+        {(user.gmail || user.team_number || user.gender || user.blood_group || user.full_name || user.mobile_number || user.date_of_birth || user.district || user.last_education || user.skills_interests || user.facebook_link) && (
           <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs" style={{ color: "var(--muted)" }}>
+            {user.full_name && (
+              <span>{t.profile.fullName}: <strong className="font-semibold" style={{ color: "var(--ink)" }}>{user.full_name}</strong></span>
+            )}
             {user.gmail && <span className="tabular-nums">{user.gmail}</span>}
+            {user.mobile_number && <span className="tabular-nums">📱 {user.mobile_number}</span>}
+            {user.date_of_birth && <span>🎂 <span className="tabular-nums">{user.date_of_birth}</span></span>}
+            {user.district && (
+              <span>📍 <strong className="font-semibold" style={{ color: "var(--ink)" }}>{user.district}</strong></span>
+            )}
+            {user.last_education && (
+              <span>🎓 <strong className="font-semibold" style={{ color: "var(--ink)" }}>{user.last_education}</strong></span>
+            )}
+            {user.skills_interests && (
+              <span>✨ {user.skills_interests}</span>
+            )}
+            {user.facebook_link && (
+              <a href={user.facebook_link} target="_blank" rel="noopener noreferrer" className="underline">🔗 Facebook</a>
+            )}
             {user.team_number && (
               <span>{t.profile.teamNo}: <strong className="font-semibold" style={{ color: "var(--ink)" }}>{user.team_number}</strong></span>
             )}

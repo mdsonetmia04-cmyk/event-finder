@@ -4,7 +4,7 @@
    design concepts, format guides (EPS Vector / PNG / JPG), upload process
    and the sales playbook. */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   BarChart3,
   Briefcase,
@@ -12,9 +12,14 @@ import {
   Cpu,
   HeartPulse,
   Layers,
+  LayoutTemplate,
   Lightbulb,
   Mountain,
+  Palette,
   Rocket,
+  Search,
+  Shapes,
+  Sparkles,
   UploadCloud,
   Users,
   UtensilsCrossed,
@@ -29,6 +34,11 @@ import {
   SALES_PLAYS,
   UPLOAD_STEPS,
 } from "@/lib/evergreen";
+import {
+  ALL_ITEM_GROUPS,
+  GRAPHICAL_ELEMENT_GROUPS,
+  TOTAL_TOPICS,
+} from "@/lib/evergreen-extra";
 
 const ICONS: Record<string, typeof Briefcase> = {
   Briefcase,
@@ -39,9 +49,13 @@ const ICONS: Record<string, typeof Briefcase> = {
   BarChart3,
   UtensilsCrossed,
   Mountain,
+  Shapes,
+  LayoutTemplate,
+  Palette,
+  Sparkles,
 };
 
-type Tab = "concepts" | "formats" | "upload" | "sales";
+type Tab = "concepts" | "formats" | "upload" | "sales" | "items" | "graphics";
 
 export default function EvergreenPage() {
   const { t, lang } = useLang();
@@ -53,7 +67,29 @@ export default function EvergreenPage() {
     { id: "formats", label: t.ev.tabFormats },
     { id: "upload", label: t.ev.tabUpload },
     { id: "sales", label: t.ev.tabSales },
+    { id: "items", label: t.ev.tabItems },
+    { id: "graphics", label: t.ev.tabGraphics },
   ];
+
+  const [query, setQuery] = useState("");
+  const [catFilter, setCatFilter] = useState("all");
+
+  const filteredGroups = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return ALL_ITEM_GROUPS.filter((g) => catFilter === "all" || g.id === catFilter).map((g) => ({
+      ...g,
+      topics: q
+        ? g.topics.filter(
+            (tp) => tp.en.toLowerCase().includes(q) || tp.bn.includes(query.trim())
+          )
+        : g.topics,
+    })).filter((g) => g.topics.length > 0);
+  }, [query, catFilter]);
+
+  const filteredCount = useMemo(
+    () => filteredGroups.reduce((n, g) => n + g.topics.length, 0),
+    [filteredGroups]
+  );
 
   const activeFormat = FORMAT_GUIDES.find((f) => f.id === format)!;
 
@@ -232,6 +268,142 @@ export default function EvergreenPage() {
                 </p>
               </article>
             ))}
+          </div>
+        </section>
+      )}
+      {tab === "items" && (
+        <section>
+          <h2 className="font-serif-d mb-1 text-xl font-semibold">{t.ev.itemsT}</h2>
+          <p className="mb-4 text-sm" style={{ color: "var(--muted)" }}>{t.ev.itemsSub}</p>
+
+          {/* Search + category filter */}
+          <div className="mb-4 flex flex-col gap-3">
+            <label
+              className="flex items-center gap-2 rounded-full border px-4 py-2.5"
+              style={{ borderColor: "var(--line)", background: "var(--surface2)" }}
+            >
+              <Search size={16} style={{ color: "var(--muted)" }} />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t.ev.itemsSearchPh}
+                className="w-full bg-transparent text-sm outline-none"
+                style={{ color: "var(--ink)" }}
+              />
+            </label>
+            <div className="flex gap-1.5 overflow-x-auto pb-1">
+              <Pressable key="all">
+                <button
+                  onClick={() => setCatFilter("all")}
+                  className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors ${catFilter === "all" ? "btn-active" : ""}`}
+                  style={catFilter === "all" ? {} : { color: "var(--muted)" }}
+                >
+                  {t.ev.itemsAll} · {TOTAL_TOPICS}
+                </button>
+              </Pressable>
+              {ALL_ITEM_GROUPS.map((g) => (
+                <Pressable key={g.id}>
+                  <button
+                    onClick={() => setCatFilter(g.id)}
+                    className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors ${catFilter === g.id ? "btn-active" : ""}`}
+                    style={catFilter === g.id ? {} : { color: "var(--muted)" }}
+                  >
+                    {g.title[lang]} · {g.topics.length}
+                  </button>
+                </Pressable>
+              ))}
+            </div>
+          </div>
+
+          <p className="mb-4 text-xs font-bold uppercase tracking-wider" style={{ color: "var(--gold-deep)" }}>
+            {t.ev.itemsCount(filteredCount)}
+          </p>
+
+          {filteredGroups.length === 0 ? (
+            <p className="rounded-2xl border p-6 text-center text-sm" style={{ borderColor: "var(--line)", color: "var(--muted)" }}>
+              {t.ev.itemsNoResult}
+            </p>
+          ) : (
+            <div className="flex flex-col gap-5">
+              {filteredGroups.map((g) => {
+                const Icon = ICONS[g.icon] ?? Lightbulb;
+                return (
+                  <article key={g.id} className="card p-5">
+                    <div className="mb-3 flex items-center gap-3">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "rgba(201,151,31,.14)", color: "var(--gold-deep)" }}>
+                        <Icon size={17} />
+                      </span>
+                      <h3 className="font-serif-d text-[16px] font-semibold">{g.title[lang]}</h3>
+                      <span className="ml-auto rounded-full px-2.5 py-0.5 text-[11px] font-bold" style={{ background: "rgba(201,151,31,.14)", color: "var(--gold-deep)" }}>
+                        {g.topics.length}
+                      </span>
+                    </div>
+                    <ol className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+                      {g.topics.map((tp, i) => (
+                        <li key={i} className="flex items-start gap-2.5 text-[13.5px] leading-snug">
+                          <span className="font-serif-d mt-px w-7 shrink-0 text-right text-[12px] font-bold" style={{ color: "var(--gold-deep)" }}>
+                            {String(i + 1).padStart(2, "0")}
+                          </span>
+                          <span>{tp[lang]}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
+
+      {tab === "graphics" && (
+        <section>
+          <h2 className="font-serif-d mb-1 text-xl font-semibold">{t.ev.graphicsT}</h2>
+          <p className="mb-5 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>{t.ev.graphicsSub}</p>
+          <div className="flex flex-col gap-5">
+            {GRAPHICAL_ELEMENT_GROUPS.map((g) => {
+              const Icon = ICONS[g.icon] ?? Shapes;
+              return (
+                <article key={g.id} className="card p-5 sm:p-6">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: "rgba(201,151,31,.14)", color: "var(--gold-deep)" }}>
+                      <Icon size={19} />
+                    </span>
+                    <div>
+                      <h3 className="font-serif-d text-[17px] font-semibold">{g.title[lang]}</h3>
+                      <p className="text-[12.5px]" style={{ color: "var(--muted)" }}>{g.blurb[lang]}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex flex-col gap-3">
+                    {g.elements.map((el, i) => (
+                      <div key={i} className="rounded-2xl border p-4" style={{ borderColor: "var(--line)", background: "var(--surface2)" }}>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="text-[14.5px] font-bold">{el.name[lang]}</h4>
+                          <span
+                            className="rounded-full px-2.5 py-0.5 text-[11px] font-bold"
+                            style={
+                              el.demand === "high"
+                                ? { background: "rgba(201,151,31,.18)", color: "var(--gold-deep)" }
+                                : { background: "var(--bg2)", color: "var(--muted)", border: "1px solid var(--line)" }
+                            }
+                          >
+                            {el.demand === "high" ? t.ev.demandHigh : t.ev.demandMed}
+                          </span>
+                        </div>
+                        <p className="mt-1.5 text-[13px] leading-relaxed">
+                          <span className="font-bold" style={{ color: "var(--gold-deep)" }}>{t.ev.buyersUse}: </span>
+                          <span style={{ color: "var(--muted)" }}>{el.buyers[lang]}</span>
+                        </p>
+                        <p className="mt-1 text-[13px] leading-relaxed">
+                          <span className="font-bold" style={{ color: "var(--gold-deep)" }}>{t.ev.proTip}: </span>
+                          <span style={{ color: "var(--muted)" }}>{el.tip[lang]}</span>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
       )}

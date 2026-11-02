@@ -6,7 +6,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", display: "swap" });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://stockseason-intelligence.vercel.app";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://sweet-smart-calendar.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -24,11 +24,20 @@ export const metadata: Metadata = {
     title: "Sweet Smart Calendar: Know What to Create. Know When to Upload.",
     description:
       "Your global seasonal intelligence system for smarter Adobe Stock content planning.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Sweet Smart Calendar — Plan Smarter. Upload Earlier. Create for Global Demand.",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Sweet Smart Calendar",
     description: "Plan Smarter. Upload Earlier. Create for Global Demand.",
+    images: ["/og-image.png"],
   },
   robots: { index: true, follow: true },
 };

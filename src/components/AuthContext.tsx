@@ -36,6 +36,12 @@ interface AuthCtx {
   reject: (id: string) => void;
   removeUser: (id: string) => void;
   changePassword: (newPassword: string) => Promise<AuthError>;
+  updateProfile: (fields: {
+    gmail: string;
+    team_number: string;
+    gender: string;
+    blood_group: string;
+  }) => Promise<"ok" | "not_ready" | "error">;
   refresh: () => Promise<void>;
 }
 
@@ -282,6 +288,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return error ? "wrong_password" : null;
   }, []);
 
+  /** Update the caller's own optional profile fields via the
+      update_own_profile RPC. Returns "not_ready" when the DB migration
+      (supabase/add-profile-fields.sql) has not been run yet. */
+  const updateProfile = useCallback(
+    async (fields: { gmail: string; team_number: string; gender: string; blood_group: string }) => {
+      const supabase = getSupabase();
+      if (!supabase) return "error" as const;
+      const { error } = await supabase.rpc("update_own_profile", {
+        p_gmail: fields.gmail.trim(),
+        p_team_number: fields.team_number.trim(),
+        p_gender: fields.gender,
+        p_blood_group: fields.blood_group,
+      });
+      if (error) {
+        // 42883 = undefined_function → migration not run yet
+        return (error as { code?: string }).code === "42883" ? ("not_ready" as const) : ("error" as const);
+      }
+      await refresh();
+      return "ok" as const;
+    },
+    [refresh]
+  );
+
   return (
     <Ctx.Provider
       value={{
@@ -296,6 +325,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         reject,
         removeUser,
         changePassword,
+        updateProfile,
         refresh,
       }}
     >

@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Sparkles,
   Sun,
+  UserRound,
   Globe2,
   ClipboardList,
   Leaf,
@@ -147,10 +148,14 @@ export function Header() {
 
         <div className="flex items-center gap-2">
           {session && (
-            <span className="chip hidden !py-1.5 md:inline-flex" title={session.whatsapp}>
-              {session.role === "super_admin" ? <ShieldCheck size={12} /> : null}
+            <Link
+              href="/profile"
+              className="chip hidden !py-1.5 transition-transform hover:scale-[1.04] md:inline-flex"
+              title={session.whatsapp}
+            >
+              {session.role === "super_admin" ? <ShieldCheck size={12} /> : <UserRound size={12} />}
               <span className="max-w-[110px] truncate font-semibold">{session.name}</span>
-            </span>
+            </Link>
           )}
           <LanguageToggle />
           <ThemeToggle />
@@ -177,6 +182,15 @@ export function Header() {
       {open && (
         <nav className="card mx-auto mt-2 max-w-7xl px-3 py-3 xl:hidden" aria-label="Mobile">
           <div className="grid gap-1">
+            {session && (
+              <Link
+                href="/profile"
+                onClick={() => setOpen(false)}
+                className={`nav-link flex items-center gap-3 !text-sm !font-medium${pathname === "/profile" ? " active" : ""}`}
+              >
+                <UserRound size={16} /> {session.name}
+              </Link>
+            )}
             {NAV.map((n) => {
               const Icon = n.icon;
               const active = pathname === n.href;

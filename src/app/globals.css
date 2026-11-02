@@ -383,7 +383,8 @@ button.cal-day:hover {
 .progress > div {
   height: 100%;
   border-radius: 999px;
-  background: var(--gold);
+  background: linear-gradient(90deg, var(--gold-soft), var(--gold) 55%, var(--gold-deep));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--gold) 50%, transparent);
   transition: width 0.3s ease;
 }
 

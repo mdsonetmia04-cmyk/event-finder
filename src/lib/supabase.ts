@@ -20,6 +20,10 @@ export interface Profile {
   role: UserRole;
   status: UserStatus;
   created_at: string;
+  gmail?: string | null;
+  team_number?: string | null;
+  gender?: string | null;
+  blood_group?: string | null;
 }
 
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";

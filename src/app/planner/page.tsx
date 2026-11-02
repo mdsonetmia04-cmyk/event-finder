@@ -5,7 +5,7 @@
    To Shoot → Editing → Ready → Uploaded. */
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, ListPlus, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Flame, ListPlus, Pencil, Plus, Search, Target, Trash2, TrendingUp, X } from "lucide-react";
 import { EmptyState, SectionHeader } from "@/components/ui";
 import { useCollections } from "@/components/collections";
 import { useLang } from "@/i18n/LanguageContext";
@@ -15,6 +15,14 @@ import type { ProductionTask } from "@/types/event";
 
 const STAGES = ["to-shoot", "editing", "ready", "uploaded"] as const;
 type Stage = (typeof STAGES)[number];
+
+/* Per-stage accent colors for the kanban pipeline. */
+const STAGE_COLORS: Record<Stage, string> = {
+  "to-shoot": "var(--gold-soft)",
+  editing: "var(--gold)",
+  ready: "var(--gold-deep)",
+  uploaded: "#2F9E6E",
+};
 
 type Season = "spring" | "summer" | "autumn" | "winter";
 
@@ -112,7 +120,7 @@ function SeasonArt({ season }: { season: Season }) {
   );
 }
 
-function PlannerHero({ active, dueThisWeek }: { active: number; dueThisWeek: number }) {
+function PlannerHero({ active, dueThisWeek, pct }: { active: number; dueThisWeek: number; pct: number }) {
   const { t, lang } = useLang();
   const { hour, month } = dhakaNow();
   const locale = lang === "bn" ? "bn-BD" : "en-US";
@@ -122,6 +130,8 @@ function PlannerHero({ active, dueThisWeek }: { active: number; dueThisWeek: num
     day: "numeric",
     month: "long",
   }).format(new Date());
+  const R = 34;
+  const CIRC = 2 * Math.PI * R;
   return (
     <div className="planner-hero card">
       <div className="min-w-0">
@@ -133,7 +143,37 @@ function PlannerHero({ active, dueThisWeek }: { active: number; dueThisWeek: num
           {t.planner.heroSub(active, dueThisWeek)}
         </p>
       </div>
-      <SeasonArt season={seasonOf(month)} />
+      <div className="flex shrink-0 items-center gap-4">
+        {/* Overall completion ring */}
+        <div className="relative hidden sm:block" role="img" aria-label={`${pct}%`}>
+          <svg width="92" height="92" viewBox="0 0 96 96">
+            <circle cx="48" cy="48" r={R} fill="none" stroke="var(--line)" strokeWidth="9" />
+            <circle
+              cx="48"
+              cy="48"
+              r={R}
+              fill="none"
+              stroke="url(#plannerRing)"
+              strokeWidth="9"
+              strokeLinecap="round"
+              strokeDasharray={`${(Math.min(100, Math.max(0, pct)) / 100) * CIRC} ${CIRC}`}
+              transform="rotate(-90 48 48)"
+              style={{ transition: "stroke-dasharray 0.5s ease", filter: "drop-shadow(0 0 6px color-mix(in srgb, var(--gold) 55%, transparent))" }}
+            />
+            <defs>
+              <linearGradient id="plannerRing" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="var(--gold-soft)" />
+                <stop offset="55%" stopColor="var(--gold)" />
+                <stop offset="100%" stopColor="var(--gold-deep)" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <span className="font-serif-d absolute inset-0 flex items-center justify-center text-[17px] font-bold tabular-nums">
+            {pct}%
+          </span>
+        </div>
+        <SeasonArt season={seasonOf(month)} />
+      </div>
     </div>
   );
 }
@@ -339,21 +379,39 @@ export default function PlannerPage() {
         }
       />
 
-      <PlannerHero active={tasks.filter((ta) => ta.status !== "uploaded").length} dueThisWeek={dueThisWeek} />
+      <PlannerHero
+        active={tasks.filter((ta) => ta.status !== "uploaded").length}
+        dueThisWeek={dueThisWeek}
+        pct={totals.pct}
+      />
 
       {/* Summary */}
       <div className="grid gap-3 sm:grid-cols-4">
         {[
-          { label: t.planner.sActive, value: tasks.filter((ta) => ta.status !== "uploaded").length },
-          { label: t.planner.sCompleted, value: tasks.filter((ta) => ta.status === "uploaded").length },
-          { label: t.planner.sPlanned, value: totals.target },
-          { label: t.planner.sProgress, value: `${totals.pct}%` },
-        ].map((s) => (
-          <div key={s.label} className="card p-4">
-            <p className="label">{s.label}</p>
-            <p className="font-serif-d mt-1 text-3xl font-bold tabular-nums">{s.value}</p>
-          </div>
-        ))}
+          { label: t.planner.sActive, value: tasks.filter((ta) => ta.status !== "uploaded").length, icon: Flame },
+          { label: t.planner.sCompleted, value: tasks.filter((ta) => ta.status === "uploaded").length, icon: CheckCircle2 },
+          { label: t.planner.sPlanned, value: totals.target, icon: Target },
+          { label: t.planner.sProgress, value: `${totals.pct}%`, icon: TrendingUp },
+        ].map((s) => {
+          const Icon = s.icon;
+          return (
+            <div key={s.label} className="card group relative overflow-hidden p-4">
+              <span
+                className="pointer-events-none absolute inset-x-0 top-0 h-[3px] opacity-80"
+                style={{ background: "linear-gradient(90deg, var(--gold-soft), var(--gold), var(--gold-deep))" }}
+                aria-hidden="true"
+              />
+              <span
+                className="mb-2.5 flex h-9 w-9 items-center justify-center rounded-xl transition-transform group-hover:scale-110"
+                style={{ background: "color-mix(in srgb, var(--gold) 13%, transparent)", color: "var(--gold-deep)" }}
+              >
+                <Icon size={17} />
+              </span>
+              <p className="label">{s.label}</p>
+              <p className="font-serif-d mt-1 text-3xl font-bold tabular-nums">{s.value}</p>
+            </div>
+          );
+        })}
       </div>
       <div className="card p-4">
         <div className="mb-1.5 flex justify-between text-xs" style={{ color: "var(--muted)" }}>
@@ -475,7 +533,10 @@ export default function PlannerPage() {
               <header className="kanban-col-head">
                 <span
                   className="kanban-dot"
-                  style={{ background: s === "uploaded" ? "#2F9E6E" : "var(--gold)" }}
+                  style={{
+                    background: STAGE_COLORS[s],
+                    boxShadow: `0 0 10px ${STAGE_COLORS[s]}`,
+                  }}
                   aria-hidden="true"
                 />
                 <h3 className="kanban-col-title">{t.planner.stages[s] ?? s}</h3>

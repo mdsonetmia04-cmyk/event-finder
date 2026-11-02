@@ -40,6 +40,22 @@ function UserRow({
         <p className="mt-0.5 text-xs tabular-nums" style={{ color: "var(--muted)" }}>
           {user.whatsapp} · {date}
         </p>
+        {(user.gmail || user.team_number || user.gender || user.blood_group) && (
+          <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs" style={{ color: "var(--muted)" }}>
+            {user.gmail && <span className="tabular-nums">{user.gmail}</span>}
+            {user.team_number && (
+              <span>{t.profile.teamNo}: <strong className="font-semibold" style={{ color: "var(--ink)" }}>{user.team_number}</strong></span>
+            )}
+            {user.gender && (
+              <span>{t.profile.gender}: <strong className="font-semibold" style={{ color: "var(--ink)" }}>
+                {user.gender === "male" ? t.profile.gMale : user.gender === "female" ? t.profile.gFemale : user.gender === "other" ? t.profile.gOther : user.gender}
+              </strong></span>
+            )}
+            {user.blood_group && (
+              <span>{t.profile.blood}: <strong className="font-semibold" style={{ color: "var(--ink)" }}>{user.blood_group}</strong></span>
+            )}
+          </p>
+        )}
       </div>
       {user.role !== "super_admin" && (
         <div className="flex items-center gap-1.5">

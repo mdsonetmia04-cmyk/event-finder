@@ -184,8 +184,9 @@ export function StudentChatBox() {
   );
 }
 
-/** Super-admin inbox: every student thread, with reply. Rendered inside the admin panel. */
-export function AdminInbox() {
+/** Super-admin inbox: every student thread, with reply. Rendered inside the admin panel.
+    `focusUserId` jumps straight to that student's thread (e.g. from a chat icon). */
+export function AdminInbox({ focusUserId }: { focusUserId?: string | null }) {
   const { t, lang } = useLang();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
@@ -243,6 +244,14 @@ export function AdminInbox() {
     if (!activeId && threads.length > 0) setActiveId(threads[0].userId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length]);
+
+  // Jump to a specific student's thread when requested (chat icon click)
+  useEffect(() => {
+    if (focusUserId && threads.some((th) => th.userId === focusUserId)) {
+      setActiveId(focusUserId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusUserId, messages.length]);
 
   const active = threads.find((th) => th.userId === activeId);
 

@@ -7,6 +7,7 @@ import { CollectionsProvider } from "./collections";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import { ScrollProgress } from "./motion";
 import { Footer, Header, ThemeProvider } from "./layout";
+import { NotificationPopup } from "./NotificationPopup";
 
 export default function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -15,6 +16,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
         <CollectionsProvider>
           <AuthProvider>
             <ScrollProgress />
+            <NotificationPopup />
             <AuthGate
               shell={(page) => (
                 <>

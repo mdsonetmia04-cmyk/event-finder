@@ -79,7 +79,7 @@ function ContactAdminModal({ onClose }: { onClose: () => void }) {
   const channels = [
     {
       label: t.auth.chWebsite,
-      href: "https://md.sonet.mia.vercel.app",
+      href: "https://mdsonetmia.vercel.app",
       icon: <Globe size={26} />,
     },
     {

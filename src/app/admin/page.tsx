@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BadgeCheck, KeyRound, ShieldCheck, Trash2, XCircle } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
+import { AdminInbox } from "@/components/AdminChat";
 import { EmptyState, SectionHeader } from "@/components/ui";
 import { useLang } from "@/i18n/LanguageContext";
 import type { Profile } from "@/lib/supabase";
@@ -194,6 +195,14 @@ export default function AdminPage() {
           </div>
         </section>
       )}
+
+      {/* Messages from students */}
+      <section>
+        <h2 className="font-serif-d mb-3 text-lg font-semibold">
+          {t.chat.inboxT}
+        </h2>
+        <AdminInbox />
+      </section>
 
       {/* Change admin password */}
       <section className="card p-5">

@@ -500,6 +500,9 @@ const en = {
     whatsapp: "WhatsApp",
     website: "Website",
     chatOn: "Chat on WhatsApp",
+    chatAdminT: "Chat with Admin",
+    chatAdminD: "Message the super admin right here on the website — they will see it and reply to you here.",
+    chatAdminBtn: "Open chat",
     whatToSend: "What to send",
     items: [
       "Date corrections for any tracked event",
@@ -507,6 +510,16 @@ const en = {
       "Feedback on recommendation accuracy",
       "Partnership or licensing inquiries",
     ],
+  },
+  chat: {
+    title: "Chat with Admin",
+    inboxT: "Student messages",
+    placeholder: "Type your message…",
+    send: "Send",
+    you: "You",
+    emptyStudent: "No messages yet — say hello! The super admin will reply here.",
+    noThreads: "No messages yet.",
+    pickThread: "Select a conversation to read and reply.",
   },
   sources: {
     title: "Research Sources & Data Admin",
@@ -1156,6 +1169,9 @@ export const bn: Dict = {
     whatsapp: "হোয়াটসঅ্যাপ",
     website: "ওয়েবসাইট",
     chatOn: "হোয়াটসঅ্যাপে চ্যাট করুন",
+    chatAdminT: "অ্যাডমিনের সাথে চ্যাট",
+    chatAdminD: "সরাসরি এই ওয়েবসাইটেই সুপার অ্যাডমিনকে মেসেজ করুন — তিনি দেখবেন এবং এখানেই উত্তর দেবেন।",
+    chatAdminBtn: "চ্যাট খুলুন",
     whatToSend: "যা পাঠাবেন",
     items: [
       "যেকোনো ট্র্যাক করা ইভেন্টের তারিখ সংশোধন",
@@ -1163,6 +1179,16 @@ export const bn: Dict = {
       "সুপারিশের নির্ভুলতা নিয়ে মতামত",
       "পার্টনারশিপ বা লাইসেন্সিং প্রস্তাব",
     ],
+  },
+  chat: {
+    title: "অ্যাডমিনের সাথে চ্যাট",
+    inboxT: "শিক্ষার্থীদের মেসেজ",
+    placeholder: "আপনার মেসেজ লিখুন…",
+    send: "পাঠান",
+    you: "আপনি",
+    emptyStudent: "এখনো কোনো মেসেজ নেই — হ্যালো বলুন! সুপার অ্যাডমিন এখানেই উত্তর দেবেন।",
+    noThreads: "এখনো কোনো মেসেজ নেই।",
+    pickThread: "পড়তে ও উত্তর দিতে একটি কথোপকথন বেছে নিন।",
   },
   sources: {
     title: "গবেষণা উৎস ও ডেটা অ্যাডমিন",

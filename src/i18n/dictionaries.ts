@@ -14,6 +14,7 @@ const en = {
     evergreen: "Evergreen",
     sources: "Research Sources",
     contact: "Contact",
+    announcements: "Announcements",
     admin: "Admin",
   },
   auth: {
@@ -537,6 +538,12 @@ const en = {
     publish: "Publish to everyone",
     delete: "Delete notification",
   },
+  announce: {
+    title: "Announcements",
+    sub: "All announcements from the admin, newest first.",
+    emptyT: "No announcements yet",
+    emptyH: "When the admin publishes a notification, it will appear here.",
+  },
   sources: {
     title: "Research Sources & Data Admin",
     sub: "Every date carries its source, verification status and last-checked date. Nothing here claims access to private Adobe Stock sales data.",
@@ -699,6 +706,7 @@ export const bn: Dict = {
     evergreen: "এভারগ্রিন",
     sources: "গবেষণা উৎস",
     contact: "যোগাযোগ",
+    announcements: "ঘোষণা",
     admin: "অ্যাডমিন",
   },
   auth: {
@@ -1221,6 +1229,12 @@ export const bn: Dict = {
     bodyPh: "সবাই যা দেখবে তা লিখুন…",
     publish: "সবার কাছে পাঠান",
     delete: "নোটিফিকেশন মুছুন",
+  },
+  announce: {
+    title: "ঘোষণা",
+    sub: "অ্যাডমিনের সব ঘোষণা — নতুন থেকে পুরনো ক্রমে।",
+    emptyT: "এখনো কোনো ঘোষণা নেই",
+    emptyH: "অ্যাডমিন নোটিফিকেশন পাঠালে তা এখানে দেখা যাবে।",
   },
   sources: {
     title: "গবেষণা উৎস ও ডেটা অ্যাডমিন",

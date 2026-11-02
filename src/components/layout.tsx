@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Bell,
   CalendarDays,
   Heart,
   Home,
   LogOut,
   Mail,
+  Megaphone,
   Menu,
   Moon,
   ShieldCheck,
@@ -101,6 +103,7 @@ function navItems(t: Dict) {
     { href: "/markets", label: t.nav.markets, icon: Globe2 },
     { href: "/planner", label: t.nav.planner, icon: ClipboardList },
     { href: "/evergreen", label: t.nav.evergreen, icon: Leaf },
+    { href: "/announcements", label: t.nav.announcements, icon: Megaphone },
     { href: "/sources", label: t.nav.sources, icon: FlaskConical },
     { href: "/contact", label: t.nav.contact, icon: Mail },
   ];
@@ -110,10 +113,20 @@ export function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { t } = useLang();
-  const { session, logout } = useAuth();
+  const { session, logout, users, refreshUsers } = useAuth();
   const NAV = session?.role === "super_admin"
     ? [...navItems(t), { href: "/admin", label: t.nav.admin, icon: ShieldCheck }]
     : navItems(t);
+  const pendingCount = session?.role === "super_admin"
+    ? users.filter((u) => u.status === "pending").length
+    : 0;
+
+  // Keep the pending-approvals badge fresh while the admin browses the site.
+  useEffect(() => {
+    if (session?.role !== "super_admin") return;
+    const timer = setInterval(refreshUsers, 60_000);
+    return () => clearInterval(timer);
+  }, [session?.role, refreshUsers]);
 
   return (
     <header className="sticky top-3 z-40 no-print px-3 sm:px-4">
@@ -147,6 +160,24 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {session?.role === "super_admin" && (
+            <Link
+              href="/admin"
+              className="icon-circle relative"
+              title={t.admin.pendingT}
+              aria-label={`${t.admin.pendingT}: ${pendingCount}`}
+            >
+              <Bell size={16} />
+              {pendingCount > 0 && (
+                <span
+                  className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white tabular-nums"
+                  style={{ background: "#b3261e" }}
+                >
+                  {pendingCount > 99 ? "99+" : pendingCount}
+                </span>
+              )}
+            </Link>
+          )}
           {session && (
             <Link
               href="/profile"

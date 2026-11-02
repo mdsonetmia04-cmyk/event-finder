@@ -18,12 +18,14 @@ export default function AuthGate({
   const pathname = usePathname();
   const router = useRouter();
   const isLogin = pathname === "/login";
+  // "/" is public: logged-out visitors see the landing page, logged-in users get the dashboard.
+  const isPublic = isLogin || pathname === "/";
 
   useEffect(() => {
     if (!ready) return;
-    if (!session && !isLogin) router.replace("/login");
+    if (!session && !isPublic) router.replace("/login");
     if (session && isLogin) router.replace("/");
-  }, [ready, session, isLogin, router]);
+  }, [ready, session, isLogin, isPublic, router]);
 
   if (!ready) {
     return (
@@ -36,7 +38,7 @@ export default function AuthGate({
   }
 
   if (!session) {
-    return isLogin ? <>{children}</> : null;
+    return isPublic ? <>{children}</> : null;
   }
 
   if (session.status === "pending") return <PendingScreen />;

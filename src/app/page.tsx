@@ -13,6 +13,8 @@ import YearDial from "@/components/YearDial";
 import { Deadlines, Faq, HowItWorks, Section, UploadChecklist } from "@/components/sections";
 import { EmptyState } from "@/components/ui";
 import { useDaysLabel, useLang } from "@/i18n/LanguageContext";
+import { useAuth } from "@/components/AuthContext";
+import LandingPage from "@/components/LandingPage";
 import { ASSET_CATEGORIES, COUNTRIES, EVENTS, META, REGIONS, countryByCode } from "@/lib/data";
 import { formatLong, formatMonthDay, todayISO } from "@/lib/date-engine";
 import {
@@ -25,7 +27,7 @@ import type { EventStatus } from "@/types/event";
 const BOARD_STATUSES: EventStatus[] = ["RESEARCH NOW", "CREATE NOW", "UPLOAD NOW", "HIGH PRIORITY", "LAST CHANCE"];
 const DAY_MS = 86_400_000;
 
-export default function DashboardPage() {
+function DashboardPage() {
   const [date, setDate] = useState(todayISO());
   const [windowDays, setWindowDays] = useState(30);
   const { t } = useLang();
@@ -389,4 +391,16 @@ export default function DashboardPage() {
       </p>
     </div>
   );
+}
+
+/**
+ * "/" is public: logged-out visitors see the marketing landing page,
+ * logged-in (approved) users see the dashboard. AuthGate renders this
+ * without the app shell when there is no session.
+ */
+export default function HomePage() {
+  const { ready, session } = useAuth();
+  if (!ready) return null;
+  if (!session) return <LandingPage />;
+  return <DashboardPage />;
 }

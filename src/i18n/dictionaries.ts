@@ -78,6 +78,10 @@ const en = {
     pwPh: "New password (min 6 characters)",
     pwBtn: "Save",
     pwOk: "Password updated.",
+    searchPh: "Search by name or WhatsApp…",
+    sortAZ: "A–Z",
+    sortNewest: "Newest first",
+    noMatch: "Nobody matches the search.",
   },
   profile: {
     title: "My Profile",
@@ -835,6 +839,10 @@ export const bn: Dict = {
     pwPh: "নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)",
     pwBtn: "সংরক্ষণ",
     pwOk: "পাসওয়ার্ড আপডেট হয়েছে।",
+    searchPh: "নাম বা WhatsApp দিয়ে খুঁজুন…",
+    sortAZ: "অ–ঔ",
+    sortNewest: "নতুন আগে",
+    noMatch: "সার্চে কেউ মিলছে না।",
   },
   profile: {
     title: "আমার প্রোফাইল",

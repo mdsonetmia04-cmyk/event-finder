@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BadgeCheck, BellDot, BellRing, KeyRound, MessageCircle, ShieldCheck, Trash2, X, XCircle } from "lucide-react";
+import { BadgeCheck, BellDot, BellRing, KeyRound, MessageCircle, Search, ShieldCheck, Trash2, X, XCircle } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { AdminInbox } from "@/components/AdminChat";
 import { getSupabase } from "@/lib/supabase";
@@ -181,7 +181,21 @@ function UserListModal({
   onAlert: (user: Profile) => void;
 }) {
   const { t, lang } = useLang();
-  const list = mode === "live" ? users.filter((u) => isLiveNow(u.last_seen)) : users;
+  const [query, setQuery] = useState("");
+  /* Tidy view: alphabetical by display name, with a live search box. */
+  const list = useMemo(() => {
+    const base = (mode === "live" ? users.filter((u) => isLiveNow(u.last_seen)) : users)
+      .slice()
+      .sort((a, b) =>
+        ((a.full_name && a.full_name.trim()) || a.name).localeCompare(
+          (b.full_name && b.full_name.trim()) || b.name,
+          lang === "bn" ? "bn" : "en"
+        )
+      );
+    const q = query.trim().toLowerCase();
+    if (!q) return base;
+    return base.filter((u) => `${u.name} ${u.full_name ?? ""} ${u.whatsapp}`.toLowerCase().includes(q));
+  }, [mode, users, query, lang]);
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -202,6 +216,17 @@ function UserListModal({
           <button className="btn btn-ghost !px-2.5 !py-2" onClick={onClose} aria-label={t.auth.close}>
             <X size={16} />
           </button>
+        </div>
+        <div className="border-b px-4 py-2.5" style={{ borderColor: "var(--line)" }}>
+          <label className="relative block">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--muted)" }} />
+            <input
+              className="input !py-2 !pl-9 !text-sm"
+              placeholder={t.admin.searchPh}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </label>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto">
           {list.length === 0 ? (
@@ -577,6 +602,8 @@ export default function AdminPage() {
   const [chatUserId, setChatUserId] = useState<string | null>(null);
   const [infoUser, setInfoUser] = useState<Profile | null>(null);
   const [alertUser, setAlertUser] = useState<Profile | null>(null);
+  const [approvedQuery, setApprovedQuery] = useState("");
+  const [approvedSort, setApprovedSort] = useState<"az" | "newest">("az");
   const inboxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -600,6 +627,22 @@ export default function AdminPage() {
   const approved = users.filter((u) => u.status === "approved");
   const rejected = users.filter((u) => u.status === "rejected");
   const liveCount = users.filter((u) => isLiveNow(u.last_seen)).length;
+
+  /* Tidy approved list: search + alphabetical (default) or newest-first sort. */
+  const approvedSorted = useMemo(() => {
+    const q = approvedQuery.trim().toLowerCase();
+    const filtered = q
+      ? approved.filter((u) => `${u.name} ${u.full_name ?? ""} ${u.whatsapp}`.toLowerCase().includes(q))
+      : approved.slice();
+    return filtered.sort((a, b) =>
+      approvedSort === "az"
+        ? ((a.full_name && a.full_name.trim()) || a.name).localeCompare(
+            (b.full_name && b.full_name.trim()) || b.name,
+            lang === "bn" ? "bn" : "en"
+          )
+        : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [approved, approvedQuery, approvedSort, lang]);
 
   /** Open a chat thread with a student: jump the inbox to them and scroll to it. */
   const openChat = (userId: string) => {
@@ -676,14 +719,43 @@ export default function AdminPage() {
 
       {/* Approved */}
       <section>
-        <h2 className="font-serif-d mb-3 text-lg font-semibold">
-          {t.admin.approvedT} <span className="kanban-count tabular-nums">{approved.length}</span>
-        </h2>
-        <div className="grid gap-2.5">
-          {approved.map((u) => (
-            <UserRow key={u.id} user={u} onApprove={() => approve(u.id)} onReject={() => reject(u.id)} onRemove={() => removeUser(u.id)} onChat={() => openChat(u.id)} onInfo={() => setInfoUser(u)} onAlert={() => setAlertUser(u)} />
-          ))}
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-serif-d text-lg font-semibold">
+            {t.admin.approvedT} <span className="kanban-count tabular-nums">{approvedSorted.length}</span>
+          </h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "var(--muted)" }} />
+              <input
+                className="input !w-52 !py-2 !pl-9 !text-sm"
+                placeholder={t.admin.searchPh}
+                value={approvedQuery}
+                onChange={(e) => setApprovedQuery(e.target.value)}
+              />
+            </label>
+            <div className="flex overflow-hidden rounded-lg border" style={{ borderColor: "var(--line)" }} role="group" aria-label="Sort">
+              {(["az", "newest"] as const).map((s) => (
+                <button
+                  key={s}
+                  className={`px-3 py-2 text-xs font-semibold transition ${approvedSort === s ? "btn-gold" : ""}`}
+                  style={approvedSort === s ? undefined : { color: "var(--muted)" }}
+                  onClick={() => setApprovedSort(s)}
+                >
+                  {s === "az" ? t.admin.sortAZ : t.admin.sortNewest}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
+        {approvedSorted.length === 0 ? (
+          <EmptyState title={approvedQuery ? t.admin.noMatch : t.admin.noUsers} hint={approvedQuery ? "" : t.admin.noPendingH} />
+        ) : (
+          <div className="grid gap-2.5">
+            {approvedSorted.map((u) => (
+              <UserRow key={u.id} user={u} onApprove={() => approve(u.id)} onReject={() => reject(u.id)} onRemove={() => removeUser(u.id)} onChat={() => openChat(u.id)} onInfo={() => setInfoUser(u)} onAlert={() => setAlertUser(u)} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Rejected */}

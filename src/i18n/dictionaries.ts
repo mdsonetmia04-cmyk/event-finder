@@ -594,6 +594,8 @@ const en = {
     bodyPh: "Write the message everyone will see…",
     publish: "Publish to everyone",
     delete: "Delete notification",
+    next: "Next",
+    readBy: (r: number, total: number) => `👁 ${r}/${total} read`,
   },
   alert: {
     btn: "Alert",
@@ -605,6 +607,7 @@ const en = {
     sending: "Sending…",
     sent: "Alert sent!",
     private: "Private alert — only you see this",
+    privateShort: "Private",
     to: (name: string) => `Alert → ${name}`,
     infoT: "Student info",
     infoTitle: "View student info",
@@ -791,6 +794,7 @@ const en = {
     ctaRegister: "Create free account",
     ctaLogin: "Log in",
     trust: "Admin-verified access · Bilingual EN | বাংলা",
+    joined: (n: number) => `🎓 ${n.toLocaleString("en-US")} learners already joined`,
     stats: [
       { n: "101", l: "Seasonal events tracked" },
       { n: "26", l: "Global markets" },
@@ -1422,6 +1426,8 @@ export const bn: Dict = {
     bodyPh: "সবাই যা দেখবে তা লিখুন…",
     publish: "সবার কাছে পাঠান",
     delete: "নোটিফিকেশন মুছুন",
+    next: "পরেরটি",
+    readBy: (r: number, total: number) => `👁 ${r}/${total} জন দেখেছেন`,
   },
   alert: {
     btn: "অ্যালার্ট",
@@ -1433,6 +1439,7 @@ export const bn: Dict = {
     sending: "পাঠানো হচ্ছে…",
     sent: "অ্যালার্ট পাঠানো হয়েছে!",
     private: "ব্যক্তিগত অ্যালার্ট — এটা শুধু আপনিই দেখছেন",
+    privateShort: "প্রাইভেট",
     to: (name: string) => `অ্যালার্ট → ${name}`,
     infoT: "স্টুডেন্টের তথ্য",
     infoTitle: "স্টুডেন্টের তথ্য দেখুন",
@@ -1618,6 +1625,7 @@ export const bn: Dict = {
     ctaRegister: "ফ্রি অ্যাকাউন্ট খুলুন",
     ctaLogin: "লগ ইন",
     trust: "অ্যাডমিন-যাচাইকৃত অ্যাক্সেস · দ্বিভাষিক EN | বাংলা",
+    joined: (n: number) => `🎓 ইতিমধ্যে ${n.toLocaleString("bn-BD")} জন যোগ দিয়েছেন`,
     stats: [
       { n: "১০১", l: "ট্র্যাক করা সিজনাল ইভেন্ট" },
       { n: "২৬", l: "বৈশ্বিক বাজার" },

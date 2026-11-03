@@ -1403,3 +1403,32 @@ html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spaci
   .earn-latest { grid-template-columns: 1fr 1fr; }
   .earn-updated { grid-column: 1 / -1; justify-self: start; }
 }
+
+/* ---- Loading skeletons ---- */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--gold) 9%, var(--bg2));
+  border-radius: 0.5rem;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--gold) 16%, transparent), transparent);
+  animation: skeleton-shimmer 1.6s infinite;
+}
+@keyframes skeleton-shimmer {
+  100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after { animation: none; }
+}
+
+/* ---- Announcement popup entrance ---- */
+@keyframes notif-pop-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.notif-pop { animation: notif-pop-in 0.35s cubic-bezier(0.22, 1, 0.36, 1); }

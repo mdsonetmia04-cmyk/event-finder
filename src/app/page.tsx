@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/ui";
 import { useDaysLabel, useLang } from "@/i18n/LanguageContext";
 import { useAuth } from "@/components/AuthContext";
 import LandingPage from "@/components/LandingPage";
+import { DashboardSkeleton } from "@/components/Skeleton";
 import { ASSET_CATEGORIES, COUNTRIES, EVENTS, META, REGIONS, countryByCode } from "@/lib/data";
 import { formatLong, formatMonthDay, todayISO } from "@/lib/date-engine";
 import {
@@ -396,7 +397,12 @@ function DashboardPage() {
  */
 export default function HomePage() {
   const { ready, session } = useAuth();
-  if (!ready) return null;
+  if (!ready)
+    return (
+      <div className="mx-auto w-full max-w-6xl px-5 py-10">
+        <DashboardSkeleton />
+      </div>
+    );
   if (!session) return <LandingPage />;
   return <DashboardPage />;
 }

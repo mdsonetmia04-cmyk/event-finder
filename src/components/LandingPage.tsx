@@ -22,6 +22,7 @@ import {
 import LanguageToggle from "@/components/LanguageToggle";
 import { LiveClock } from "@/components/motion";
 import { useLang } from "@/i18n/LanguageContext";
+import { getSupabase } from "@/lib/supabase";
 
 const FEATURE_ICONS = [CalendarDays, TrendingUp, Globe2, ClipboardCheck, Leaf, Languages];
 const STEP_ICONS = [UserPlus, ShieldCheck, Sparkles];
@@ -68,7 +69,29 @@ export default function LandingPage() {
   const { t } = useLang();
   const L = t.landing;
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [joined, setJoined] = useState<number | null>(null);
   const year = new Date().getFullYear();
+
+  // Live "learners already joined" counter — refreshes every minute.
+  useEffect(() => {
+    let stop = false;
+    const fetchCount = async () => {
+      try {
+        const supabase = getSupabase();
+        if (!supabase) return;
+        const { data } = await supabase.rpc("registered_count");
+        if (!stop && typeof data === "number") setJoined(data);
+      } catch {
+        /* offline / RPC missing — pill simply stays hidden */
+      }
+    };
+    fetchCount();
+    const id = setInterval(fetchCount, 60000);
+    return () => {
+      stop = true;
+      clearInterval(id);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg)", color: "var(--ink)" }}>
@@ -132,6 +155,19 @@ export default function LandingPage() {
                 {L.ctaLogin}
               </Link>
             </div>
+            {joined !== null && joined > 0 && (
+              <div
+                className="mt-5 inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold"
+                style={{
+                  borderColor: "var(--gold)",
+                  color: "var(--gold-deep)",
+                  background: "color-mix(in srgb, var(--gold) 8%, transparent)",
+                }}
+              >
+                <span className="h-2 w-2 animate-pulse rounded-full" style={{ background: "var(--gold)" }} />
+                {L.joined(joined)}
+              </div>
+            )}
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
               <span className="inline-flex items-center gap-1.5 normal-case tracking-normal">
                 <span className="live-dot" aria-hidden="true" /> Dhaka <LiveClock />

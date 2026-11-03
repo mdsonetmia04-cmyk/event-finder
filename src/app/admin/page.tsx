@@ -336,6 +336,10 @@ interface AdminNotification {
   id: string;
   title: string;
   body: string;
+  title_en?: string | null;
+  body_en?: string | null;
+  title_bn?: string | null;
+  body_bn?: string | null;
   created_at: string;
   active: boolean;
   user_id: string | null;
@@ -535,36 +539,61 @@ function AlertComposer({ user, onClose }: { user: Profile; onClose: () => void }
 function AdminNotifications({ users }: { users: Profile[] }) {
   const { t, lang } = useLang();
   const [items, setItems] = useState<AdminNotification[]>([]);
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
+  const [readCounts, setReadCounts] = useState<Record<string, number>>({});
+  const [titleEn, setTitleEn] = useState("");
+  const [bodyEn, setBodyEn] = useState("");
+  const [titleBn, setTitleBn] = useState("");
+  const [bodyBn, setBodyBn] = useState("");
   const [sending, setSending] = useState(false);
 
   const load = async () => {
     const supabase = getSupabase();
     if (!supabase) return;
-    const { data } = await supabase
-      .from("admin_notifications")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(20);
+    const [{ data }, { data: reads }] = await Promise.all([
+      supabase
+        .from("admin_notifications")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20),
+      supabase.from("notification_reads").select("notification_id"),
+    ]);
     if (data) setItems(data as AdminNotification[]);
+    const counts: Record<string, number> = {};
+    for (const r of (reads ?? []) as { notification_id: string }[]) {
+      counts[r.notification_id] = (counts[r.notification_id] ?? 0) + 1;
+    }
+    setReadCounts(counts);
   };
 
   useEffect(() => {
     load();
   }, []);
 
+  const enDone = titleEn.trim() && bodyEn.trim();
+  const bnDone = titleBn.trim() && bodyBn.trim();
+
   const publish = async () => {
     const supabase = getSupabase();
-    if (!supabase || !title.trim() || !body.trim() || sending) return;
+    if (!supabase || sending || (!enDone && !bnDone)) return;
     setSending(true);
+    const te = titleEn.trim().slice(0, 200);
+    const be = bodyEn.trim().slice(0, 2000);
+    const tb = titleBn.trim().slice(0, 200);
+    const bb = bodyBn.trim().slice(0, 2000);
     await supabase.from("admin_notifications").insert({
-      title: title.trim().slice(0, 200),
-      body: body.trim().slice(0, 2000),
+      // legacy single-language columns keep the first available version
+      title: te || tb,
+      body: be || bb,
+      title_en: te || null,
+      body_en: be || null,
+      title_bn: tb || null,
+      body_bn: bb || null,
       active: true,
     });
-    setTitle("");
-    setBody("");
+    setTitleEn("");
+    setBodyEn("");
+    setTitleBn("");
+    setBodyBn("");
     await load();
     setSending(false);
   };
@@ -578,25 +607,47 @@ function AdminNotifications({ users }: { users: Profile[] }) {
     await load();
   };
 
+  const approvedTotal = users.filter((u) => u.status === "approved").length;
+
   return (
     <div className="card p-5">
       <div className="grid gap-2.5">
+        <p className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
+          English
+        </p>
         <input
           className="input"
           placeholder={t.notif.titlePh}
-          value={title}
+          value={titleEn}
           maxLength={200}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => setTitleEn(e.target.value)}
         />
         <textarea
-          className="input min-h-[84px] resize-y"
+          className="input min-h-[64px] resize-y"
           placeholder={t.notif.bodyPh}
-          value={body}
+          value={bodyEn}
           maxLength={2000}
-          onChange={(e) => setBody(e.target.value)}
+          onChange={(e) => setBodyEn(e.target.value)}
+        />
+        <p className="mt-1 text-xs font-bold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
+          বাংলা
+        </p>
+        <input
+          className="input"
+          placeholder={t.notif.titlePh}
+          value={titleBn}
+          maxLength={200}
+          onChange={(e) => setTitleBn(e.target.value)}
+        />
+        <textarea
+          className="input min-h-[64px] resize-y"
+          placeholder={t.notif.bodyPh}
+          value={bodyBn}
+          maxLength={2000}
+          onChange={(e) => setBodyBn(e.target.value)}
         />
         <div>
-          <button className="btn btn-gold" onClick={publish} disabled={sending || !title.trim() || !body.trim()}>
+          <button className="btn btn-gold" onClick={publish} disabled={sending || (!enDone && !bnDone)}>
             <BellRing size={14} /> {t.notif.publish}
           </button>
         </div>
@@ -606,17 +657,22 @@ function AdminNotifications({ users }: { users: Profile[] }) {
           {items.map((n) => (
             <div key={n.id} className="flex items-start gap-3 rounded-xl p-3" style={{ background: "var(--surface2)" }}>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold">{n.title}</p>
+                <p className="text-sm font-semibold">{n.title_en || n.title_bn || n.title}</p>
                 {n.user_id && (
                   <p className="mt-0.5 flex items-center gap-1 text-xs font-semibold" style={{ color: "var(--gold-deep)" }}>
                     <BellDot size={12} /> {t.alert.to(users.find((u) => u.id === n.user_id)?.name ?? "…")}
                   </p>
                 )}
-                <p className="mt-0.5 line-clamp-2 text-xs" style={{ color: "var(--muted)" }}>{n.body}</p>
-                <p className="mt-1 text-[10px] tabular-nums" style={{ color: "var(--muted)" }}>
-                  {new Date(n.created_at).toLocaleString(lang === "bn" ? "bn-BD" : "en-US", {
-                    day: "numeric", month: "short", hour: "numeric", minute: "2-digit",
-                  })}
+                <p className="mt-0.5 line-clamp-2 text-xs" style={{ color: "var(--muted)" }}>{n.body_en || n.body_bn || n.body}</p>
+                <p className="mt-1 flex items-center gap-2 text-[10px] tabular-nums" style={{ color: "var(--muted)" }}>
+                  <span>
+                    {new Date(n.created_at).toLocaleString(lang === "bn" ? "bn-BD" : "en-US", {
+                      day: "numeric", month: "short", hour: "numeric", minute: "2-digit",
+                    })}
+                  </span>
+                  <span className="font-bold" style={{ color: "var(--gold-deep)" }}>
+                    {t.notif.readBy(readCounts[n.id] ?? 0, n.user_id ? 1 : Math.max(approvedTotal, 1))}
+                  </span>
                 </p>
               </div>
               <button

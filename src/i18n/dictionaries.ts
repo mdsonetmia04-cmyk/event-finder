@@ -82,6 +82,8 @@ const en = {
     sortAZ: "A–Z",
     sortNewest: "Newest first",
     noMatch: "Nobody matches the search.",
+    waNotify: "Notify on WhatsApp",
+    waNotified: "WhatsApp notified",
   },
   profile: {
     title: "My Profile",
@@ -714,7 +716,72 @@ const en = {
     rights: (y: number) =>
       `© ${y} Sweet Smart Calendar · Research-based planning guidance for Adobe Stock contributors`,
     lastUpdate: "Last research update",
+    privacy: "Privacy Policy",
   },
+  privacy: {
+    title: "Privacy Policy",
+    updated: "Last updated: November 3, 2026",
+    back: "Back to home",
+    sections: [
+      {
+        h: "Who we are",
+        p: [
+          "Sweet Smart Calendar is operated by Md Sonet Mia (Microstock Journey with Sonet), Tangail, Bangladesh. Contact: WhatsApp 01797953059.",
+        ],
+      },
+      {
+        h: "What we collect",
+        p: [
+          "Account data: your name, WhatsApp number and password (stored as a secure hash \u2014 we never see your plain password).",
+          "Profile data you add: email, full name, mobile number, date of birth, district, education, skills and interests, team number, gender, blood group and Facebook link.",
+          "Usage data: when you were last active and how long you use the site, so we can show live presence and usage statistics.",
+          "Your content: production tasks (stored in your own browser), chat messages with the admin, and earning records you enter in the Asset Planner.",
+        ],
+      },
+      {
+        h: "Why we collect it",
+        p: [
+          "To create and approve your account, to run the training platform and support you, and to improve the site. We do not sell your data and we do not use it for advertising.",
+        ],
+      },
+      {
+        h: "Who can see your data",
+        p: [
+          "You can see and edit your own data on the Profile page.",
+          "The site administrator (Md Sonet Mia) can see member data to manage approvals, support and safety.",
+          "Other students cannot see your profile data or your private messages.",
+        ],
+      },
+      {
+        h: "Storage and security",
+        p: [
+          "Your data is stored on Supabase (data centre in Singapore) and transferred over encrypted HTTPS. Passwords are stored as one-way hashes. No system is perfectly secure, but we take reasonable steps to protect your information.",
+        ],
+      },
+      {
+        h: "Cookies and local storage",
+        p: [
+          "We store your theme and language choice, and your production tasks, in your own browser's local storage. Dismissed notifications are remembered the same way. Nothing in local storage is sent to advertisers.",
+        ],
+      },
+      {
+        h: "Your rights",
+        p: [
+          "You can update most of your data anytime on the Profile page. To correct anything else, or to ask for your account and data to be deleted, message us on WhatsApp at 01797953059 or use the Contact page.",
+        ],
+      },
+      {
+        h: "Changes to this policy",
+        p: ["If this policy changes, we will post the new version here with a new \u2018last updated\u2019 date."],
+      },
+      {
+        h: "Contact",
+        p: ["Questions about privacy: WhatsApp 01797953059 (Md Sonet Mia)."],
+      },
+    ],
+  },
+
+
   landing: {
     badge: "For Adobe Stock contributors",
     titleA: "Plan Smarter.",
@@ -843,6 +910,8 @@ export const bn: Dict = {
     sortAZ: "অ–ঔ",
     sortNewest: "নতুন আগে",
     noMatch: "সার্চে কেউ মিলছে না।",
+    waNotify: "WhatsApp-এ জানান",
+    waNotified: "WhatsApp-এ জানানো হয়েছে",
   },
   profile: {
     title: "আমার প্রোফাইল",
@@ -1475,7 +1544,71 @@ export const bn: Dict = {
     rights: (y: number) =>
       `© ${y} Sweet Smart Calendar · অ্যাডোবি স্টক কন্ট্রিবিউটরদের জন্য গবেষণাভিত্তিক পরিকল্পনা নির্দেশনা`,
     lastUpdate: "শেষ গবেষণা হালনাগাদ",
+    privacy: "প্রাইভেসি পলিসি",
   },
+  privacy: {
+    title: "প্রাইভেসি পলিসি",
+    updated: "সর্বশেষ হালনাগাদ: ৩ নভেম্বর, ২০২৬",
+    back: "হোমে ফিরুন",
+    sections: [
+      {
+        h: "আমরা কারা",
+        p: [
+          "Sweet Smart Calendar পরিচালনা করেন মোঃ সোনেত মিয়া (Microstock Journey with Sonet), টাঙ্গাইল, বাংলাদেশ। যোগাযোগ: WhatsApp 01797953059।",
+        ],
+      },
+      {
+        h: "আমরা কী তথ্য সংগ্রহ করি",
+        p: [
+          "অ্যাকাউন্টের তথ্য: আপনার নাম, WhatsApp নম্বর ও পাসওয়ার্ড (নিরাপদ hash হিসেবে সংরক্ষিত \u2014 আমরা আপনার আসল পাসওয়ার্ড দেখি না)।",
+          "আপনি যে প্রোফাইল তথ্য দেন: ইমেইল, পুরো নাম, মোবাইল নম্বর, জন্ম তারিখ, জেলা, শিক্ষা, দক্ষতা ও আগ্রহ, টিম নম্বর, লিঙ্গ, রক্তের গ্রুপ ও ফেসবুক লিংক।",
+          "ব্যবহারের তথ্য: আপনি কখন সক্রিয় ছিলেন ও কতক্ষণ সাইট ব্যবহার করেছেন \u2014 live presence ও ব্যবহার পরিসংখ্যান দেখানোর জন্য।",
+          "আপনার কনটেন্ট: প্রোডাকশন টাস্ক (আপনার নিজের ব্রাউজারে সংরক্ষিত), অ্যাডমিনের সাথে চ্যাট বার্তা, এবং Asset Planner-এ আপনার দেওয়া আয়ের রেকর্ড।",
+        ],
+      },
+      {
+        h: "কেন সংগ্রহ করি",
+        p: [
+          "অ্যাকাউন্ট তৈরি ও অনুমোদন, ট্রেনিং প্ল্যাটফর্ম পরিচালনা ও আপনাকে সহায়তা, এবং সাইটের উন্নতির জন্য। আমরা আপনার তথ্য বিক্রি করি না এবং বিজ্ঞাপনে ব্যবহার করি না।",
+        ],
+      },
+      {
+        h: "কে আপনার তথ্য দেখতে পারে",
+        p: [
+          "Profile পেজে আপনি নিজের তথ্য দেখতে ও পরিবর্তন করতে পারেন।",
+          "সাইট অ্যাডমিনিস্ট্রেটর (মোঃ সোনেত মিয়া) অনুমোদন, সহায়তা ও নিরাপত্তার জন্য সদস্যদের তথ্য দেখতে পারেন।",
+          "অন্য শিক্ষার্থীরা আপনার প্রোফাইল তথ্য বা ব্যক্তিগত বার্তা দেখতে পারে না।",
+        ],
+      },
+      {
+        h: "সংরক্ষণ ও নিরাপত্তা",
+        p: [
+          "আপনার তথ্য Supabase-এ (সিঙ্গাপুর ডেটা সেন্টার) সংরক্ষিত থাকে এবং এনক্রিপ্টেড HTTPS-এ পাঠানো হয়। পাসওয়ার্ড one-way hash হিসেবে থাকে। কোনো সিস্টেমই পুরোপুরি নিরাপদ নয়, তবে আপনার তথ্য রক্ষায় আমরা যথাযথ ব্যবস্থা নিই।",
+        ],
+      },
+      {
+        h: "কুকি ও লোকাল স্টোরেজ",
+        p: [
+          "আপনার থিম ও ভাষা পছন্দ এবং প্রোডাকশন টাস্ক আপনার নিজের ব্রাউজারের local storage-এ থাকে। বন্ধ করা নোটিফিকেশনও সেভাবেই মনে রাখা হয়। Local storage-এর কিছুই বিজ্ঞাপনদাতাদের পাঠানো হয় না।",
+        ],
+      },
+      {
+        h: "আপনার অধিকার",
+        p: [
+          "Profile পেজে আপনি বেশিরভাগ তথ্য নিজেই হালনাগাদ করতে পারেন। অন্য কিছু সংশোধন করতে বা অ্যাকাউন্ট ও তথ্য মুছে ফেলতে চাইলে WhatsApp 01797953059-এ মেসেজ করুন বা Contact পেজ ব্যবহার করুন।",
+        ],
+      },
+      {
+        h: "পলিসির পরিবর্তন",
+        p: ["এই পলিসি বদলালে নতুন সংস্করণ এখানেই নতুন \u2018সর্বশেষ হালনাগাদ\u2019 তারিখসহ প্রকাশ করা হবে।"],
+      },
+      {
+        h: "যোগাযোগ",
+        p: ["প্রাইভেসি বিষয়ে প্রশ্ন: WhatsApp 01797953059 (মোঃ সোনেত মিয়া)।"],
+      },
+    ],
+  },
+
   landing: {
     badge: "অ্যাডোবি স্টক কন্ট্রিবিউটরদের জন্য",
     titleA: "বুদ্ধিমানের মতো পরিকল্পনা করুন।",

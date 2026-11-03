@@ -277,7 +277,12 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t py-4 text-center text-xs" style={{ borderColor: "var(--line)", color: "var(--muted)" }}>
-        {t.footer.rights(new Date().getFullYear())}
+        <p>{t.footer.rights(new Date().getFullYear())}</p>
+        <p className="mt-1.5">
+          <Link href="/privacy" className="underline-offset-4 hover:underline" style={{ textDecorationColor: "var(--gold-1)" }}>
+            {t.footer.privacy}
+          </Link>
+        </p>
       </div>
     </footer>
   );

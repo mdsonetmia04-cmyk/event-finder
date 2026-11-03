@@ -34,6 +34,7 @@ export interface Profile {
   last_education?: string | null;
   skills_interests?: string | null;
   facebook_link?: string | null;
+  wa_notified?: boolean | null;
 }
 
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";

@@ -18,6 +18,10 @@ export const metadata: Metadata = {
     "Know what to create and when to upload. A global seasonal intelligence platform for Adobe Stock contributors: smart calendar, priority opportunities, market intelligence and production planning.",
   keywords: ["adobe stock", "stock contributor", "seasonal calendar", "upload planner", "microstock", "content planning"],
   authors: [{ name: "Md Sonet Mia" }],
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
   openGraph: {
     type: "website",
     siteName: "Sweet Smart Calendar",

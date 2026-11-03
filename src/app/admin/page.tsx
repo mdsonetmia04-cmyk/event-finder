@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BadgeCheck, BellDot, BellRing, KeyRound, MessageCircle, Search, ShieldCheck, Trash2, X, XCircle } from "lucide-react";
+import { BadgeCheck, BellDot, BellRing, KeyRound, MessageCircle, Search, Send, ShieldCheck, Trash2, X, XCircle } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { AdminInbox } from "@/components/AdminChat";
 import { getSupabase } from "@/lib/supabase";
@@ -11,8 +11,49 @@ import { useLang } from "@/i18n/LanguageContext";
 import type { Profile } from "@/lib/supabase";
 import { formatUsage, isLiveNow } from "@/lib/presence";
 
-function UserRow({
-  user,
+/** One-tap WhatsApp approval notification for an approved student.
+    Opens wa.me with a pre-written Bengali message; the admin taps send in
+    WhatsApp (fully automatic sending from a personal number risks a ban, so
+    the send itself stays one tap). Marks the student notified afterwards. */
+function WhatsAppNotifyButton({ user }: { user: Profile }) {
+  const { t } = useLang();
+  const [notified, setNotified] = useState(!!user.wa_notified);
+
+  const send = async () => {
+    const digits = user.whatsapp.replace(/\D/g, "");
+    const intl = digits.startsWith("880") ? digits : digits.startsWith("0") ? `880${digits.slice(1)}` : `880${digits}`;
+    const name = (user.full_name && user.full_name.trim()) || user.name;
+    const msg =
+      `আসসালামু আলাইকুম ${name}! 🎉\n\n` +
+      `Sweet Smart Calendar (Microstock Journey with Sonet)-এ আপনার রেজিস্ট্রেশন অনুমোদিত হয়েছে।\n\n` +
+      `এখন লগইন করুন: https://sweet-smart-calendar.vercel.app`;
+    window.open(`https://wa.me/${intl}?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
+    const supabase = getSupabase();
+    if (supabase) {
+      await supabase.from("profiles").update({ wa_notified: true }).eq("id", user.id);
+    }
+    setNotified(true);
+  };
+
+  return (
+    <button
+      className="btn !px-2 !py-1.5"
+      title={notified ? t.admin.waNotified : `${t.admin.waNotify}: ${user.name}`}
+      aria-label={`${t.admin.waNotify}: ${user.name}`}
+      onClick={send}
+      style={
+        notified
+          ? { border: "1px solid #2F9E6E", color: "#2F9E6E" }
+          : { border: "1px solid #2F9E6E", color: "#1f7a4d", background: "rgba(47,158,110,0.1)" }
+      }
+    >
+      <Send size={13} />
+      {notified && <span className="!text-[10px] font-bold">✓</span>}
+    </button>
+  );
+}
+
+function UserRow({  user,
   onApprove,
   onReject,
   onRemove,
@@ -128,9 +169,12 @@ function UserRow({
             </>
           )}
           {user.status === "approved" && (
-            <button className="btn btn-ghost !px-3 !py-1.5 !text-xs" onClick={onReject}>
-              <XCircle size={13} /> {t.admin.reject}
-            </button>
+            <>
+              <WhatsAppNotifyButton user={user} />
+              <button className="btn btn-ghost !px-3 !py-1.5 !text-xs" onClick={onReject}>
+                <XCircle size={13} /> {t.admin.reject}
+              </button>
+            </>
           )}
           {user.status === "rejected" && (
             <button className="btn btn-ghost !px-3 !py-1.5 !text-xs" onClick={onApprove}>

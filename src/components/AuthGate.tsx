@@ -19,7 +19,8 @@ export default function AuthGate({
   const router = useRouter();
   const isLogin = pathname === "/login";
   // "/" is public: logged-out visitors see the landing page, logged-in users get the dashboard.
-  const isPublic = isLogin || pathname === "/";
+  // "/privacy" is public too: the footer links it for everyone.
+  const isPublic = isLogin || pathname === "/" || pathname === "/privacy";
 
   useEffect(() => {
     if (!ready) return;

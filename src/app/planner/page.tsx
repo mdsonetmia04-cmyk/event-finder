@@ -8,6 +8,8 @@ import { useMemo, useState } from "react";
 import { CheckCircle2, ChevronLeft, ChevronRight, Flame, ListPlus, Pencil, Plus, Search, Target, Trash2, TrendingUp, X } from "lucide-react";
 import { EmptyState, SectionHeader } from "@/components/ui";
 import { useCollections } from "@/components/collections";
+import { useAuth } from "@/components/AuthContext";
+import EarningsTracker from "@/components/EarningsTracker";
 import { useLang } from "@/i18n/LanguageContext";
 import { ASSET_CATEGORIES, EVENTS, eventById } from "@/lib/data";
 import { daysBetween, todayISO } from "@/lib/date-engine";
@@ -120,8 +122,11 @@ function SeasonArt({ season }: { season: Season }) {
   );
 }
 
+/* Mission-deck hero: dark gold-ink panel with the logged-in user's name,
+   avatar initial, quick stat chips, completion ring and seasonal art. */
 function PlannerHero({ active, dueThisWeek, pct }: { active: number; dueThisWeek: number; pct: number }) {
   const { t, lang } = useLang();
+  const { session } = useAuth();
   const { hour, month } = dhakaNow();
   const locale = lang === "bn" ? "bn-BD" : "en-US";
   const dateStr = new Intl.DateTimeFormat(locale, {
@@ -130,24 +135,45 @@ function PlannerHero({ active, dueThisWeek, pct }: { active: number; dueThisWeek
     day: "numeric",
     month: "long",
   }).format(new Date());
+  const displayName = (session?.full_name && session.full_name.trim()) || session?.name || t.planner.heroName;
+  const initial = displayName.trim().charAt(0).toUpperCase() || "✦";
   const R = 34;
   const CIRC = 2 * Math.PI * R;
+  const chips = [
+    { label: t.planner.sActive, value: String(active) },
+    { label: lang === "bn" ? "এই সপ্তাহে ডেডলাইন" : "due this week", value: String(dueThisWeek) },
+    { label: t.planner.sProgress, value: `${pct}%` },
+  ];
   return (
-    <div className="planner-hero card">
-      <div className="min-w-0">
-        <p className="planner-hero-kicker">{dateStr}</p>
-        <h2 className="font-serif-d mt-1 font-semibold leading-tight">
-          {t.planner.greet(hour)}, {t.planner.heroName}
-        </h2>
-        <p className="mt-1.5 text-sm" style={{ color: "var(--muted)" }}>
-          {t.planner.heroSub(active, dueThisWeek)}
-        </p>
+    <div className="planner-deck">
+      <svg className="planner-deck-arcs" viewBox="0 0 600 200" aria-hidden="true" preserveAspectRatio="none">
+        <circle cx="520" cy="100" r="150" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.16" />
+        <circle cx="520" cy="100" r="110" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.22" />
+        <circle cx="520" cy="100" r="70" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.3" />
+        <path d="M0 170 Q 150 130, 300 160 T 600 140" fill="none" stroke="currentColor" strokeWidth="1.2" opacity="0.18" />
+      </svg>
+      <div className="planner-deck-main">
+        <div className="planner-avatar" aria-hidden="true">{initial}</div>
+        <div className="min-w-0">
+          <p className="planner-deck-kicker">{dateStr}</p>
+          <h2 className="font-serif-d mt-1 font-semibold leading-tight">
+            {t.planner.greet(hour)}, <span className="planner-name">{displayName}</span>
+          </h2>
+          <p className="planner-deck-sub">{t.planner.heroSub(active, dueThisWeek)}</p>
+          <div className="planner-chips">
+            {chips.map((c) => (
+              <span key={c.label} className="planner-chip">
+                <strong className="tabular-nums">{c.value}</strong> {c.label}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
-      <div className="flex shrink-0 items-center gap-4">
+      <div className="planner-deck-side">
         {/* Overall completion ring */}
         <div className="relative hidden sm:block" role="img" aria-label={`${pct}%`}>
           <svg width="92" height="92" viewBox="0 0 96 96">
-            <circle cx="48" cy="48" r={R} fill="none" stroke="var(--line)" strokeWidth="9" />
+            <circle cx="48" cy="48" r={R} fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="9" />
             <circle
               cx="48"
               cy="48"
@@ -158,17 +184,17 @@ function PlannerHero({ active, dueThisWeek, pct }: { active: number; dueThisWeek
               strokeLinecap="round"
               strokeDasharray={`${(Math.min(100, Math.max(0, pct)) / 100) * CIRC} ${CIRC}`}
               transform="rotate(-90 48 48)"
-              style={{ transition: "stroke-dasharray 0.5s ease", filter: "drop-shadow(0 0 6px color-mix(in srgb, var(--gold) 55%, transparent))" }}
+              style={{ transition: "stroke-dasharray 0.5s ease", filter: "drop-shadow(0 0 6px rgba(217,160,68,0.6))" }}
             />
             <defs>
               <linearGradient id="plannerRing" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="var(--gold-soft)" />
-                <stop offset="55%" stopColor="var(--gold)" />
-                <stop offset="100%" stopColor="var(--gold-deep)" />
+                <stop offset="0%" stopColor="#E9C17A" />
+                <stop offset="55%" stopColor="#D9A044" />
+                <stop offset="100%" stopColor="#A66A19" />
               </linearGradient>
             </defs>
           </svg>
-          <span className="font-serif-d absolute inset-0 flex items-center justify-center text-[17px] font-bold tabular-nums">
+          <span className="font-serif-d absolute inset-0 flex items-center justify-center text-[17px] font-bold tabular-nums" style={{ color: "#F7EBD3" }}>
             {pct}%
           </span>
         </div>
@@ -512,6 +538,9 @@ export default function PlannerPage() {
           </div>
         </div>
       )}
+
+      {/* Earnings by date — per account */}
+      <EarningsTracker />
 
       {/* Search */}
       <div className="card flex flex-wrap items-center gap-2 p-3">

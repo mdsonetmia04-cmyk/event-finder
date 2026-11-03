@@ -43,7 +43,7 @@ export function CategoryBarChart({
         <BarChart data={rows} layout="vertical" margin={{ left: 8, right: 16, top: 4, bottom: 4 }}>
           <CartesianGrid stroke="var(--line)" horizontal={false} vertical={false} />
           <XAxis type="number" tick={{ fontSize: 11, fill: "var(--muted)" }} axisLine={false} tickLine={false} />
-          <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11, fill: "var(--muted)" }} axisLine={false} tickLine={false} />
+          <YAxis type="category" dataKey="name" width={152} tick={{ fontSize: 11, fill: "var(--muted)" }} axisLine={false} tickLine={false} />
           <Tooltip contentStyle={tooltipStyle()} />
           <Bar dataKey="count" radius={[0, 4, 4, 0]} fill="var(--gold)" />
         </BarChart>

@@ -320,10 +320,6 @@ function DashboardPage() {
       <Section title={t.sec.charts.byCat} sub={t.sec.charts.byCatSub}>
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="card h-full p-5">
-            <h3 className="font-serif-d text-lg font-semibold">{t.sec.charts.byCat}</h3>
-            <p className="mb-2 text-xs" style={{ color: "var(--muted)" }}>
-              {t.sec.charts.byCatSub}
-            </p>
             <CategoryBarChart data={catCounts} labels={t.category} />
           </div>
           <div className="card h-full p-5">

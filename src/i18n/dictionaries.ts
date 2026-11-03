@@ -784,10 +784,10 @@ const en = {
 
   landing: {
     badge: "For Adobe Stock contributors",
-    titleA: "Plan Smarter.",
-    titleB: "Upload Earlier.",
-    titleC: "Create for Global Demand.",
-    sub: "Sweet Smart Calendar is your global seasonal intelligence system — 101 seasonal events across 26 markets, 2026–2028 — telling you what to create and exactly when to upload it.",
+    titleA: "Plan what to create.",
+    titleB: "Know when to upload.",
+    titleC: "Never miss a season.",
+    sub: "Sweet Smart Calendar tracks 101 seasonal events across 26 markets (2026–2028) — telling microstock contributors exactly what to make and when to upload it.",
     ctaRegister: "Create free account",
     ctaLogin: "Log in",
     trust: "Admin-verified access · Bilingual EN | বাংলা",
@@ -1611,10 +1611,10 @@ export const bn: Dict = {
 
   landing: {
     badge: "অ্যাডোবি স্টক কন্ট্রিবিউটরদের জন্য",
-    titleA: "বুদ্ধিমানের মতো পরিকল্পনা করুন।",
-    titleB: "আগেভাগে আপলোড করুন।",
-    titleC: "বৈশ্বিক চাহিদার জন্য তৈরি করুন।",
-    sub: "Sweet Smart Calendar আপনার বৈশ্বিক সিজনাল ইন্টেলিজেন্স সিস্টেম — ২৬টি বাজারে ১০১টি সিজনাল ইভেন্ট, ২০২৬–২০২৮ — কী তৈরি করবেন এবং ঠিক কখন আপলোড করবেন, সেটাই বলে দেয়।",
+    titleA: "কী বানাবেন, ঠিক করুন।",
+    titleB: "কখন আপলোড করবেন, জানুন।",
+    titleC: "কোনো সিজন মিস হবে না।",
+    sub: "Sweet Smart Calendar ২৬টি মার্কেটের ১০১টি সিজনাল ইভেন্ট (২০২৬–২০২৮) ট্র্যাক করে — মাইক্রোস্টক কন্ট্রিবিউটরদের বলে দেয় ঠিক কী বানাতে হবে, আর কখন আপলোড করতে হবে।",
     ctaRegister: "ফ্রি অ্যাকাউন্ট খুলুন",
     ctaLogin: "লগ ইন",
     trust: "অ্যাডমিন-যাচাইকৃত অ্যাক্সেস · দ্বিভাষিক EN | বাংলা",

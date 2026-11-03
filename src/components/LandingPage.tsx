@@ -20,6 +20,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import LanguageToggle from "@/components/LanguageToggle";
+import { LiveClock } from "@/components/motion";
 import { useLang } from "@/i18n/LanguageContext";
 
 const FEATURE_ICONS = [CalendarDays, TrendingUp, Globe2, ClipboardCheck, Leaf, Languages];
@@ -131,9 +132,12 @@ export default function LandingPage() {
                 {L.ctaLogin}
               </Link>
             </div>
-            <p className="mt-4 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
-              {L.trust}
-            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--muted)" }}>
+              <span className="inline-flex items-center gap-1.5 normal-case tracking-normal">
+                <span className="live-dot" aria-hidden="true" /> Dhaka <LiveClock />
+              </span>
+              <span>{L.trust}</span>
+            </div>
           </motion.div>
           <motion.div
             {...fadeUp}

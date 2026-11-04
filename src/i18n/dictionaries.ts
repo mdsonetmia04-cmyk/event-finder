@@ -795,6 +795,13 @@ const en = {
     ctaLogin: "Log in",
     trust: "Admin-verified access · Bilingual EN | বাংলা",
     joined: (n: number) => `🎓 ${n.toLocaleString("en-US")} learners already joined`,
+    previewK: "Inside the app",
+    previewH: "See demand before it arrives",
+    previewSub:
+      "A live calendar of 101 seasonal events, ranked opportunities and upload deadlines — the dashboard every member opens each morning.",
+    previewOppT: "Top opportunities",
+    previewLive: "Live",
+    previewSub2: "Ranked by demand timing and competition — refreshed as seasons approach.",
     stats: [
       { n: "101", l: "Seasonal events tracked" },
       { n: "26", l: "Global markets" },
@@ -1626,6 +1633,13 @@ export const bn: Dict = {
     ctaLogin: "লগ ইন",
     trust: "অ্যাডমিন-যাচাইকৃত অ্যাক্সেস · দ্বিভাষিক EN | বাংলা",
     joined: (n: number) => `🎓 ইতিমধ্যে ${n.toLocaleString("bn-BD")} জন যোগ দিয়েছেন`,
+    previewK: "অ্যাপের ভেতরে",
+    previewH: "চাহিদা আসার আগেই দেখুন",
+    previewSub:
+      "১০১টি সিজনাল ইভেন্টের লাইভ ক্যালেন্ডার, র‍্যাঙ্ক করা সুযোগ ও আপলোড ডেডলাইন — প্রত্যেক সদস্য প্রতিদিন সকালে এই ড্যাশবোর্ডই খোলেন।",
+    previewOppT: "সেরা সুযোগ",
+    previewLive: "লাইভ",
+    previewSub2: "চাহিদার সময় ও প্রতিযোগিতা অনুযায়ী র‍্যাঙ্কড — সিজন ঘনিয়ে এলে আপডেট হয়।",
     stats: [
       { n: "১০১", l: "ট্র্যাক করা সিজনাল ইভেন্ট" },
       { n: "২৬", l: "বৈশ্বিক বাজার" },

@@ -147,11 +147,11 @@ export default function LandingPage() {
             <p className="mt-5 max-w-xl text-base leading-relaxed sm:text-lg" style={{ color: "var(--muted)" }}>
               {L.sub}
             </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link href="/login" className="btn btn-gold !rounded-full px-7 py-3.5 text-base font-bold">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+              <Link href="/login" className="btn btn-gold w-full !rounded-full px-7 py-3.5 text-base font-bold sm:w-auto">
                 {L.ctaRegister} <ArrowRight size={17} />
               </Link>
-              <Link href="/login" className="btn btn-ghost !rounded-full px-7 py-3.5 text-base font-semibold">
+              <Link href="/login" className="btn btn-ghost w-full !rounded-full px-7 py-3.5 text-base font-semibold sm:w-auto">
                 {L.ctaLogin}
               </Link>
             </div>

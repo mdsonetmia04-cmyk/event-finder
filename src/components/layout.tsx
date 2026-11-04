@@ -133,7 +133,7 @@ export function Header() {
           <span className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "var(--gold)" }}>
             <CalendarDays size={19} className="gold-contrast-icon" strokeWidth={2.4} />
           </span>
-          <span className="leading-tight">
+          <span className="hidden leading-tight min-[380px]:block">
             <span className="font-serif-d block text-[16px] font-semibold tracking-tight">
               Sweet Smart Calendar
             </span>

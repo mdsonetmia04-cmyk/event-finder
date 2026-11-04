@@ -177,17 +177,23 @@ export function Header() {
             </Link>
           )}
           {session && <UserChip />}
-          <LanguageToggle />
-          <ThemeToggle />
+          <span className="hidden sm:block">
+            <LanguageToggle />
+          </span>
+          <span className="hidden sm:block">
+            <ThemeToggle />
+          </span>
           {session && (
-            <button
-              className="icon-circle"
-              onClick={logout}
-              title={t.auth.logout}
-              aria-label={t.auth.logout}
-            >
-              <LogOut size={16} />
-            </button>
+            <span className="hidden sm:block">
+              <button
+                className="icon-circle"
+                onClick={logout}
+                title={t.auth.logout}
+                aria-label={t.auth.logout}
+              >
+                <LogOut size={16} />
+              </button>
+            </span>
           )}
           <button
             className="icon-circle xl:hidden"
@@ -225,6 +231,24 @@ export function Header() {
                 </Link>
               );
             })}
+            <div
+              className="mt-2 flex items-center justify-between gap-2 border-t px-1 pt-3 sm:hidden"
+              style={{ borderColor: "var(--line)" }}
+            >
+              <LanguageToggle />
+              <ThemeToggle />
+            </div>
+            {session && (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  logout();
+                }}
+                className="nav-link mt-1 flex w-full items-center gap-3 !text-sm !font-medium sm:hidden"
+              >
+                <LogOut size={16} /> {t.auth.logout}
+              </button>
+            )}
           </div>
         </nav>
       )}

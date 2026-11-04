@@ -6,12 +6,16 @@ import Link from "next/link";
 import { motion, useInView } from "framer-motion";
 import {
   ArrowRight,
+  Bell,
+  BookOpen,
   CalendarDays,
   ChevronDown,
   ClipboardCheck,
   Globe2,
   Languages,
+  LayoutDashboard,
   Leaf,
+  MessagesSquare,
   Moon,
   ShieldCheck,
   Sparkles,
@@ -101,121 +105,53 @@ function CountUp({ to }: { to: number }) {
   return <span ref={ref}>{val.toLocaleString("en-US")}</span>;
 }
 
-/** Illustrative in-app events for the preview mockup (decorative, not live data). */
-const PREVIEW_EVENTS = [
-  { d: 8, en: "Diwali", bn: "দীপাবলি", score: 92 },
-  { d: 16, en: "Christmas", bn: "বড়দিন", score: 88 },
-  { d: 24, en: "New Year", bn: "নববর্ষ", score: 81 },
-];
+/** "What's inside" directory — numbered list of the app's sections so guests
+    know exactly where to go after approval. Names come from the nav dict,
+    so the list is bilingual for free. */
+const INSIDE_FUNCTIONS = [
+  { icon: LayoutDashboard, key: "dashboard" },
+  { icon: CalendarDays, key: "calendar" },
+  { icon: TrendingUp, key: "opportunities" },
+  { icon: Globe2, key: "markets" },
+  { icon: ClipboardCheck, key: "planner" },
+  { icon: Leaf, key: "evergreen" },
+  { icon: BookOpen, key: "sources" },
+  { icon: Bell, key: "announcements" },
+  { icon: MessagesSquare, key: "contact" },
+] as const;
 
-/** Mini dashboard mockup — shows guests what the app looks like inside. */
-function AppPreview() {
-  const { t, lang } = useLang();
-  const L = t.landing;
-  const locale = lang === "bn" ? "bn-BD" : "en-US";
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = now.getMonth();
-  const firstDow = new Date(y, m, 1).getDay();
-  const dim = new Date(y, m + 1, 0).getDate();
-  const monthLabel = now.toLocaleString(locale, { month: "long", year: "numeric" });
-  const weekdays = Array.from({ length: 7 }, (_, d) =>
-    new Date(2026, 5, 7 + d).toLocaleString(locale, { weekday: "narrow" })
-  );
-  const chips = new Map(PREVIEW_EVENTS.map((e) => [e.d, e]));
-  const cells: Array<number | null> = [
-    ...Array<null>(firstDow).fill(null),
-    ...Array.from({ length: dim }, (_, i) => i + 1),
-  ];
-  while (cells.length % 7 !== 0) cells.push(null);
-
+function InsideList() {
+  const { t } = useLang();
   return (
     <motion.div {...fadeUp} className="mx-auto mt-10 max-w-3xl">
       <div
-        className="overflow-hidden rounded-[2rem] border shadow-2xl"
-        style={{ borderColor: "var(--line)", background: "var(--bg2)", boxShadow: "0 30px 60px -30px color-mix(in srgb, var(--gold) 35%, transparent)" }}
+        className="rounded-[2rem] border p-3 sm:p-5"
+        style={{ borderColor: "var(--line)", background: "var(--bg2)" }}
       >
-        <div className="flex items-center gap-2 border-b px-5 py-3" style={{ borderColor: "var(--line)" }}>
-          <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#e0655a" }} />
-          <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#e6b93d" }} />
-          <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#7bc47f" }} />
-          <span className="ml-3 truncate text-xs font-semibold" style={{ color: "var(--muted)" }}>
-            sweet-smart-calendar.vercel.app
-          </span>
-        </div>
-        <div className="grid md:grid-cols-[1fr_210px]">
-          <div className="p-5">
-            <div className="flex items-center justify-between">
-              <p className="font-serif-d text-lg font-semibold">{monthLabel}</p>
-              <span
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider"
-                style={{ background: "color-mix(in srgb, var(--gold) 14%, transparent)", color: "var(--gold)" }}
+        <ol className="grid gap-2 sm:grid-cols-2">
+          {INSIDE_FUNCTIONS.map((f, i) => {
+            const Icon = f.icon;
+            return (
+              <li
+                key={f.key}
+                className="flex items-center gap-3 rounded-2xl border px-4 py-3 transition-transform hover:-translate-y-0.5"
+                style={{ borderColor: "var(--line)", background: "var(--bg)" }}
               >
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full" style={{ background: "var(--gold)" }} />
-                {L.previewLive}
-              </span>
-            </div>
-            <div className="mt-4 grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--muted)" }}>
-              {weekdays.map((w, i) => (
-                <span key={i} className="py-1">{w}</span>
-              ))}
-            </div>
-            <div className="mt-1 grid grid-cols-7 gap-1">
-              {cells.map((d, i) => {
-                if (d === null) return <span key={i} />;
-                const chip = chips.get(d);
-                const dot = !chip && (d * 7 + m) % 8 < 3;
-                return (
-                  <span
-                    key={i}
-                    className={`flex aspect-square flex-col items-center justify-center rounded-xl text-xs font-semibold ${chip ? "border-2" : ""}`}
-                    style={
-                      chip
-                        ? { borderColor: "var(--gold)", background: "color-mix(in srgb, var(--gold) 12%, transparent)", color: "var(--gold-deep)" }
-                        : { color: "var(--ink)" }
-                    }
-                    title={chip ? (lang === "bn" ? chip.bn : chip.en) : undefined}
-                  >
-                    {d}
-                    {chip ? (
-                      <span className="max-w-full truncate px-0.5 text-[8px] font-bold uppercase">{lang === "bn" ? chip.bn : chip.en}</span>
-                    ) : (
-                      dot && <span className="mt-0.5 h-1 w-1 rounded-full" style={{ background: "var(--gold)" }} />
-                    )}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-          <div className="border-t p-5 md:border-l md:border-t-0" style={{ borderColor: "var(--line)" }}>
-            <p className="text-[11px] font-bold uppercase tracking-[0.15em]" style={{ color: "var(--muted)" }}>
-              {L.previewOppT}
-            </p>
-            <div className="mt-4 grid gap-4">
-              {PREVIEW_EVENTS.map((e) => (
-                <div key={e.en}>
-                  <div className="flex items-center justify-between text-xs font-semibold">
-                    <span>{lang === "bn" ? e.bn : e.en}</span>
-                    <span style={{ color: "var(--gold)" }}>{e.score}</span>
-                  </div>
-                  <div className="mt-1.5 h-1.5 overflow-hidden rounded-full" style={{ background: "var(--line)" }}>
-                    <motion.div
-                      initial={{ width: 0 }}
-                      whileInView={{ width: `${e.score}%` }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
-                      className="h-full rounded-full"
-                      style={{ background: "var(--gold)" }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="mt-5 text-[11px] leading-relaxed" style={{ color: "var(--muted)" }}>
-              {L.previewSub2}
-            </p>
-          </div>
-        </div>
+                <span className="font-serif-d text-sm font-bold tabular-nums" style={{ color: "var(--gold)" }}>
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                  style={{ background: "color-mix(in srgb, var(--gold) 14%, transparent)", color: "var(--gold)" }}
+                >
+                  <Icon size={18} />
+                </span>
+                <span className="text-[15px] font-semibold">{t.nav[f.key]}</span>
+                <ArrowRight size={15} className="ml-auto shrink-0" style={{ color: "var(--muted)" }} />
+              </li>
+            );
+          })}
+        </ol>
       </div>
     </motion.div>
   );
@@ -396,7 +332,7 @@ export default function LandingPage() {
           <h2 className="font-serif-d mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{L.previewH}</h2>
           <p className="mt-3" style={{ color: "var(--muted)" }}>{L.previewSub}</p>
         </motion.div>
-        <AppPreview />
+        <InsideList />
       </section>
 
       {/* ── Features ────────────────────────────── */}

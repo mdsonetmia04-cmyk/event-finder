@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import AppShell from "@/components/AppShell";
+import { SWRegister } from "@/components/SWRegister";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -21,6 +22,13 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
+  },
+  manifest: "/manifest.webmanifest",
+  themeColor: "#A66A19",
+  appleWebApp: {
+    capable: true,
+    title: "Sweet Smart Calendar",
+    statusBarStyle: "default",
   },
   openGraph: {
     type: "website",
@@ -57,6 +65,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className={`${inter.variable} ${fraunces.variable}`} suppressHydrationWarning>
+        <SWRegister />
         <AppShell>{children}</AppShell>
       </body>
     </html>

@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.mdsonetmia.sweetsmartcalendar",
+    "sha256_cert_fingerprints": ["E1:48:AD:DF:14:53:9B:34:48:A4:12:74:18:7B:54:99:00:00:CB:BA:9C:F4:28:46:A3:1D:B4:4F:A8:74:77:18"]
+  }
+}]

@@ -10,6 +10,7 @@ import { EventCard, OpportunityCard } from "@/components/cards";
 import { CategoryBarChart, StageDonutChart } from "@/components/charts";
 import { LiveClock, Marquee, NumberTicker, Pressable, usePointerParallax } from "@/components/motion";
 import YearDial from "@/components/YearDial";
+import Leaderboard from "@/components/Leaderboard";
 import { Deadlines, Faq, HowItWorks, Section, UploadChecklist } from "@/components/sections";
 import { EmptyState } from "@/components/ui";
 import { useDaysLabel, useLang } from "@/i18n/LanguageContext";
@@ -213,6 +214,9 @@ function DashboardPage() {
           ))}
         </div>
       </section>
+
+      {/* ---------- Leaderboard ---------- */}
+      <Leaderboard />
 
       {/* ---------- Event ticker ---------- */}
       <div className="ticker" aria-label="Upcoming events">

@@ -45,7 +45,7 @@ export default function SoloLudoPage() {
         const settle = window.setTimeout(() => {
           setGame((g) => (g && g.phase === "roll" ? applyRoll(g, roll) : g));
           setDiceRolling(false);
-        }, 500);
+        }, 800);
         timersRef.current.push(settle);
       }, 800);
       return () => window.clearTimeout(id);
@@ -76,7 +76,7 @@ export default function SoloLudoPage() {
     const id = window.setTimeout(() => {
       setGame((g) => (g && g.phase === "roll" ? applyRoll(g, roll) : g));
       setDiceRolling(false);
-    }, 550);
+    }, 800);
     timersRef.current.push(id);
   }, [game, diceRolling]);
 

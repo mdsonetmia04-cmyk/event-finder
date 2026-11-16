@@ -101,6 +101,10 @@ export const HOME_CELLS: Record<LudoColor, [number, number][]> = {
   ],
 };
 
+/** Why the current player kept the turn (or lost it) — UI messaging only.
+    Added in Ludo v2; older stored states simply lack the field. */
+export type LudoBonus = "six" | "capture" | "home" | "forfeit";
+
 export interface LudoPlayerState {
   color: LudoColor;
   tokens: number[];
@@ -115,6 +119,7 @@ export interface LudoState {
   sixes: number;
   winner: number | null;
   move_no: number;
+  lastBonus?: LudoBonus | null;
 }
 
 export interface LudoMove {
@@ -143,6 +148,7 @@ export function createGame(playerCount: 2 | 3 | 4): LudoState {
     sixes: 0,
     winner: null,
     move_no: 0,
+    lastBonus: null,
   };
 }
 
@@ -153,20 +159,77 @@ export function trackIndex(color: LudoColor, progress: number): number | null {
   return (START_OFFSETS[color] + progress) % 52;
 }
 
+/**
+ * Track cells currently blocked for `playerIndex`: any cell holding 2+
+ * tokens of ONE opponent colour (a blockade). Opponents may neither land
+ * on nor pass over a blockade; the owner's own tokens pass freely, and
+ * home-column cells can never hold a blockade (single colour only).
+ */
+export function blockadeCells(state: LudoState, playerIndex: number): number[] {
+  const blocked: number[] = [];
+  for (let p = 0; p < state.players.length; p++) {
+    if (p === playerIndex) {
+      continue;
+    }
+    const opp: LudoPlayerState = state.players[p];
+    const perCell: Record<number, number> = {};
+    for (let t = 0; t < opp.tokens.length; t++) {
+      const cell: number | null = trackIndex(opp.color, opp.tokens[t]);
+      if (cell === null) {
+        continue;
+      }
+      perCell[cell] = (perCell[cell] ?? 0) + 1;
+    }
+    for (const key of Object.keys(perCell)) {
+      const cell = Number(key);
+      if (perCell[cell] >= 2 && blocked.indexOf(cell) === -1) {
+        blocked.push(cell);
+      }
+    }
+  }
+  return blocked;
+}
+
+/** Is the path from `from` (exclusive) to `dest` (inclusive) free of
+    opponent blockades? Only the on-track part of the path is checked. */
+function pathClear(
+  color: LudoColor,
+  from: number,
+  dest: number,
+  blocked: number[],
+): boolean {
+  const lastTrack = Math.min(dest, 50);
+  for (let p = from + 1; p <= lastTrack; p++) {
+    const cell: number | null = trackIndex(color, p);
+    if (cell !== null && blocked.indexOf(cell) !== -1) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function legalMoves(state: LudoState, roll: number): number[] {
   if (roll === 6 && state.sixes >= 2) {
     return [];
   }
   const player: LudoPlayerState = state.players[state.turn];
+  const blocked: number[] = blockadeCells(state, state.turn);
   const moves: number[] = [];
   for (let i = 0; i < player.tokens.length; i++) {
     const progress: number = player.tokens[i];
     if (progress === -1) {
       if (roll === 6) {
-        moves.push(i);
+        const destCell: number | null = trackIndex(player.color, 0);
+        if (destCell === null || blocked.indexOf(destCell) === -1) {
+          moves.push(i);
+        }
       }
     } else if (progress >= 0 && progress <= 56) {
-      if (progress + roll <= 57) {
+      const dest = progress + roll;
+      if (dest > 57) {
+        continue;
+      }
+      if (pathClear(player.color, progress, dest, blocked)) {
         moves.push(i);
       }
     }
@@ -188,6 +251,7 @@ export function applyRoll(state: LudoState, roll: number): LudoState {
       sixes: 0,
       winner: state.winner,
       move_no: state.move_no + 1,
+      lastBonus: "forfeit",
     };
   }
   return {
@@ -199,6 +263,7 @@ export function applyRoll(state: LudoState, roll: number): LudoState {
     sixes: state.sixes,
     winner: state.winner,
     move_no: state.move_no + 1,
+    lastBonus: state.lastBonus ?? null,
   };
 }
 
@@ -217,6 +282,7 @@ export function applyMove(state: LudoState, move: LudoMove): LudoState {
       sixes: 0,
       winner: state.winner,
       move_no: state.move_no + 1,
+      lastBonus: null,
     };
   }
   const legal: number[] = legalMoves(state, roll);
@@ -234,6 +300,7 @@ export function applyMove(state: LudoState, move: LudoMove): LudoState {
     dest = currentProgress + roll;
   }
   current.tokens[tokenIndex] = dest;
+  let captured = false;
   const destCell: number | null = trackIndex(current.color, dest);
   if (destCell !== null && SAFE_CELLS.indexOf(destCell) === -1) {
     for (let p = 0; p < players.length; p++) {
@@ -245,6 +312,7 @@ export function applyMove(state: LudoState, move: LudoMove): LudoState {
         const oppCell: number | null = trackIndex(opp.color, opp.tokens[t]);
         if (oppCell !== null && oppCell === destCell) {
           opp.tokens[t] = -1;
+          captured = true;
         }
       }
     }
@@ -265,18 +333,29 @@ export function applyMove(state: LudoState, move: LudoMove): LudoState {
       sixes: state.sixes,
       winner: state.turn,
       move_no: state.move_no + 1,
+      lastBonus: null,
     };
   }
-  if (roll === 6) {
+  /* Extra turn: rolling a 6, capturing, or bringing a token home. The
+     three-six counter only counts consecutive sixes. */
+  const reachedHome = dest === 57;
+  if (roll === 6 || captured || reachedHome) {
+    let bonus: LudoBonus = "home";
+    if (roll === 6) {
+      bonus = "six";
+    } else if (captured) {
+      bonus = "capture";
+    }
     return {
       players: players,
       turn: state.turn,
       phase: "roll",
       roll: null,
       lastRoll: state.lastRoll,
-      sixes: state.sixes + 1,
+      sixes: roll === 6 ? state.sixes + 1 : 0,
       winner: state.winner,
       move_no: state.move_no + 1,
+      lastBonus: bonus,
     };
   }
   return {
@@ -288,7 +367,45 @@ export function applyMove(state: LudoState, move: LudoMove): LudoState {
     sixes: 0,
     winner: state.winner,
     move_no: state.move_no + 1,
+    lastBonus: null,
   };
+}
+
+/**
+ * Is `cell` (absolute track index) threatened — i.e. could an opponent
+ * token reach it with a roll of 1..6? Bot heuristic only; ignores
+ * blockades, which only makes the bot slightly more cautious.
+ */
+function cellThreatened(state: LudoState, playerIndex: number, cell: number): boolean {
+  for (let p = 0; p < state.players.length; p++) {
+    if (p === playerIndex) {
+      continue;
+    }
+    const opp: LudoPlayerState = state.players[p];
+    for (let t = 0; t < opp.tokens.length; t++) {
+      const oppCell: number | null = trackIndex(opp.color, opp.tokens[t]);
+      if (oppCell === null) {
+        continue;
+      }
+      const gap = (cell - oppCell + 52) % 52;
+      if (gap >= 1 && gap <= 6) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function ownTokensOnCell(state: LudoState, playerIndex: number, cell: number): number {
+  const player: LudoPlayerState = state.players[playerIndex];
+  let count = 0;
+  for (let t = 0; t < player.tokens.length; t++) {
+    const c: number | null = trackIndex(player.color, player.tokens[t]);
+    if (c !== null && c === cell) {
+      count++;
+    }
+  }
+  return count;
 }
 
 export function botMove(state: LudoState, roll: number): number | null {
@@ -311,6 +428,8 @@ export function botMove(state: LudoState, roll: number): number | null {
     }
     let score: number = 0;
     const destCell: number | null = trackIndex(player.color, dest);
+    const fromCell: number | null = trackIndex(player.color, progress);
+    /* Capture. */
     if (destCell !== null && SAFE_CELLS.indexOf(destCell) === -1) {
       let captures: boolean = false;
       for (let p = 0; p < state.players.length; p++) {
@@ -329,20 +448,39 @@ export function botMove(state: LudoState, roll: number): number | null {
         score += 100;
       }
     }
+    /* Leave base. */
     if (progress === -1 && roll === 6) {
       score += 80;
     }
+    /* Reach the centre. */
     if (dest === 57) {
       score += 70;
     }
-    score += dest;
+    /* Enter the safety of the home column. */
+    if (dest >= 51 && dest <= 56) {
+      score += 25;
+    }
+    /* Form a blockade by stacking onto an own token. */
+    if (destCell !== null && ownTokensOnCell(state, state.turn, destCell) >= 1) {
+      score += 40;
+    }
+    /* Breaking an own blockade exposes the token left behind. */
+    if (fromCell !== null && ownTokensOnCell(state, state.turn, fromCell) >= 2) {
+      score -= 15;
+    }
+    /* Escape danger / avoid walking into danger. */
+    if (fromCell !== null && SAFE_CELLS.indexOf(fromCell) === -1 && cellThreatened(state, state.turn, fromCell)) {
+      score += 30;
+    }
     if (destCell !== null) {
       if (SAFE_CELLS.indexOf(destCell) !== -1) {
-        score += 10;
-      } else {
-        score -= 25;
+        score += 12;
+      } else if (cellThreatened(state, state.turn, destCell)) {
+        score -= 30;
       }
     }
+    /* Prefer the furthest-advanced token as a tiebreak. */
+    score += dest * 0.5;
     if (first || score > bestScore) {
       bestScore = score;
       bestToken = tokenIndex;

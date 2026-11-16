@@ -322,7 +322,7 @@ export default function RoomPage() {
     await submitState(applyRoll(st, roll), st.move_no, (fresh) =>
       fresh.phase === "roll" && fresh.turn === myIdx ? applyRoll(fresh, roll) : null,
     );
-    diceTimerRef.current = window.setTimeout(() => setDiceRolling(false), 600);
+    diceTimerRef.current = window.setTimeout(() => setDiceRolling(false), 800);
   };
 
   const handleToken = (token: number) => {

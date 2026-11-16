@@ -1461,34 +1461,195 @@ html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spaci
   .games-heart-ring { animation: none; }
 }
 
-/* ---- Ludo: dice shake while rolling ---- */
-@keyframes ludo-dice-shake {
-  0% { transform: rotate(0deg) scale(1); }
-  20% { transform: rotate(-14deg) scale(1.06); }
-  40% { transform: rotate(12deg) scale(0.96); }
-  60% { transform: rotate(-10deg) scale(1.05); }
-  80% { transform: rotate(8deg) scale(0.98); }
-  100% { transform: rotate(0deg) scale(1); }
+/* ---- Ludo v2: 3D dice cube ---- */
+.ludo-dice-scene {
+  display: block;
+  width: 62px;
+  height: 62px;
+  perspective: 320px;
 }
-.ludo-dice-rolling {
-  animation: ludo-dice-shake 0.5s ease-in-out infinite;
+.ludo-dice-cube {
+  display: block;
+  position: relative;
+  width: 62px;
+  height: 62px;
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.25, 0.9, 0.3, 1.2);
+}
+.ludo-dice-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fffdf6;
+  border: 1px solid rgba(60, 45, 20, 0.18);
+  border-radius: 14px;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.06);
+  backface-visibility: hidden;
+}
+@keyframes ludo-dice-tumble-kf {
+  from { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+  to { transform: rotateX(360deg) rotateY(360deg) rotateZ(180deg); }
+}
+.ludo-dice-cube-tumble {
+  animation: ludo-dice-tumble-kf 0.6s linear infinite;
+}
+@keyframes ludo-dice-ring-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px var(--dice-ring), 0 4px 14px rgba(0, 0, 0, 0.12); }
+  50% { box-shadow: 0 0 0 6px var(--dice-ring), 0 4px 18px rgba(0, 0, 0, 0.18); }
+}
+.ludo-dice-ring {
+  animation: ludo-dice-ring-pulse 1.1s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .ludo-dice-rolling { animation: none; }
+  .ludo-dice-cube-tumble, .ludo-dice-ring { animation: none; }
 }
 
-/* ---- Ludo: movable token pulse highlight ---- */
-@keyframes ludo-token-pulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 2px #fff, 0 0 0 5px var(--gold), 0 2px 6px rgba(0, 0, 0, 0.35); }
-  50% { transform: translate(-50%, -50%) scale(1.18); box-shadow: 0 0 0 2px #fff, 0 0 0 7px var(--gold), 0 2px 8px rgba(0, 0, 0, 0.4); }
+/* ---- Ludo v2: movable token pulse highlight ---- */
+@keyframes ludo-token-pulse-kf {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 2px #fff, 0 0 0 5px var(--gold), 0 3px 7px rgba(0, 0, 0, 0.35); }
+  50% { transform: scale(1.16); box-shadow: 0 0 0 2px #fff, 0 0 0 8px var(--gold), 0 3px 9px rgba(0, 0, 0, 0.4); }
 }
 .ludo-token-movable {
-  animation: ludo-token-pulse 0.9s ease-in-out infinite;
-  cursor: pointer;
-  z-index: 5;
+  animation: ludo-token-pulse-kf 0.9s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .ludo-token-pulse, .ludo-token-movable { animation: none; }
+  .ludo-token-movable { animation: none; }
+}
+
+/* ---- Ludo v2: token hop while moving (two identical keyframe sets so
+   alternating classes restart the bounce on every step) ---- */
+@keyframes ludo-token-hop-kf-a {
+  0% { transform: translateY(0) scale(1); }
+  45% { transform: translateY(-48%) scale(1.14); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes ludo-token-hop-kf-b {
+  0% { transform: translateY(0) scale(1); }
+  45% { transform: translateY(-48%) scale(1.14); }
+  100% { transform: translateY(0) scale(1); }
+}
+.ludo-token-hop-a { animation: ludo-token-hop-kf-a 0.135s ease-out 1; }
+.ludo-token-hop-b { animation: ludo-token-hop-kf-b 0.135s ease-out 1; }
+@media (prefers-reduced-motion: reduce) {
+  .ludo-token-hop-a, .ludo-token-hop-b { animation: none; }
+}
+
+/* ---- Ludo v2: captured token wobbles as it flies back to base ---- */
+@keyframes ludo-token-fly-kf {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-18%) rotate(-10deg); }
+  50% { transform: translateY(-30%) rotate(8deg) scale(0.94); }
+  75% { transform: translateY(-12%) rotate(-6deg); }
+}
+.ludo-token-flyhome {
+  animation: ludo-token-fly-kf 0.55s ease-in-out 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ludo-token-flyhome { animation: none; }
+}
+
+/* ---- Ludo v2: capture burst on the captured cell ---- */
+.ludo-burst {
+  position: relative;
+  width: 64px;
+  height: 64px;
+}
+.ludo-burst-ring {
+  position: absolute;
+  inset: 0;
+  border: 3px solid #E5484D;
+  border-radius: 9999px;
+  animation: ludo-burst-ring-kf 0.55s ease-out 1;
+}
+@keyframes ludo-burst-ring-kf {
+  0% { transform: scale(0.3); opacity: 1; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+.ludo-burst-star {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #E5484D;
+  font-size: 34px;
+  line-height: 1;
+  animation: ludo-burst-star-kf 0.55s ease-out 1;
+}
+@keyframes ludo-burst-star-kf {
+  0% { transform: scale(0.2) rotate(0deg); opacity: 1; }
+  60% { transform: scale(1.25) rotate(25deg); opacity: 1; }
+  100% { transform: scale(1.5) rotate(40deg); opacity: 0; }
+}
+.ludo-burst-label {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #E5484D;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  white-space: nowrap;
+  animation: ludo-burst-label-kf 0.55s ease-out 1;
+}
+@keyframes ludo-burst-label-kf {
+  0% { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  25% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ludo-burst-ring, .ludo-burst-star, .ludo-burst-label { animation: none; }
+}
+
+/* ---- Ludo v2: active player panel glow + your-turn dot ---- */
+@keyframes ludo-panel-glow-kf {
+  0%, 100% { box-shadow: 0 0 0 2px var(--panel-glow); }
+  50% { box-shadow: 0 0 0 3px var(--panel-glow), 0 0 14px var(--panel-glow); }
+}
+.ludo-panel-active {
+  animation: ludo-panel-glow-kf 1.4s ease-in-out infinite;
+}
+.ludo-turn-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: var(--gold);
+  animation: ludo-turn-dot-kf 1s ease-in-out infinite;
+}
+@keyframes ludo-turn-dot-kf {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(193, 138, 58, 0.5); }
+  50% { box-shadow: 0 0 0 5px rgba(193, 138, 58, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ludo-panel-active, .ludo-turn-dot { animation: none; }
+}
+
+/* ---- Ludo v2: win overlay pop + bouncing crown ---- */
+@keyframes ludo-pop-in-kf {
+  0% { transform: scale(0.85); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.ludo-pop-in {
+  animation: ludo-pop-in-kf 0.35s cubic-bezier(0.25, 0.9, 0.3, 1.3) 1;
+}
+@keyframes ludo-crown-bounce-kf {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-7px) rotate(4deg); }
+}
+.ludo-crown-bounce {
+  animation: ludo-crown-bounce-kf 1.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ludo-pop-in, .ludo-crown-bounce { animation: none; }
 }
 
 /* ---- Ludo: confetti fall for the win overlay ---- */

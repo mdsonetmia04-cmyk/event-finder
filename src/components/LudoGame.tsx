@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Crown } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Crown, Volume2, VolumeX } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import {
   HOME_CELLS,
@@ -13,6 +13,21 @@ import {
   type LudoState,
 } from "@/lib/ludo/engine";
 import { COLOR_HEX, COLOR_TINT } from "@/lib/ludo/room";
+import {
+  isSoundEnabled,
+  playButtonClick,
+  playCapture,
+  playDiceRoll,
+  playDiceSettle,
+  playTokenHome,
+  playTokenPop,
+  playTokenSelect,
+  playTokenStep,
+  playTurnChime,
+  playWinFanfare,
+  setSoundEnabled,
+  unlockAudio,
+} from "@/lib/ludo/sounds";
 
 export interface LudoPlayerMeta {
   name: string;
@@ -81,6 +96,26 @@ const DICE_PIPS: Record<number, number[]> = {
   6: [0, 2, 3, 5, 6, 8],
 };
 
+/* 3D dice cube: opposite faces sum to 7 (1-6, 2-5, 3-4). */
+const DICE_FACE_TRANSFORM: Record<number, string> = {
+  1: "rotateY(0deg) translateZ(31px)",
+  6: "rotateY(180deg) translateZ(31px)",
+  3: "rotateY(90deg) translateZ(31px)",
+  4: "rotateY(-90deg) translateZ(31px)",
+  2: "rotateX(90deg) translateZ(31px)",
+  5: "rotateX(-90deg) translateZ(31px)",
+};
+
+/* Cube rotation that brings each face to the front: [rotateX, rotateY]. */
+const DICE_ORIENTATION: Record<number, [number, number]> = {
+  1: [0, 0],
+  2: [-90, 0],
+  3: [0, -90],
+  4: [0, 90],
+  5: [90, 0],
+  6: [0, 180],
+};
+
 function Dice({
   value,
   rolling,
@@ -94,26 +129,73 @@ function Dice({
   label: string;
   onRoll: () => void;
 }) {
-  const pips = DICE_PIPS[value] ?? DICE_PIPS[6];
+  const [rest, setRest] = useState<[number, number]>(() => DICE_ORIENTATION[value] ?? [0, 0]);
+  const [tumbling, setTumbling] = useState(false);
+  const spinRef = useRef(0);
+  const prevRollingRef = useRef(rolling);
+
+  useEffect(() => {
+    if (rolling) {
+      if (!prevRollingRef.current) {
+        setTumbling(true);
+        playDiceRoll();
+      }
+    } else {
+      if (prevRollingRef.current) {
+        spinRef.current += 1;
+        playDiceSettle();
+      }
+      const [rx, ry] = DICE_ORIENTATION[value] ?? [0, 0];
+      const s = spinRef.current * 360;
+      setRest((prev) => (prev[0] === rx + s && prev[1] === ry + s ? prev : [rx + s, ry + s]));
+      setTumbling(false);
+    }
+    prevRollingRef.current = rolling;
+  }, [rolling, value]);
+
   return (
     <button
       type="button"
       onClick={onRoll}
       disabled={disabled}
       aria-label={label}
-      className={`flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-2xl border-2 transition-transform ${
-        rolling ? "ludo-dice-rolling" : ""
-      } ${disabled ? "cursor-default opacity-70" : "cursor-pointer hover:scale-105 active:scale-95"}`}
-      style={{ background: "var(--surface)", borderColor: "var(--line)", boxShadow: "0 4px 14px rgba(0,0,0,0.12)" }}
+      className={`flex h-[78px] w-[78px] shrink-0 items-center justify-center rounded-2xl border-2 transition-transform ${
+        disabled ? "cursor-default opacity-70" : "cursor-pointer hover:scale-105 active:scale-95"
+      }`}
+      style={{
+        background: "var(--surface)",
+        borderColor: "var(--line)",
+        boxShadow: "0 4px 14px rgba(0,0,0,0.12)",
+      }}
     >
-      <span className="grid h-full w-full grid-cols-3 grid-rows-3 p-2.5" aria-hidden="true">
-        {Array.from({ length: 9 }, (_, i) => (
-          <span key={i} className="flex items-center justify-center">
-            {pips.includes(i) && (
-              <span className="block h-[11px] w-[11px] rounded-full" style={{ background: "var(--text)" }} />
-            )}
-          </span>
-        ))}
+      <span className="ludo-dice-scene" aria-hidden="true">
+        <span
+          className={`ludo-dice-cube ${tumbling ? "ludo-dice-cube-tumble" : ""}`}
+          style={{ transform: `rotateX(${rest[0]}deg) rotateY(${rest[1]}deg)` }}
+        >
+          {([1, 2, 3, 4, 5, 6] as const).map((face) => {
+            const pips = DICE_PIPS[face];
+            return (
+              <span key={face} className="ludo-dice-face" style={{ transform: DICE_FACE_TRANSFORM[face] }}>
+                <span className="grid h-full w-full grid-cols-3 grid-rows-3 p-2">
+                  {Array.from({ length: 9 }, (_, i) => (
+                    <span key={i} className="flex items-center justify-center">
+                      {pips.includes(i) && (
+                        <span
+                          className="block h-[9px] w-[9px] rounded-full"
+                          style={{
+                            background: face === 1 ? "var(--gold-deep)" : "#2b2620",
+                            boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4)",
+                          }}
+                        />
+                      )}
+                    </span>
+                  ))}
+                </span>
+              </span>
+            );
+          })}
+        </span>
       </span>
     </button>
   );
@@ -132,6 +214,14 @@ const FINISH_DIR: Record<LudoColor, [number, number]> = {
   green: [0, -1.05],
   yellow: [1.05, 0],
   blue: [0, 1.05],
+};
+
+/* Track index of the home-column mouth per colour + arrow rotation. */
+const HOME_ARROWS: Record<number, { color: LudoColor; deg: number }> = {
+  50: { color: "red", deg: 90 },
+  11: { color: "green", deg: 180 },
+  24: { color: "yellow", deg: 270 },
+  37: { color: "blue", deg: 0 },
 };
 
 interface TokenPos {
@@ -163,19 +253,150 @@ function tokenPosition(color: LudoColor, tokenIndex: number, progress: number): 
   return { x: 7.5 + dx + jx, y: 7.5 + dy + jy, kind: "finished", key: `fin:${color}:${tokenIndex}` };
 }
 
+type ProgressGrid = number[][];
+
+function snapshot(state: LudoState): ProgressGrid {
+  return state.players.map((p) => p.tokens.slice());
+}
+
+interface GridDiff {
+  p: number;
+  t: number;
+  from: number;
+  to: number;
+}
+
+function diffGrids(oldG: ProgressGrid, newG: ProgressGrid): GridDiff[] {
+  const diffs: GridDiff[] = [];
+  for (let p = 0; p < newG.length; p++) {
+    for (let t = 0; t < 4; t++) {
+      const from = oldG[p]?.[t] ?? -1;
+      const to = newG[p][t];
+      if (from !== to) {
+        diffs.push({ p, t, from, to });
+      }
+    }
+  }
+  return diffs;
+}
+
+const HOP_MS = 135;
+const FLY_HOME_MS = 550;
+
 function Board({
   state,
   movable,
   canMove,
   onToken,
   colorNames,
+  capturedLabel,
+  onAnimatingChange,
 }: {
   state: LudoState;
   movable: number[];
   canMove: boolean;
   onToken: (token: number) => void;
   colorNames: Record<LudoColor, string>;
+  capturedLabel: string;
+  onAnimatingChange: (animating: boolean) => void;
 }) {
+  /* Displayed token positions — animated toward the real state. */
+  const [shown, setShown] = useState<ProgressGrid>(() => snapshot(state));
+  const shownRef = useRef(shown);
+  const [hop, setHop] = useState<{ p: number; t: number; n: number } | null>(null);
+  const [burst, setBurst] = useState<{ x: number; y: number; id: number } | null>(null);
+  const [flyHome, setFlyHome] = useState<ReadonlySet<string>>(new Set());
+  const timersRef = useRef<number[]>([]);
+  const burstIdRef = useRef(0);
+  const onAnimatingRef = useRef(onAnimatingChange);
+  onAnimatingRef.current = onAnimatingChange;
+
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach((id) => window.clearTimeout(id));
+      timersRef.current = [];
+    };
+  }, []);
+
+  /* Animate single-token moves step by step; snap complex diffs. */
+  useEffect(() => {
+    const target = snapshot(state);
+    const diffs = diffGrids(shownRef.current, target);
+    if (diffs.length === 0) {
+      return;
+    }
+    const movers = diffs.filter((d) => d.to > d.from);
+    const victims = diffs.filter((d) => d.to === -1 && d.from >= 0);
+    const other = diffs.filter((d) => movers.indexOf(d) === -1 && victims.indexOf(d) === -1);
+    if (movers.length !== 1 || other.length !== 0) {
+      shownRef.current = target;
+      setShown(target);
+      setHop(null);
+      setBurst(null);
+      setFlyHome(new Set());
+      onAnimatingRef.current(false);
+      return;
+    }
+    const m = movers[0];
+    const steps: number[] = [];
+    for (let p = m.from + 1; p <= m.to; p++) {
+      steps.push(p);
+    }
+    onAnimatingRef.current(true);
+    let i = 0;
+    const runStep = () => {
+      if (i < steps.length) {
+        const np = steps[i];
+        const g = shownRef.current.map((row) => row.slice());
+        g[m.p][m.t] = np;
+        shownRef.current = g;
+        setShown(g);
+        setHop({ p: m.p, t: m.t, n: i });
+        if (m.from === -1 && i === 0) {
+          playTokenPop();
+        } else {
+          playTokenStep();
+        }
+        i++;
+        timersRef.current.push(window.setTimeout(runStep, HOP_MS));
+      } else {
+        setHop(null);
+        if (victims.length > 0) {
+          const pos = tokenPosition(state.players[m.p].color, m.t, m.to);
+          burstIdRef.current += 1;
+          setBurst({ x: pos.x, y: pos.y, id: burstIdRef.current });
+          playCapture();
+          setFlyHome(new Set(victims.map((v) => `${v.p}:${v.t}`)));
+          const g = shownRef.current.map((row) => row.slice());
+          for (const v of victims) {
+            g[v.p][v.t] = -1;
+          }
+          shownRef.current = g;
+          setShown(g);
+          timersRef.current.push(
+            window.setTimeout(() => {
+              setFlyHome(new Set());
+              setBurst(null);
+              onAnimatingRef.current(false);
+            }, FLY_HOME_MS),
+          );
+        } else {
+          if (m.to === 57) {
+            playTokenHome();
+          }
+          onAnimatingRef.current(false);
+        }
+      }
+    };
+    runStep();
+    return () => {
+      timersRef.current.forEach((id) => window.clearTimeout(id));
+      timersRef.current = [];
+    };
+    // Only the authoritative state drives the animation; `shown` is a ref mirror.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
   /* Tokens, with stacking offsets when several share one cell. */
   interface PlacedToken {
     player: number;
@@ -188,7 +409,8 @@ function Board({
   const placed: PlacedToken[] = [];
   const groups = new Map<string, number>();
   state.players.forEach((player, pi) => {
-    player.tokens.forEach((progress, ti) => {
+    const row = shown[pi] ?? player.tokens;
+    row.forEach((progress, ti) => {
       const pos = tokenPosition(player.color, ti, progress);
       const groupIndex = groups.get(pos.key) ?? 0;
       groups.set(pos.key, groupIndex + 1);
@@ -205,7 +427,14 @@ function Board({
   };
 
   return (
-    <div className="relative aspect-square w-full select-none overflow-hidden rounded-2xl border" style={{ borderColor: "var(--line)", background: "var(--surface)" }}>
+    <div
+      className="relative aspect-square w-full overflow-hidden rounded-2xl border-2 select-none"
+      style={{
+        borderColor: "rgba(193,138,58,0.55)",
+        background: "var(--surface)",
+        boxShadow: "0 12px 32px rgba(0,0,0,0.16)",
+      }}
+    >
       {/* Static cells: 15x15 grid */}
       <div
         className="absolute inset-0 grid"
@@ -219,9 +448,18 @@ function Board({
             <div
               key={`base-${color}`}
               className="relative"
-              style={{ gridRow: `${r0 + 1} / span 6`, gridColumn: `${c0 + 1} / span 6`, background: COLOR_HEX[color] }}
+              style={{
+                gridRow: `${r0 + 1} / span 6`,
+                gridColumn: `${c0 + 1} / span 6`,
+                background: `linear-gradient(135deg, ${COLOR_HEX[color]}, ${COLOR_HEX[color]}DD)`,
+                borderRadius: 10,
+                boxShadow: "inset 0 2px 8px rgba(255,255,255,0.25), inset 0 -3px 8px rgba(0,0,0,0.18)",
+              }}
             >
-              <div className="absolute rounded-xl bg-white/95" style={{ inset: "13%" }} />
+              <div
+                className="absolute rounded-2xl bg-white/95"
+                style={{ inset: "13%", boxShadow: "0 2px 8px rgba(0,0,0,0.18)" }}
+              />
               {[25, 75].map((top) =>
                 [25, 75].map((left) => (
                   <span
@@ -231,8 +469,9 @@ function Board({
                       top: `${top}%`,
                       left: `${left}%`,
                       width: "22%",
-                      background: "rgba(255,255,255,0.9)",
+                      background: "radial-gradient(circle at 35% 30%, #ffffff, #f1e8d8)",
                       border: `2px solid ${COLOR_HEX[color]}`,
+                      boxShadow: "inset 0 2px 4px rgba(0,0,0,0.12)",
                     }}
                   />
                 )),
@@ -244,6 +483,7 @@ function Board({
         {TRACK_CELLS.map(([r, c], i) => {
           const start = startColorOf(i);
           const safe = SAFE_CELLS.includes(i);
+          const arrow = HOME_ARROWS[i];
           return (
             <div
               key={`track-${i}`}
@@ -256,12 +496,30 @@ function Board({
               }}
             >
               {safe && !start && (
-                <span className="leading-none" style={{ color: "var(--muted)", fontSize: "clamp(7px, 1.6vw, 12px)" }}>
+                <span
+                  className="leading-none"
+                  style={{ color: "var(--gold-deep)", fontSize: "clamp(7px, 1.7vw, 13px)", textShadow: "0 1px 2px rgba(0,0,0,0.15)" }}
+                >
                   ★
                 </span>
               )}
               {start && (
-                <span className="block rounded-full" style={{ width: "38%", height: "38%", background: COLOR_HEX[start] }} />
+                <span
+                  className="block rounded-full"
+                  style={{ width: "38%", height: "38%", background: COLOR_HEX[start], boxShadow: "0 0 0 2px rgba(255,255,255,0.6)" }}
+                />
+              )}
+              {arrow && !safe && (
+                <span
+                  className="leading-none"
+                  style={{
+                    color: COLOR_HEX[arrow.color],
+                    fontSize: "clamp(7px, 1.6vw, 12px)",
+                    transform: `rotate(${arrow.deg}deg)`,
+                  }}
+                >
+                  ▲
+                </span>
               )}
             </div>
           );
@@ -276,12 +534,20 @@ function Board({
             />
           )),
         )}
-        {/* Centre home triangle: 4 clipped triangles */}
+        {/* Centre home triangle: 4 clipped triangles + gold star */}
         <div className="relative" style={{ gridRow: "7 / span 3", gridColumn: "7 / span 3" }}>
           <span className="absolute inset-0" style={{ background: COLOR_HEX.green, clipPath: "polygon(0 0, 100% 0, 50% 50%)" }} />
           <span className="absolute inset-0" style={{ background: COLOR_HEX.yellow, clipPath: "polygon(100% 0, 100% 100%, 50% 50%)" }} />
           <span className="absolute inset-0" style={{ background: COLOR_HEX.blue, clipPath: "polygon(0 100%, 100% 100%, 50% 50%)" }} />
           <span className="absolute inset-0" style={{ background: COLOR_HEX.red, clipPath: "polygon(0 0, 0 100%, 50% 50%)" }} />
+          <span
+            className="absolute flex items-center justify-center rounded-full bg-white/95"
+            style={{ inset: "34%", boxShadow: "0 1px 4px rgba(0,0,0,0.25)" }}
+          >
+            <span className="leading-none" style={{ color: "var(--gold-deep)", fontSize: "clamp(8px, 1.8vw, 14px)" }}>
+              ★
+            </span>
+          </span>
         </div>
       </div>
 
@@ -301,46 +567,86 @@ function Board({
             widthPct = 4.3;
           }
           const isMovable = canMove && p.player === state.turn && movable.includes(p.token);
+          const isHopping = hop !== null && hop.p === p.player && hop.t === p.token;
+          const isFlying = flyHome.has(`${p.player}:${p.token}`);
           const hex = COLOR_HEX[p.color];
-          const commonStyle: React.CSSProperties = {
-            left: `${(x * 100) / 15}%`,
-            top: `${(y * 100) / 15}%`,
-            width: `${widthPct}%`,
-            background: hex,
+          const visualClass = [
+            "relative block h-full w-full rounded-full",
+            isMovable ? "ludo-token-movable" : "",
+            isHopping ? (hop !== null && hop.n % 2 === 0 ? "ludo-token-hop-a" : "ludo-token-hop-b") : "",
+            isFlying ? "ludo-token-flyhome" : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+          const visualStyle: React.CSSProperties = {
+            background: `radial-gradient(circle at 32% 28%, rgba(255,255,255,0.65), rgba(255,255,255,0) 46%), ${hex}`,
             border: "2px solid #fff",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.35)",
+            boxShadow: "0 3px 7px rgba(0,0,0,0.35), inset 0 -3px 5px rgba(0,0,0,0.22)",
           };
           const inner = (
             <>
-              <span className="absolute rounded-full bg-white/95" style={{ inset: "26%" }} aria-hidden="true" />
-              <span className="absolute rounded-full" style={{ inset: "41%", background: hex }} aria-hidden="true" />
+              <span className="absolute rounded-full bg-white/95" style={{ inset: "27%" }} aria-hidden="true" />
+              <span
+                className="absolute rounded-full"
+                style={{ inset: "42%", background: hex, boxShadow: "inset 0 1px 2px rgba(0,0,0,0.25)" }}
+                aria-hidden="true"
+              />
             </>
           );
-          if (isMovable) {
-            return (
-              <button
-                key={`${p.player}-${p.token}`}
-                type="button"
-                onClick={() => onToken(p.token)}
-                aria-label={`${colorNames[p.color]} ${p.token + 1}`}
-                className="ludo-token-movable pointer-events-auto absolute aspect-square -translate-x-1/2 -translate-y-1/2 rounded-full"
-                style={commonStyle}
-              >
-                {inner}
-              </button>
-            );
-          }
           return (
             <div
               key={`${p.player}-${p.token}`}
-              className="absolute aspect-square -translate-x-1/2 -translate-y-1/2 rounded-full"
-              style={commonStyle}
-              aria-hidden="true"
+              className="absolute"
+              style={{
+                left: `${(x * 100) / 15}%`,
+                top: `${(y * 100) / 15}%`,
+                width: `${widthPct}%`,
+                aspectRatio: "1",
+                transform: "translate(-50%, -50%)",
+                transition: isFlying
+                  ? "left 0.55s ease-in-out, top 0.55s ease-in-out"
+                  : "left 0.13s ease-out, top 0.13s ease-out",
+                zIndex: isHopping ? 6 : isMovable ? 5 : 2,
+              }}
             >
-              {inner}
+              {isMovable ? (
+                <button
+                  type="button"
+                  onClick={() => onToken(p.token)}
+                  aria-label={`${colorNames[p.color]} ${p.token + 1}`}
+                  className={`pointer-events-auto ${visualClass}`}
+                  style={{ ...visualStyle, cursor: "pointer" }}
+                >
+                  {inner}
+                </button>
+              ) : (
+                <div className={visualClass} style={visualStyle} aria-hidden="true">
+                  {inner}
+                </div>
+              )}
             </div>
           );
         })}
+
+        {/* Capture burst effect */}
+        {burst && (
+          <div
+            key={burst.id}
+            className="absolute z-10"
+            style={{
+              left: `${(burst.x * 100) / 15}%`,
+              top: `${(burst.y * 100) / 15}%`,
+              transform: "translate(-50%, -50%)",
+            }}
+            aria-hidden="true"
+          >
+            <div className="ludo-burst">
+              <span className="ludo-burst-ring" />
+              <span className="ludo-burst-star">✦</span>
+              <span className="ludo-burst-label">{capturedLabel}</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -351,7 +657,7 @@ const CONFETTI_COLORS = ["#E5484D", "#2FA36B", "#E8A90C", "#3E7BFA", "#C18A3A"];
 function Confetti() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      {Array.from({ length: 28 }, (_, i) => (
+      {Array.from({ length: 36 }, (_, i) => (
         <span
           key={i}
           className="ludo-confetti-piece absolute top-0"
@@ -391,6 +697,40 @@ export default function LudoGame(props: LudoGameProps) {
   } = props;
   const { t } = useLang();
 
+  /* Input locks while a token animation is playing. */
+  const [animating, setAnimating] = useState(false);
+  const onAnimatingChange = useCallback((v: boolean) => setAnimating(v), []);
+  const effCanRoll = canRoll && !animating;
+  const effCanMove = canMove && !animating;
+
+  /* Sound on/off, persisted in localStorage by the sounds module. */
+  const [soundOn, setSoundOn] = useState<boolean>(() => isSoundEnabled());
+  const toggleSound = useCallback(() => {
+    setSoundOn((prev) => {
+      const next = !prev;
+      setSoundEnabled(next);
+      if (next) {
+        unlockAudio();
+        playButtonClick();
+      }
+      return next;
+    });
+  }, []);
+
+  const handleRoll = useCallback(() => {
+    unlockAudio();
+    onRoll();
+  }, [onRoll]);
+
+  const handleToken = useCallback(
+    (token: number) => {
+      unlockAudio();
+      playTokenSelect();
+      onToken(token);
+    },
+    [onToken],
+  );
+
   /* 30s turn countdown: resets when timerKey changes, fires onTimeout once. */
   const [remaining, setRemaining] = useState(timerSeconds);
   const firedKeyRef = useRef<string | number | null>(null);
@@ -415,9 +755,38 @@ export default function LudoGame(props: LudoGameProps) {
   const turnMeta = metas[state.turn];
   const turnColor = state.players[state.turn]?.color ?? "red";
   const isYourTurn = turnMeta?.isYou === true;
+
+  /* Chime when the player's own turn begins (not on first render). */
+  const prevTurnRef = useRef<{ turn: number; phase: string } | null>(null);
+  useEffect(() => {
+    const prev = prevTurnRef.current;
+    prevTurnRef.current = { turn: state.turn, phase: state.phase };
+    if (!prev || finished) return;
+    if (isYourTurn && state.phase === "roll" && (prev.turn !== state.turn || prev.phase !== "roll")) {
+      playTurnChime();
+    }
+  }, [state.turn, state.phase, isYourTurn, finished]);
+
+  /* Fanfare when the game is won (not when loading a finished game). */
+  const prevFinishedRef = useRef(finished);
+  useEffect(() => {
+    if (finished && !prevFinishedRef.current) {
+      playWinFanfare();
+    }
+    prevFinishedRef.current = finished;
+  }, [finished]);
+
   const diceValue = state.lastRoll ?? state.roll ?? 6;
-  const showSixNote = !finished && state.phase === "roll" && state.lastRoll === 6 && state.sixes > 0;
-  const showForfeitNote = !finished && state.phase === "roll" && state.lastRoll === 6 && state.sixes === 0 && state.move_no > 0;
+  const bonus = state.lastBonus;
+  const legacy = bonus === undefined;
+  const showSixNote =
+    !finished && state.phase === "roll" && (bonus === "six" || (legacy && state.lastRoll === 6 && state.sixes > 0));
+  const showCaptureNote = !finished && state.phase === "roll" && bonus === "capture";
+  const showHomeNote = !finished && state.phase === "roll" && bonus === "home";
+  const showForfeitNote =
+    !finished &&
+    state.phase === "roll" &&
+    (bonus === "forfeit" || (legacy && state.lastRoll === 6 && state.sixes === 0 && state.move_no > 0));
 
   let statusText: string;
   if (finished) {
@@ -445,14 +814,30 @@ export default function LudoGame(props: LudoGameProps) {
           return (
             <div
               key={i}
-              className="card flex items-center gap-2.5 p-2.5"
-              style={active ? { boxShadow: `0 0 0 2px ${hex}` } : undefined}
+              className={`card flex items-center gap-2.5 p-2.5 ${active ? "ludo-panel-active" : ""}`}
+              style={
+                {
+                  "--panel-glow": hex,
+                  ...(active ? { boxShadow: `0 0 0 2px ${hex}` } : {}),
+                } as React.CSSProperties
+              }
             >
               <LudoAvatar url={meta.avatar_url} name={meta.name} size={36} ringColor={active ? hex : undefined} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold leading-tight">{meta.name}</p>
-                <p className="mt-0.5 flex items-center gap-1.5 text-xs" style={{ color: "var(--muted)" }}>
-                  <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: hex }} aria-hidden="true" />
+                <p className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: "var(--muted)" }}>
+                  <span className="flex shrink-0 items-center gap-[3px]" aria-hidden="true">
+                    {[0, 1, 2, 3].map((d) => (
+                      <span
+                        key={d}
+                        className="inline-block h-2.5 w-2.5 rounded-full"
+                        style={{
+                          background: d < home ? hex : "transparent",
+                          border: `1.5px solid ${hex}`,
+                        }}
+                      />
+                    ))}
+                  </span>
                   {t.ludo.tokensHome(home)}
                 </p>
               </div>
@@ -471,7 +856,8 @@ export default function LudoGame(props: LudoGameProps) {
             <LudoAvatar url={turnMeta.avatar_url} name={turnMeta.name} size={40} ringColor={COLOR_HEX[turnColor]} />
           )}
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold">
+            <p className="flex items-center gap-2 truncate text-sm font-semibold">
+              {isYourTurn && !finished && <span className="ludo-turn-dot" aria-hidden="true" />}
               {finished
                 ? t.ludo.winnerTitle
                 : isYourTurn
@@ -486,12 +872,32 @@ export default function LudoGame(props: LudoGameProps) {
                 {t.ludo.rolledSix}
               </p>
             )}
+            {showCaptureNote && (
+              <p className="truncate text-xs font-semibold" style={{ color: "var(--gold-deep)" }}>
+                {t.ludo.extraTurnCapture}
+              </p>
+            )}
+            {showHomeNote && (
+              <p className="truncate text-xs font-semibold" style={{ color: "var(--gold-deep)" }}>
+                {t.ludo.extraTurnHome}
+              </p>
+            )}
             {showForfeitNote && (
               <p className="truncate text-xs" style={{ color: "var(--muted)" }}>
                 {t.ludo.threeSixes}
               </p>
             )}
           </div>
+          <button
+            type="button"
+            onClick={toggleSound}
+            aria-label={soundOn ? t.ludo.soundOff : t.ludo.soundOn}
+            aria-pressed={soundOn}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-transform hover:scale-105 active:scale-95"
+            style={{ borderColor: "var(--line)", background: "var(--surface)", color: "var(--text)" }}
+          >
+            {soundOn ? <Volume2 size={18} aria-hidden="true" /> : <VolumeX size={18} aria-hidden="true" />}
+          </button>
           {timerActive && !finished && (
             <span
               className="shrink-0 rounded-full px-2.5 py-1 text-sm font-bold tabular-nums"
@@ -512,7 +918,7 @@ export default function LudoGame(props: LudoGameProps) {
                 className="h-full rounded-full"
                 style={{
                   width: `${timerPct}%`,
-                  background: timerLow ? "#E5484D" : "var(--gold)",
+                  background: timerLow ? "#E5484D" : "linear-gradient(90deg, var(--gold-2), var(--gold-deep))",
                   transition: "width 1s linear",
                 }}
               />
@@ -527,9 +933,33 @@ export default function LudoGame(props: LudoGameProps) {
       {/* Board + chat */}
       <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-start">
         <div className="mx-auto w-full max-w-[560px] flex-1">
-          <Board state={state} movable={movable} canMove={canMove} onToken={onToken} colorNames={t.ludo.colors} />
+          <Board
+            state={state}
+            movable={movable}
+            canMove={effCanMove}
+            onToken={handleToken}
+            colorNames={t.ludo.colors}
+            capturedLabel={t.ludo.capturedLabel}
+            onAnimatingChange={onAnimatingChange}
+          />
           <div className="mt-4 flex flex-col items-center gap-2">
-            <Dice value={diceValue} rolling={diceRolling} disabled={!canRoll} label={t.ludo.rollDice} onRoll={onRoll} />
+            <div
+              className={`rounded-[20px] ${effCanRoll ? "ludo-dice-ring" : ""}`}
+              style={
+                {
+                  "--dice-ring": COLOR_HEX[turnColor],
+                  boxShadow: `0 0 0 3px ${COLOR_HEX[turnColor]}`,
+                } as React.CSSProperties
+              }
+            >
+              <Dice
+                value={diceValue}
+                rolling={diceRolling}
+                disabled={!effCanRoll}
+                label={t.ludo.rollDice}
+                onRoll={handleRoll}
+              />
+            </div>
             <p className="text-sm font-semibold">{t.ludo.rollDice}</p>
             <p className="text-center text-xs" style={{ color: "var(--muted)" }}>
               {t.ludo.firstWinnerNote} {t.ludo.rollSixToStart}
@@ -543,9 +973,9 @@ export default function LudoGame(props: LudoGameProps) {
       {finished && state.winner !== null && (
         <div className="absolute inset-0 z-20 flex items-center justify-center overflow-hidden rounded-2xl bg-black/55 p-4">
           <Confetti />
-          <div className="card relative z-10 w-full max-w-sm p-6 text-center">
+          <div className="ludo-pop-in card relative z-10 w-full max-w-sm p-6 text-center">
             <span
-              className="mx-auto flex h-14 w-14 items-center justify-center rounded-full text-white"
+              className="ludo-crown-bounce mx-auto flex h-14 w-14 items-center justify-center rounded-full text-white"
               style={{ background: "linear-gradient(135deg, var(--gold-2), var(--gold-deep))" }}
             >
               <Crown size={28} />

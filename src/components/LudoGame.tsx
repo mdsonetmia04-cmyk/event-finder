@@ -182,9 +182,9 @@ function Dice({
                     <span key={i} className="flex items-center justify-center">
                       {pips.includes(i) && (
                         <span
-                          className="block h-[9px] w-[9px] rounded-full"
+                          className={face === 1 ? "block h-4 w-4 rounded-full" : "block h-[9px] w-[9px] rounded-full"}
                           style={{
-                            background: face === 1 ? "var(--gold-deep)" : "#2b2620",
+                            background: "#2b2620",
                             boxShadow: "inset 0 1px 2px rgba(0,0,0,0.4)",
                           }}
                         />

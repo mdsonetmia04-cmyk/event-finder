@@ -1448,3 +1448,58 @@ html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spaci
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .notif-pop { animation: notif-pop-in 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* ---- Gaming Zone: heart button pulse ring ---- */
+@keyframes games-heart-ring {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+.games-heart-ring {
+  animation: games-heart-ring 2.2s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .games-heart-ring { animation: none; }
+}
+
+/* ---- Ludo: dice shake while rolling ---- */
+@keyframes ludo-dice-shake {
+  0% { transform: rotate(0deg) scale(1); }
+  20% { transform: rotate(-14deg) scale(1.06); }
+  40% { transform: rotate(12deg) scale(0.96); }
+  60% { transform: rotate(-10deg) scale(1.05); }
+  80% { transform: rotate(8deg) scale(0.98); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+.ludo-dice-rolling {
+  animation: ludo-dice-shake 0.5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ludo-dice-rolling { animation: none; }
+}
+
+/* ---- Ludo: movable token pulse highlight ---- */
+@keyframes ludo-token-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 2px #fff, 0 0 0 5px var(--gold), 0 2px 6px rgba(0, 0, 0, 0.35); }
+  50% { transform: translate(-50%, -50%) scale(1.18); box-shadow: 0 0 0 2px #fff, 0 0 0 7px var(--gold), 0 2px 8px rgba(0, 0, 0, 0.4); }
+}
+.ludo-token-movable {
+  animation: ludo-token-pulse 0.9s ease-in-out infinite;
+  cursor: pointer;
+  z-index: 5;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ludo-token-pulse, .ludo-token-movable { animation: none; }
+}
+
+/* ---- Ludo: confetti fall for the win overlay ---- */
+@keyframes ludo-confetti-fall {
+  0% { transform: translate3d(0, -6vh, 0) rotate(0deg); opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translate3d(0, 105vh, 0) rotate(540deg); opacity: 0.15; }
+}
+.ludo-confetti-piece {
+  animation: ludo-confetti-fall linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ludo-confetti-piece { animation: none; }
+}

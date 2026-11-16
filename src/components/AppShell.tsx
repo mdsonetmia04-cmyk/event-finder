@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/i18n/LanguageContext";
 import { ScrollProgress } from "./motion";
 import { Footer, Header, ThemeProvider } from "./layout";
 import { NotificationPopup } from "./NotificationPopup";
+import GamesButton from "./GamesButton";
 
 export default function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -25,6 +26,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
                     {page}
                   </main>
                   <Footer />
+                  <GamesButton />
                 </>
               )}
             >

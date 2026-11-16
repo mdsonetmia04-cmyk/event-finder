@@ -2,19 +2,41 @@
 
 /* My Profile: the logged-in user views and edits their own basic info.
    Name + WhatsApp are read-only; gmail / team number / gender / blood group
-   are editable and visible to the super admin in /admin. */
+   are editable and visible to the super admin in /admin. The profile picture
+   is visible to every user on the leaderboard, next to the name. */
 
-import { useEffect, useState } from "react";
-import { CheckCircle2, Lock, Save, UserRound } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { CheckCircle2, ImagePlus, Lock, Save, Trash2, UserRound } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { SectionHeader } from "@/components/ui";
 import { useLang } from "@/i18n/LanguageContext";
+import { getSupabase } from "@/lib/supabase";
 
 const GENDERS = ["male", "female", "other"] as const;
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"] as const;
 
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+const AVATAR_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+/** Storage path (<user_id>/avatar.<ext>) parsed back out of a public URL. */
+function storagePathFromAvatarUrl(url: string): string | null {
+  const marker = "/avatars/";
+  const i = url.indexOf(marker);
+  if (i === -1) return null;
+  const rest = url.slice(i + marker.length).split("?")[0];
+  try {
+    return rest ? decodeURIComponent(rest) : null;
+  } catch {
+    return rest || null;
+  }
+}
+
 export default function ProfilePage() {
-  const { ready, session, updateProfile } = useAuth();
+  const { ready, session, updateProfile, updateAvatar } = useAuth();
   const { t } = useLang();
   const [gmail, setGmail] = useState("");
   const [teamNo, setTeamNo] = useState("");
@@ -29,6 +51,11 @@ export default function ProfilePage() {
   const [fbLink, setFbLink] = useState("");
   const [msg, setMsg] = useState<"ok" | "not_ready" | "error" | null>(null);
   const [saving, setSaving] = useState(false);
+  const [avatarMsg, setAvatarMsg] = useState<
+    "saved" | "removed" | "too_big" | "bad_type" | "not_ready" | "error" | null
+  >(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (session) {
@@ -72,6 +99,70 @@ export default function ProfilePage() {
     setSaving(false);
   };
 
+  const onPickFile = async (file: File | undefined) => {
+    if (!file || !session) return;
+    const ext = AVATAR_EXT[file.type];
+    if (!ext) {
+      setAvatarMsg("bad_type");
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      setAvatarMsg("too_big");
+      return;
+    }
+    const supabase = getSupabase();
+    if (!supabase) {
+      setAvatarMsg("error");
+      return;
+    }
+    setUploading(true);
+    setAvatarMsg(null);
+    const path = `${session.id}/avatar.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true, contentType: file.type, cacheControl: "3600" });
+    if (upErr) {
+      setAvatarMsg(/bucket not found/i.test(upErr.message) ? "not_ready" : "error");
+      setUploading(false);
+      return;
+    }
+    const publicUrl = supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl;
+    // Version query param busts browser/CDN caches so the new picture shows at once.
+    const res = await updateAvatar(`${publicUrl}?v=${Date.now()}`);
+    setAvatarMsg(res === "ok" ? "saved" : res);
+    setUploading(false);
+  };
+
+  const removeAvatar = async () => {
+    if (!session?.avatar_url) return;
+    const supabase = getSupabase();
+    setUploading(true);
+    setAvatarMsg(null);
+    // Best effort: delete the stored object, then clear the URL.
+    const path = storagePathFromAvatarUrl(session.avatar_url);
+    if (supabase && path) {
+      await supabase.storage.from("avatars").remove([path]);
+    }
+    const res = await updateAvatar(null);
+    setAvatarMsg(res === "ok" ? "removed" : res);
+    setUploading(false);
+  };
+
+  const avatarMsgText =
+    avatarMsg === "saved"
+      ? t.profile.avatarSaved
+      : avatarMsg === "removed"
+        ? t.profile.avatarRemoved
+        : avatarMsg === "too_big"
+          ? t.profile.avatarTooBig
+          : avatarMsg === "bad_type"
+            ? t.profile.avatarBadType
+            : avatarMsg === "not_ready"
+              ? t.profile.avatarNotReady
+              : avatarMsg === "error"
+                ? t.profile.avatarErr
+                : null;
+
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <SectionHeader title={t.profile.title} subtitle={t.profile.sub} />
@@ -79,12 +170,21 @@ export default function ProfilePage() {
       <div className="card p-5 sm:p-6">
         {/* Identity (read-only) */}
         <div className="flex items-center gap-4">
-          <span
-            className="font-serif-d flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-2xl font-bold text-white"
-            style={{ background: "var(--gold)" }}
-          >
-            {session.name.trim().charAt(0).toUpperCase()}
-          </span>
+          {session.avatar_url ? (
+            <img
+              src={session.avatar_url}
+              alt=""
+              className="h-16 w-16 shrink-0 rounded-full object-cover"
+              style={{ border: "2px solid var(--gold)" }}
+            />
+          ) : (
+            <span
+              className="font-serif-d flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-2xl font-bold text-white"
+              style={{ background: "var(--gold)" }}
+            >
+              {session.name.trim().charAt(0).toUpperCase()}
+            </span>
+          )}
           <div className="min-w-0">
             <p className="font-serif-d truncate text-xl font-semibold">{session.name}</p>
             <p className="mt-0.5 text-sm tabular-nums" style={{ color: "var(--muted)" }}>
@@ -95,6 +195,56 @@ export default function ProfilePage() {
         <p className="mt-3 flex items-center gap-1.5 text-xs" style={{ color: "var(--muted)" }}>
           <Lock size={12} /> {t.profile.lockedNote}
         </p>
+
+        {/* Profile picture */}
+        <div className="mt-5">
+          <span className="label">{t.profile.avatar}</span>
+          <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>
+            {t.profile.avatarHint}
+          </p>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            aria-label={t.profile.avatar}
+            onChange={(e) => {
+              void onPickFile(e.target.files?.[0]);
+              e.target.value = "";
+            }}
+          />
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <button
+              className="btn btn-gold !text-xs"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+            >
+              <ImagePlus size={14} />{" "}
+              {session.avatar_url ? t.profile.avatarChange : t.profile.avatarUpload}
+            </button>
+            {session.avatar_url && (
+              <button className="btn btn-ghost !text-xs" onClick={() => void removeAvatar()} disabled={uploading}>
+                <Trash2 size={14} /> {t.profile.avatarRemove}
+              </button>
+            )}
+            {avatarMsgText && (
+              <p
+                className="flex items-center gap-1.5 text-sm font-semibold"
+                style={{
+                  color:
+                    avatarMsg === "saved" || avatarMsg === "removed"
+                      ? "#2F9E6E"
+                      : avatarMsg === "not_ready"
+                        ? "var(--gold-deep)"
+                        : "#C0524D",
+                }}
+              >
+                {(avatarMsg === "saved" || avatarMsg === "removed") && <CheckCircle2 size={15} />}
+                {avatarMsgText}
+              </p>
+            )}
+          </div>
+        </div>
 
         <div className="my-5 h-px" style={{ background: "var(--line)" }} />
 

@@ -50,6 +50,10 @@ interface AuthCtx {
     skills_interests: string;
     facebook_link: string;
   }) => Promise<"ok" | "not_ready" | "error">;
+  /** Set the caller's own avatar URL (null clears it) via the
+      update_own_avatar RPC. Refreshes the session so the header chip
+      updates without a manual reload. */
+  updateAvatar: (avatarUrl: string | null) => Promise<"ok" | "not_ready" | "error">;
   refresh: () => Promise<void>;
 }
 
@@ -365,6 +369,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [refresh]
   );
 
+  const updateAvatar = useCallback(
+    async (avatarUrl: string | null) => {
+      const supabase = getSupabase();
+      if (!supabase) return "error" as const;
+      const { error } = await supabase.rpc("update_own_avatar", {
+        p_avatar_url: avatarUrl ?? "",
+      });
+      if (error) {
+        // 42883 = undefined_function → migration not run yet
+        return (error as { code?: string }).code === "42883" ? ("not_ready" as const) : ("error" as const);
+      }
+      await refresh();
+      return "ok" as const;
+    },
+    [refresh]
+  );
+
   return (
     <Ctx.Provider
       value={{
@@ -380,6 +401,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         removeUser,
         changePassword,
         updateProfile,
+        updateAvatar,
         refresh,
         refreshUsers,
       }}

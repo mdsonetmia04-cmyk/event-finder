@@ -103,7 +103,7 @@ function navItems(t: Dict) {
     { href: "/planner", label: t.nav.planner, icon: ClipboardList },
     { href: "/evergreen", label: t.nav.evergreen, icon: Leaf },
     { href: "/contact", label: t.nav.contact, icon: Mail },
-    { href: "/announcements", label: "🔔", icon: Megaphone },
+    { href: "/announcements", label: t.nav.announcements, icon: Megaphone },
   ];
 }
 
@@ -115,6 +115,11 @@ export function Header() {
   const NAV = session?.role === "super_admin"
     ? [...navItems(t), { href: "/admin", label: t.nav.admin, icon: ShieldCheck }]
     : navItems(t);
+  // Desktop + mobile text nav: text links only, Admin last. Announcements
+  // lives in the icon group (Megaphone) instead of breaking the text serial.
+  const TEXT_NAV = NAV.filter((n) => n.href !== "/announcements");
+  const ANNOUNCE = NAV.find((n) => n.href === "/announcements")!;
+  const announceActive = pathname === "/announcements" || pathname.startsWith("/announcements/");
   const pendingCount = session?.role === "super_admin"
     ? users.filter((u) => u.status === "pending").length
     : 0;
@@ -142,7 +147,7 @@ export function Header() {
         </Link>
 
         <nav className="hidden items-center gap-0.5 xl:flex" aria-label="Primary">
-          {NAV.map((n) => {
+          {TEXT_NAV.map((n) => {
             const active = pathname === n.href || (n.href !== "/" && pathname.startsWith(n.href));
             return (
               <Link
@@ -158,6 +163,22 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {/* 1) Announcements — Megaphone icon, distinct from the admin bell. */}
+          <Link
+            href="/announcements"
+            className="icon-circle"
+            title={t.announce.title}
+            aria-label={t.announce.title}
+            aria-current={announceActive ? "page" : undefined}
+            style={
+              announceActive
+                ? { borderColor: "var(--gold)", color: "var(--gold)", background: "var(--gold-soft)" }
+                : undefined
+            }
+          >
+            <Megaphone size={16} />
+          </Link>
+          {/* 2) Pending approvals — Bell icon, super admin only. */}
           {session?.role === "super_admin" && (
             <Link
               href="/admin"
@@ -214,10 +235,26 @@ export function Header() {
                 onClick={() => setOpen(false)}
                 className={`nav-link flex items-center gap-3 !text-sm !font-medium${pathname === "/profile" ? " active" : ""}`}
               >
-                <span className="text-lg leading-none">👤</span>
+                {session.avatar_url ? (
+                  <img
+                    src={session.avatar_url}
+                    alt=""
+                    className="h-6 w-6 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="text-lg leading-none">👤</span>
+                )}
+                {t.profile.title}
               </Link>
             )}
-            {NAV.map((n) => {
+            <Link
+              href="/announcements"
+              onClick={() => setOpen(false)}
+              className={`nav-link flex items-center gap-3 !text-sm !font-medium${pathname === "/announcements" ? " active" : ""}`}
+            >
+              <Megaphone size={16} /> {ANNOUNCE.label}
+            </Link>
+            {TEXT_NAV.map((n) => {
               const Icon = n.icon;
               const active = pathname === n.href;
               return (

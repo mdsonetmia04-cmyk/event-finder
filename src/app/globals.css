@@ -1170,6 +1170,12 @@ html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spaci
 .dark .nav-link.active {
   color: #201405;
 }
+/* Desktop header pill: tighter links so every item fits at laptop widths
+   (Bengali labels are long). Mobile menu links live in .card, unaffected. */
+.nav-pill .nav-link {
+  padding: 0.5rem 0.7rem;
+  font-size: 13px;
+}
 .icon-circle {
   display: inline-flex;
   align-items: center;

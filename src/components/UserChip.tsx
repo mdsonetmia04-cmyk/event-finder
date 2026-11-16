@@ -6,8 +6,8 @@ import { Pencil, X } from "lucide-react";
 import { useAuth } from "./AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 
-/** Header user chip: shows a 👤 emoji instead of the name.
-    Clicking it opens a popup with the user's full info. */
+/** Header user chip: shows the user's profile picture when set, otherwise
+    a 👤 emoji. Clicking it opens a popup with the user's full info. */
 export function UserChip() {
   const { session } = useAuth();
   const { t, lang } = useLang();
@@ -52,12 +52,16 @@ export function UserChip() {
       <button
         onClick={() => setOpen((o) => !o)}
         className="icon-circle"
-        style={{ fontSize: 18 }}
+        style={p.avatar_url ? { fontSize: 18, overflow: "hidden", padding: 0 } : { fontSize: 18 }}
         title={t.profile.title}
         aria-label={t.profile.title}
         aria-expanded={open}
       >
-        👤
+        {p.avatar_url ? (
+          <img src={p.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
+        ) : (
+          "👤"
+        )}
       </button>
       {open && (
         <div
@@ -74,7 +78,15 @@ export function UserChip() {
             <X size={14} />
           </button>
           <div className="flex items-center gap-3">
-            <span className="text-4xl">👤</span>
+            {p.avatar_url ? (
+              <img
+                src={p.avatar_url}
+                alt=""
+                className="h-14 w-14 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <span className="text-4xl">👤</span>
+            )}
             <div>
               <p className="font-serif-d text-lg font-semibold">{p.name}</p>
               <p className="text-xs capitalize" style={{ color: "var(--muted)" }}>

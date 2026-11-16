@@ -58,7 +58,10 @@ insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)
 on conflict (id) do update set public = excluded.public;
 
-alter table storage.objects enable row level security;
+-- NOTE: storage.objects already has RLS enabled in every Supabase project;
+-- do NOT run `alter table storage.objects enable row level security` here:
+-- the dashboard role does not own that table (42501) and the whole
+-- migration would roll back. CREATE POLICY below works as-is.
 
 drop policy if exists "avatars public read" on storage.objects;
 create policy "avatars public read"

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bot, Gamepad2, HelpCircle, PencilLine, Play, Trophy, Users } from "lucide-react";
+import { Bot, HelpCircle, PencilLine, Play, Trophy, Users } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
@@ -30,7 +30,11 @@ function MiniBoard() {
   return (
     <div
       className="grid w-28 shrink-0 grid-cols-7 gap-[2px] rounded-xl border p-1.5 sm:w-32"
-      style={{ borderColor: "var(--line)", background: "var(--surface)" }}
+      style={{
+        borderColor: "var(--line)",
+        background: "var(--surface)",
+        boxShadow: "0 0 0 1px color-mix(in srgb, var(--gold) 40%, transparent), 0 8px 18px -10px rgba(166, 106, 25, 0.55)",
+      }}
       aria-hidden="true"
     >
       {cells.flat().map((color, i) => (
@@ -90,13 +94,35 @@ export default function GamesPage() {
           game cards → Game Chat → live card → record section. */}
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="flex min-w-0 flex-col gap-6">
-      {/* Ludo card */}
-      <article className="card card-hover p-5 sm:p-6">
+      {/* Ludo card: four-colour accent strip + mini board + quadrant badge. */}
+      <article
+        className="card card-hover relative overflow-hidden p-5 sm:p-6"
+        style={{
+          background:
+            "linear-gradient(135deg, color-mix(in srgb, var(--gold) 7%, var(--card)), var(--card) 60%)",
+        }}
+      >
+        <div
+          className="absolute inset-x-0 top-0 h-1"
+          aria-hidden="true"
+          style={{
+            background: `linear-gradient(90deg, ${COLOR_HEX.red} 0 25%, ${COLOR_HEX.green} 25% 50%, ${COLOR_HEX.yellow} 50% 75%, ${COLOR_HEX.blue} 75% 100%)`,
+          }}
+        />
         <div className="flex items-start gap-4 sm:gap-5">
           <MiniBoard />
           <div className="min-w-0 flex-1">
             <h2 className="font-serif-d flex items-center gap-2 text-2xl font-semibold">
-              <Gamepad2 size={22} style={{ color: "var(--gold-deep)" }} aria-hidden="true" />
+              <span
+                className="grid h-[22px] w-[22px] shrink-0 grid-cols-2 gap-[2px] rounded-[6px] p-[2px]"
+                style={{ background: "var(--surface)", boxShadow: "0 0 0 1px var(--line)" }}
+                aria-hidden="true"
+              >
+                <span className="rounded-[2px]" style={{ background: COLOR_HEX.red }} />
+                <span className="rounded-[2px]" style={{ background: COLOR_HEX.green }} />
+                <span className="rounded-[2px]" style={{ background: COLOR_HEX.blue }} />
+                <span className="rounded-[2px]" style={{ background: COLOR_HEX.yellow }} />
+              </span>
               {t.games.ludoTitle}
             </h2>
             <p className="mt-1.5 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
@@ -118,11 +144,29 @@ export default function GamesPage() {
 
       {/* Quiz Battle is live; Draw & Guess is still a placeholder: chip only, nothing clickable. */}
       <div className="grid gap-3 sm:grid-cols-2">
-        <article className="card card-hover flex flex-col p-5">
-          <div className="flex items-start justify-between gap-3">
+        <article
+          className="card card-hover relative flex flex-col overflow-hidden p-5"
+          style={{
+            background:
+              "linear-gradient(160deg, color-mix(in srgb, #3E7BFA 8%, var(--card)), var(--card) 55%)",
+          }}
+        >
+          {/* Oversized "?" watermark — the quiz motif. */}
+          <span
+            className="font-serif-d pointer-events-none absolute -top-5 right-3 text-[96px] leading-none font-bold select-none"
+            style={{ color: "color-mix(in srgb, #3E7BFA 10%, transparent)" }}
+            aria-hidden="true"
+          >
+            ?
+          </span>
+          <div className="relative flex items-start justify-between gap-3">
             <span
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white"
-              style={{ background: "linear-gradient(135deg, #3E7BFA, #2FA36B)" }}
+              style={{
+                background: "linear-gradient(135deg, #3E7BFA, #2FA36B)",
+                boxShadow:
+                  "0 0 0 3px color-mix(in srgb, #3E7BFA 18%, transparent), 0 6px 14px -6px rgba(62, 123, 250, 0.55)",
+              }}
             >
               <HelpCircle size={20} aria-hidden="true" />
             </span>
@@ -136,11 +180,25 @@ export default function GamesPage() {
             {t.games.playVsComputer}
           </Link>
         </article>
-        <article className="card p-5 opacity-70">
+        <article
+          className="card relative flex flex-col overflow-hidden p-5 opacity-70"
+          style={{
+            borderStyle: "dashed",
+            borderWidth: 2,
+            borderColor: "color-mix(in srgb, var(--gold) 55%, transparent)",
+            backgroundImage:
+              "radial-gradient(color-mix(in srgb, var(--gold) 22%, transparent) 1px, transparent 1px)",
+            backgroundSize: "14px 14px",
+          }}
+        >
           <div className="flex items-start justify-between gap-3">
             <span
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white"
-              style={{ background: "linear-gradient(135deg, #E8A90C, #E5484D)" }}
+              style={{
+                background: "linear-gradient(135deg, #E8A90C, #E5484D)",
+                outline: "2px dashed color-mix(in srgb, #E5484D 45%, transparent)",
+                outlineOffset: 3,
+              }}
             >
               <PencilLine size={20} aria-hidden="true" />
             </span>

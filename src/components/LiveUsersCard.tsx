@@ -5,7 +5,10 @@
    - Serial 1: everyone currently live on the website (site-wide).
    - Serial 2: the subset currently inside the Gaming Zone — their last
      heartbeat came from a page under /games (migration v14 last_path).
-   Each entry is avatar + name + green live dot. Liveness reuses the
+   Each entry is avatar + name + green live dot, plus — when the user
+   is on a game page — a small pill with that game's name (migration
+   v15 current_game), so others can tell what they are playing.
+   Liveness reuses the
    heartbeat signal: get_live_users RPC, the same 3-minute "live now"
    window as src/lib/presence.ts. Demo accounts are excluded
    server-side; name + pic only — never phone numbers, same rule as
@@ -22,7 +25,30 @@ import { parseLiveUser, type LiveUser } from "@/lib/zone-chat";
 
 const LIVE_POLL_MS = 30_000;
 
-function LiveUserRow({ user, isYou, youLabel }: { user: LiveUser; isYou: boolean; youLabel: string }) {
+/** Localized game name for a current_game key ('ludo' / 'quiz-battle'
+    from migration v15), or null when the user is not on a game page.
+    Unknown keys never render a pill. Labels reuse the game card titles
+    so both languages stay consistent. */
+function gameLabelFor(
+  currentGame: string | null,
+  labels: { ludo: string; quizBattle: string },
+): string | null {
+  if (currentGame === "ludo") return labels.ludo;
+  if (currentGame === "quiz-battle") return labels.quizBattle;
+  return null;
+}
+
+function LiveUserRow({
+  user,
+  isYou,
+  youLabel,
+  gameLabel,
+}: {
+  user: LiveUser;
+  isYou: boolean;
+  youLabel: string;
+  gameLabel: string | null;
+}) {
   return (
     <li className="flex min-w-0 items-center gap-3">
       <span className="relative shrink-0">
@@ -49,6 +75,19 @@ function LiveUserRow({ user, isYou, youLabel }: { user: LiveUser; isYou: boolean
         </span>
       </span>
       <span className="min-w-0 truncate text-sm font-semibold">{user.display_name}</span>
+      {gameLabel && (
+        <span
+          className="flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-px text-[10px] font-bold whitespace-nowrap"
+          style={{
+            background: "color-mix(in srgb, var(--gold) 10%, transparent)",
+            borderColor: "color-mix(in srgb, var(--gold) 40%, transparent)",
+            color: "var(--gold-deep)",
+          }}
+        >
+          <Gamepad2 size={10} aria-hidden="true" />
+          {gameLabel}
+        </span>
+      )}
       {isYou && (
         <span
           className="shrink-0 rounded-full px-1.5 py-px text-[10px] font-bold"
@@ -142,7 +181,7 @@ export function LiveUsersCard() {
         ) : (
           <ul className="mt-3 max-h-80 space-y-3 overflow-y-auto pr-1">
             {liveUsers.map((u) => (
-              <LiveUserRow key={u.user_id} user={u} isYou={u.user_id === session.id} youLabel={t.zoneChat.you} />
+              <LiveUserRow key={u.user_id} user={u} isYou={u.user_id === session.id} youLabel={t.zoneChat.you} gameLabel={gameLabelFor(u.current_game, { ludo: t.games.ludoTitle, quizBattle: t.games.quizTitle })} />
             ))}
           </ul>
         )}
@@ -164,7 +203,7 @@ export function LiveUsersCard() {
         ) : (
           <ul className="mt-3 max-h-80 space-y-3 overflow-y-auto pr-1">
             {inZone.map((u) => (
-              <LiveUserRow key={u.user_id} user={u} isYou={u.user_id === session.id} youLabel={t.zoneChat.you} />
+              <LiveUserRow key={u.user_id} user={u} isYou={u.user_id === session.id} youLabel={t.zoneChat.you} gameLabel={gameLabelFor(u.current_game, { ludo: t.games.ludoTitle, quizBattle: t.games.quizTitle })} />
             ))}
           </ul>
         )}

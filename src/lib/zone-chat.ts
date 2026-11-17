@@ -1,6 +1,7 @@
 /* Shared Gaming Zone chat types + pure helpers (no I/O).
-   Row shapes mirror supabase/add-zone-chat.sql (migration v13) and
-   supabase/add-zone-presence.sql (migration v14, in_zone flag).
+   Row shapes mirror supabase/add-zone-chat.sql (migration v13),
+   supabase/add-zone-presence.sql (migration v14, in_zone flag) and
+   supabase/add-game-presence.sql (migration v15, current_game).
    Room-code detection reuses the Ludo code alphabet so only real
    Ludo codes are ever linkified — never invent a second scheme. */
 
@@ -17,7 +18,7 @@ export interface ZoneChatMessage {
 
 /** One row from the get_live_users() RPC: id + name + pic + last beat +
     whether the user's last heartbeat came from inside the Gaming Zone
-    (migration v14). */
+    (migration v14) and which game they are playing (migration v15). */
 export interface LiveUser {
   user_id: string;
   display_name: string;
@@ -25,6 +26,9 @@ export interface LiveUser {
   last_seen: string | null;
   /** True when the user's last heartbeat path was under /games. */
   in_zone: boolean;
+  /** 'ludo' / 'quiz-battle' when the user's last heartbeat path was a
+      game page, else null (browsing, or pre-migration v15 rows). */
+  current_game: string | null;
 }
 
 /** How many recent messages the chat page loads and keeps. */
@@ -55,9 +59,10 @@ export function parseZoneChatMessage(row: unknown): ZoneChatMessage | null {
 }
 
 /** Validate an untyped get_live_users() row into a LiveUser, or null.
-    The in_zone flag is optional: rows from before migration v14 carry
-    no flag and are treated as not in the zone (empty zone list until
-    v14 is applied — never a crash). */
+    The in_zone flag and current_game label are optional: rows from
+    before migrations v14/v15 carry no flag / no label and are treated
+    as not in the zone / not in a game (empty zone list and no game
+    pills until the migrations are applied — never a crash). */
 export function parseLiveUser(row: unknown): LiveUser | null {
   if (!isRecord(row)) return null;
   if (typeof row.user_id !== "string" || typeof row.display_name !== "string") return null;
@@ -69,6 +74,7 @@ export function parseLiveUser(row: unknown): LiveUser | null {
     avatar_url: row.avatar_url,
     last_seen: row.last_seen,
     in_zone: row.in_zone === true,
+    current_game: typeof row.current_game === "string" ? row.current_game : null,
   };
 }
 

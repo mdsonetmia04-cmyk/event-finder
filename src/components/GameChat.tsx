@@ -13,7 +13,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { MessageCircle, Play, Send } from "lucide-react";
+import { Eye, MessageCircle, Play, Send } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
@@ -255,12 +255,33 @@ export function GameChat() {
 
   if (!ready || !session) {
     return (
-      <section className="card flex flex-col p-4">
-        <h2 className="font-serif-d flex items-center gap-2 text-lg font-semibold">
-          <MessageCircle size={19} style={{ color: "var(--gold-deep)" }} aria-hidden="true" />
-          {t.zoneChat.title}
-        </h2>
-        <p className="mt-3 text-sm" style={{ color: "var(--muted)" }}>
+      <section className="card overflow-hidden">
+        <div
+          className="relative overflow-hidden px-4 py-4 sm:px-5"
+          style={{
+            background: "linear-gradient(120deg, #6B4A0F 0%, #A66A19 48%, #C18A3A 100%)",
+            boxShadow: "inset 0 1px 0 rgba(255, 249, 236, 0.25)",
+          }}
+        >
+          <div
+            className="pointer-events-none absolute inset-0"
+            aria-hidden="true"
+            style={{ background: "radial-gradient(320px 120px at 12% 0%, rgba(243, 217, 160, 0.35), transparent 65%)" }}
+          />
+          <h2 className="font-serif-d relative flex items-center gap-3 text-lg font-semibold" style={{ color: "#FFF9EC" }}>
+            <span
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+              style={{
+                background: "rgba(255, 249, 236, 0.16)",
+                boxShadow: "0 0 0 1px rgba(255, 249, 236, 0.45), 0 4px 12px rgba(0, 0, 0, 0.25)",
+              }}
+            >
+              <MessageCircle size={19} style={{ color: "#FFF9EC" }} aria-hidden="true" />
+            </span>
+            {t.zoneChat.title}
+          </h2>
+        </div>
+        <p className="p-4 text-sm" style={{ color: "var(--muted)" }}>
           {t.zoneChat.loading}
         </p>
       </section>
@@ -268,23 +289,63 @@ export function GameChat() {
   }
 
   return (
-    <section className="card flex flex-col p-4">
-      <h2 className="font-serif-d flex items-center gap-2 text-lg font-semibold">
-        <MessageCircle size={19} style={{ color: "var(--gold-deep)" }} aria-hidden="true" />
-        {t.zoneChat.title}
-      </h2>
-      <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
-        {t.zoneChat.zoneSub}
-      </p>
-      <div ref={scrollRef} className="mt-3 max-h-[60vh] min-h-72 flex-1 space-y-4 overflow-y-auto pr-1">
+    <section
+      className="card flex flex-col overflow-hidden"
+      style={{ boxShadow: "0 14px 34px -22px rgba(166, 106, 25, 0.45)" }}
+    >
+      {/* Gold-gradient header band with icon badge. */}
+      <div
+        className="relative overflow-hidden px-4 py-4 sm:px-5"
+        style={{
+          background: "linear-gradient(120deg, #6B4A0F 0%, #A66A19 48%, #C18A3A 100%)",
+          boxShadow: "inset 0 1px 0 rgba(255, 249, 236, 0.25)",
+        }}
+      >
+        <div
+          className="pointer-events-none absolute inset-0"
+          aria-hidden="true"
+          style={{ background: "radial-gradient(320px 120px at 12% 0%, rgba(243, 217, 160, 0.35), transparent 65%)" }}
+        />
+        <h2 className="font-serif-d relative flex items-center gap-3 text-lg font-semibold" style={{ color: "#FFF9EC" }}>
+          <span
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+            style={{
+              background: "rgba(255, 249, 236, 0.16)",
+              boxShadow: "0 0 0 1px rgba(255, 249, 236, 0.45), 0 4px 12px rgba(0, 0, 0, 0.25)",
+            }}
+          >
+            <MessageCircle size={19} style={{ color: "#FFF9EC" }} aria-hidden="true" />
+          </span>
+          {t.zoneChat.title}
+        </h2>
+        <p className="relative mt-1.5 pl-[52px] text-sm leading-relaxed" style={{ color: "rgba(255, 249, 236, 0.88)" }}>
+          {t.zoneChat.zoneSub}
+        </p>
+      </div>
+      <div
+        ref={scrollRef}
+        className="chat-bg max-h-[60vh] min-h-72 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-5"
+        style={{ backgroundColor: "color-mix(in srgb, var(--gold) 4%, var(--surface))" }}
+      >
         {loading ? (
           <p className="text-sm" style={{ color: "var(--muted)" }}>
             {t.zoneChat.loading}
           </p>
         ) : messages.length === 0 ? (
-          <p className="text-sm" style={{ color: "var(--muted)" }}>
-            {t.zoneChat.chatEmpty}
-          </p>
+          <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
+            <span
+              className="flex h-14 w-14 items-center justify-center rounded-full"
+              style={{
+                background: "color-mix(in srgb, var(--gold) 12%, transparent)",
+                boxShadow: "0 0 0 1px color-mix(in srgb, var(--gold) 30%, transparent), 0 6px 16px -8px rgba(166, 106, 25, 0.5)",
+              }}
+            >
+              <MessageCircle size={24} style={{ color: "var(--gold-deep)" }} aria-hidden="true" />
+            </span>
+            <p className="text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
+              {t.zoneChat.chatEmpty}
+            </p>
+          </div>
         ) : (
           messages.map((m) => {
             const mine = m.user_id === session.id;
@@ -293,18 +354,39 @@ export function GameChat() {
               .map((code) => openRooms.get(code))
               .filter((r): r is LudoRoom => Boolean(r));
             return (
-              <div key={m.id} className={`flex gap-2 ${mine ? "flex-row-reverse" : ""}`}>
-                <LudoAvatar url={m.avatar_url} name={m.name} size={32} />
+              <div key={m.id} className={`chat-msg flex gap-2 ${mine ? "flex-row-reverse" : ""}`}>
+                <span className="shrink-0 pt-0.5">
+                  <LudoAvatar
+                    url={m.avatar_url}
+                    name={m.name}
+                    size={32}
+                    ringColor="color-mix(in srgb, var(--gold) 55%, transparent)"
+                  />
+                </span>
                 <div className={`max-w-[78%] min-w-0 ${mine ? "text-right" : ""}`}>
-                  <p className="text-[11px] font-medium" style={{ color: "var(--muted)" }}>
+                  <p className="px-1 text-[11px] font-semibold" style={{ color: "var(--muted)" }}>
                     {m.name} · {formatChatTime(m.created_at)}
                   </p>
                   <p
-                    className="mt-0.5 inline-block break-words rounded-2xl px-3 py-1.5 text-left text-sm leading-relaxed"
-                    style={{
-                      background: mine ? "var(--gold)" : "var(--surface2)",
-                      color: mine ? "#FFF9EC" : "var(--text)",
-                    }}
+                    className="mt-1 inline-block break-words px-3.5 py-2 text-left text-sm leading-relaxed"
+                    style={
+                      mine
+                        ? {
+                            background: "linear-gradient(135deg, var(--gold-2), var(--gold))",
+                            color: "#000",
+                            borderRadius: 18,
+                            borderBottomRightRadius: 6,
+                            boxShadow: "0 3px 10px rgba(166, 106, 25, 0.3)",
+                          }
+                        : {
+                            background: "var(--surface)",
+                            color: "var(--text)",
+                            borderRadius: 18,
+                            borderBottomLeftRadius: 6,
+                            border: "1px solid var(--line)",
+                            boxShadow: "0 2px 8px rgba(33, 26, 20, 0.06)",
+                          }
+                    }
                   >
                     {renderSegments(splitByRoomCodes(m.body))}
                   </p>
@@ -313,7 +395,12 @@ export function GameChat() {
                       <Link
                         href={`/games/ludo/room/${room.id}`}
                         className="chip !py-1 text-xs font-bold"
-                        style={{ borderColor: "var(--gold)", color: "var(--gold-deep)" }}
+                        style={{
+                          background: "linear-gradient(135deg, var(--gold-soft), var(--gold-2))",
+                          borderColor: "var(--gold)",
+                          color: "#201405",
+                          boxShadow: "0 0 0 1px var(--gold), 0 4px 14px rgba(166, 106, 25, 0.35)",
+                        }}
                       >
                         <Play size={12} aria-hidden="true" />
                         {t.zoneChat.joinRoom(room.code)}
@@ -321,7 +408,11 @@ export function GameChat() {
                     </div>
                   ))}
                   {seen > 0 && (
-                    <p className="mt-1 text-[11px]" style={{ color: "var(--muted)" }}>
+                    <p
+                      className={`mt-1 flex items-center gap-1 px-1 text-[11px] ${mine ? "justify-end" : ""}`}
+                      style={{ color: "var(--muted)" }}
+                    >
+                      <Eye size={12} aria-hidden="true" />
                       {t.zoneChat.seenBy(seen)}
                     </p>
                   )}
@@ -332,30 +423,41 @@ export function GameChat() {
         )}
       </div>
       {sendError && (
-        <p role="alert" className="mt-3 text-sm font-medium" style={{ color: "#C44D45" }}>
+        <p role="alert" className="px-4 pt-3 text-sm font-medium sm:px-5" style={{ color: "#C44D45" }}>
           {t.zoneChat.sendFailed}
         </p>
       )}
       <form
-        className="mt-3 flex gap-2"
+        className="border-t px-3 py-3 sm:px-4"
+        style={{ borderColor: "var(--line)", background: "var(--surface)" }}
         onSubmit={(e) => {
           e.preventDefault();
           void send();
         }}
       >
-        <input
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          placeholder={t.zoneChat.composerPh}
-          maxLength={ZONE_CHAT_MAX_CHARS}
-          autoComplete="off"
-          className="min-w-0 flex-1 rounded-full border px-4 py-2.5 text-sm outline-none"
-          style={{ borderColor: "var(--line)", background: "var(--surface)", color: "var(--text)" }}
-        />
-        <button type="submit" className="btn btn-gold shrink-0" disabled={sending || body.trim().length === 0}>
-          <Send size={15} aria-hidden="true" />
-          {t.zoneChat.send}
-        </button>
+        <div
+          className="flex items-center gap-2 rounded-full border p-1.5 pl-4 transition-all focus-within:border-[var(--gold)] focus-within:shadow-[0_0_0_3px_rgba(193,138,58,0.25)]"
+          style={{ borderColor: "var(--line)", background: "var(--card)", boxShadow: "0 2px 10px rgba(33, 26, 20, 0.05)" }}
+        >
+          <input
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder={t.zoneChat.composerPh}
+            maxLength={ZONE_CHAT_MAX_CHARS}
+            autoComplete="off"
+            className="min-w-0 flex-1 bg-transparent py-1 text-sm outline-none"
+            style={{ color: "var(--text)" }}
+          />
+          <button
+            type="submit"
+            className="btn btn-gold shrink-0 !px-4 !py-2"
+            style={{ boxShadow: "0 4px 14px rgba(166, 106, 25, 0.4)" }}
+            disabled={sending || body.trim().length === 0}
+          >
+            <Send size={15} aria-hidden="true" />
+            {t.zoneChat.send}
+          </button>
+        </div>
       </form>
     </section>
   );

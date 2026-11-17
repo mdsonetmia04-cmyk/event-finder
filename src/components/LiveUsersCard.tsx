@@ -26,15 +26,16 @@ import { parseLiveUser, type LiveUser } from "@/lib/zone-chat";
 const LIVE_POLL_MS = 30_000;
 
 /** Localized game name for a current_game key ('ludo' / 'quiz-battle'
-    from migration v15), or null when the user is not on a game page.
-    Unknown keys never render a pill. Labels reuse the game card titles
-    so both languages stay consistent. */
+    from migration v15, 'draw-guess' from migration v18), or null when
+    the user is not on a game page. Unknown keys never render a pill.
+    Labels reuse the game card titles so both languages stay consistent. */
 function gameLabelFor(
   currentGame: string | null,
-  labels: { ludo: string; quizBattle: string },
+  labels: { ludo: string; quizBattle: string; drawGuess: string },
 ): string | null {
   if (currentGame === "ludo") return labels.ludo;
   if (currentGame === "quiz-battle") return labels.quizBattle;
+  if (currentGame === "draw-guess") return labels.drawGuess;
   return null;
 }
 
@@ -181,7 +182,7 @@ export function LiveUsersCard() {
         ) : (
           <ul className="mt-3 max-h-80 space-y-3 overflow-y-auto pr-1">
             {liveUsers.map((u) => (
-              <LiveUserRow key={u.user_id} user={u} isYou={u.user_id === session.id} youLabel={t.zoneChat.you} gameLabel={gameLabelFor(u.current_game, { ludo: t.games.ludoTitle, quizBattle: t.games.quizTitle })} />
+              <LiveUserRow key={u.user_id} user={u} isYou={u.user_id === session.id} youLabel={t.zoneChat.you} gameLabel={gameLabelFor(u.current_game, { ludo: t.games.ludoTitle, quizBattle: t.games.quizTitle, drawGuess: t.games.drawTitle })} />
             ))}
           </ul>
         )}
@@ -203,7 +204,7 @@ export function LiveUsersCard() {
         ) : (
           <ul className="mt-3 max-h-80 space-y-3 overflow-y-auto pr-1">
             {inZone.map((u) => (
-              <LiveUserRow key={u.user_id} user={u} isYou={u.user_id === session.id} youLabel={t.zoneChat.you} gameLabel={gameLabelFor(u.current_game, { ludo: t.games.ludoTitle, quizBattle: t.games.quizTitle })} />
+              <LiveUserRow key={u.user_id} user={u} isYou={u.user_id === session.id} youLabel={t.zoneChat.you} gameLabel={gameLabelFor(u.current_game, { ludo: t.games.ludoTitle, quizBattle: t.games.quizTitle, drawGuess: t.games.drawTitle })} />
             ))}
           </ul>
         )}

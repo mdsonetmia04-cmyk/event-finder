@@ -3,9 +3,10 @@
 /* Game Chat: the Gaming Zone's shared inbox, embedded open on /games.
    - Messages: realtime INSERT subscription (same channel pattern as
      AdminChat), newest at the bottom, auto-scroll on new messages.
-   - Ludo room codes in a message get a "Join room" chip, but only when
-     the code matches a currently open (waiting + fresh) room — the room
-     page itself handles joining for non-members.
+   - Room codes in a message get a "Join room" chip, but only when the
+     code matches a currently open room — a waiting Ludo room, or a
+     waiting/playing Draw & Guess room (fresh only, Ludo wins a code
+     clash). The room page itself handles joining for non-members.
    - Seen counts: opening the Gaming Zone records read rows for the
      messages on screen (mark_zone_chat_read RPC, author excluded
      server-side); the count beside each message is other readers,
@@ -24,7 +25,8 @@ import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
 import { LudoAvatar } from "@/components/LudoGame";
-import { isRoomFresh, parseRoom, type LudoRoom } from "@/lib/ludo/room";
+import { isRoomFresh, parseRoom } from "@/lib/ludo/room";
+import { isDrawRoomFresh, parseDrawRoomLookup } from "@/lib/draw-guess/room";
 import {
   extractRoomCodes,
   parseZoneChatMessage,
@@ -37,6 +39,13 @@ import {
 
 const ROOM_RESOLVE_MS = 30_000;
 const SEEN_DEBOUNCE_MS = 600;
+
+/** A room code resolved to a joinable room: Ludo or Draw & Guess. */
+interface OpenRoomChip {
+  kind: "ludo" | "draw";
+  id: string;
+  code: string;
+}
 
 /** "14:32" in Dhaka time — stable, no ticking relative labels. */
 function formatChatTime(iso: string): string {
@@ -51,7 +60,7 @@ export function GameChat() {
 
   const [messages, setMessages] = useState<ZoneChatMessage[]>([]);
   const [seenCounts, setSeenCounts] = useState<Record<number, number>>({});
-  const [openRooms, setOpenRooms] = useState<Map<string, LudoRoom>>(new Map());
+  const [openRooms, setOpenRooms] = useState<Map<string, OpenRoomChip>>(new Map());
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState(false);
@@ -201,17 +210,32 @@ export function GameChat() {
       setOpenRooms(new Map());
       return;
     }
-    const { data, error } = await supabase
-      .from("ludo_rooms")
-      .select("*")
-      .in("code", codes)
-      .eq("status", "waiting");
-    if (error || !data) return;
+    // Draw & Guess rooms are read through the find_draw_room() RPC —
+    // direct SELECT on draw_rooms is denied (hidden word). If migration
+    // v16 has not run yet the RPC errors and only Ludo chips resolve.
+    const [ludoRes, drawResList] = await Promise.all([
+      supabase.from("ludo_rooms").select("*").in("code", codes).eq("status", "waiting"),
+      Promise.all(codes.map((code) => supabase.rpc("find_draw_room", { p_code: code }))),
+    ]);
     const now = Date.now();
-    const next = new Map<string, LudoRoom>();
-    for (const row of data as unknown[]) {
-      const room = parseRoom(row);
-      if (room && isRoomFresh(room, now)) next.set(room.code, room);
+    const next = new Map<string, OpenRoomChip>();
+    if (!ludoRes.error && ludoRes.data) {
+      for (const row of ludoRes.data as unknown[]) {
+        const room = parseRoom(row);
+        if (room && isRoomFresh(room, now)) {
+          next.set(room.code, { kind: "ludo", id: room.id, code: room.code });
+        }
+      }
+    }
+    for (const drawRes of drawResList) {
+      if (drawRes.error || !drawRes.data) continue;
+      for (const row of drawRes.data as unknown[]) {
+        const found = parseDrawRoomLookup(row);
+        // Ludo takes precedence when a code somehow exists in both tables.
+        if (found && !next.has(found.code) && isDrawRoomFresh(found.updated_at, now)) {
+          next.set(found.code, { kind: "draw", id: found.id, code: found.code });
+        }
+      }
     }
     setOpenRooms(next);
   }, []);
@@ -394,7 +418,7 @@ export function GameChat() {
             const seen = seenCounts[m.id] ?? 0;
             const joinable = [...new Set(extractRoomCodes(m.body))]
               .map((code) => openRooms.get(code))
-              .filter((r): r is LudoRoom => Boolean(r));
+              .filter((r): r is OpenRoomChip => Boolean(r));
             return (
               <div key={m.id} className={`chat-msg flex gap-2 ${mine ? "flex-row-reverse" : ""}`}>
                 <span className="shrink-0 pt-0.5">
@@ -435,7 +459,7 @@ export function GameChat() {
                   {joinable.map((room) => (
                     <div key={room.id} className={`mt-1.5 ${mine ? "flex justify-end" : ""}`}>
                       <Link
-                        href={`/games/ludo/room/${room.id}`}
+                        href={room.kind === "ludo" ? `/games/ludo/room/${room.id}` : `/games/draw-guess/room/${room.id}`}
                         className="chip !py-1 text-xs font-bold"
                         style={{
                           background: "linear-gradient(135deg, var(--gold-soft), var(--gold-2))",
@@ -445,7 +469,7 @@ export function GameChat() {
                         }}
                       >
                         <Play size={12} aria-hidden="true" />
-                        {t.zoneChat.joinRoom(room.code)}
+                        {room.kind === "ludo" ? t.zoneChat.joinRoom(room.code) : t.zoneChat.joinDrawRoom(room.code)}
                       </Link>
                     </div>
                   ))}

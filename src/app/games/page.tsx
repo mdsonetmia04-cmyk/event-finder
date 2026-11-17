@@ -142,7 +142,7 @@ export default function GamesPage() {
         </div>
       </article>
 
-      {/* Quiz Battle is live; Draw & Guess is still a placeholder: chip only, nothing clickable. */}
+      {/* Quiz Battle and Draw & Guess are both live. */}
       <div className="grid gap-3 sm:grid-cols-2">
         <article
           className="card card-hover relative flex flex-col overflow-hidden p-5"
@@ -181,7 +181,7 @@ export default function GamesPage() {
           </Link>
         </article>
         <article
-          className="card relative flex flex-col overflow-hidden p-5 opacity-70"
+          className="card card-hover relative flex flex-col overflow-hidden p-5"
           style={{
             borderStyle: "dashed",
             borderWidth: 2,
@@ -202,12 +202,15 @@ export default function GamesPage() {
             >
               <PencilLine size={20} aria-hidden="true" />
             </span>
-            <span className="chip">{t.games.comingSoon}</span>
           </div>
           <h3 className="font-serif-d mt-3 text-lg font-semibold">{t.games.drawTitle}</h3>
-          <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
+          <p className="mt-1 flex-1 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
             {t.games.drawDesc}
           </p>
+          <Link href="/games/draw-guess" className="btn btn-gold mt-4 w-full">
+            <Play size={17} aria-hidden="true" />
+            {t.games.playWithFriends}
+          </Link>
         </article>
       </div>
 

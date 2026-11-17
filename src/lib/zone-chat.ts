@@ -2,8 +2,9 @@
    Row shapes mirror supabase/add-zone-chat.sql (migration v13),
    supabase/add-zone-presence.sql (migration v14, in_zone flag) and
    supabase/add-game-presence.sql (migration v15, current_game).
-   Room-code detection reuses the Ludo code alphabet so only real
-   Ludo codes are ever linkified — never invent a second scheme. */
+   Room-code detection reuses the Ludo code alphabet so only real room
+   codes are ever linkified — Ludo and Draw & Guess share the scheme,
+   never invent a second one. */
 
 import { isValidRoomCode } from "./ludo/room";
 
@@ -84,7 +85,7 @@ export function parseLiveUser(row: unknown): LiveUser | null {
    word can never match partially — "ABCDEFGH" yields no code. */
 const TOKEN_RE = /[A-Za-z0-9]+/g;
 
-/** All distinct Ludo room codes mentioned in a message, in order. */
+/** All distinct room codes mentioned in a message, in order. */
 export function extractRoomCodes(body: string): string[] {
   const found: string[] = [];
   const seen = new Set<string>();

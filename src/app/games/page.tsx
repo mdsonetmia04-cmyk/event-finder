@@ -2,7 +2,19 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bot, HelpCircle, PencilLine, Play, Trophy, Users } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  Bot,
+  HelpCircle,
+  MoveUpRight,
+  PencilLine,
+  Play,
+  Trophy,
+  Users,
+} from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
@@ -210,6 +222,52 @@ export default function GamesPage() {
           <Link href="/games/draw-guess" className="btn btn-gold mt-4 w-full">
             <Play size={17} aria-hidden="true" />
             {t.games.playWithFriends}
+          </Link>
+        </article>
+
+        {/* Arrows Out card: 2x2 arrow-cluster badge + purple wash + watermark arrow. */}
+        <article
+          className="card card-hover relative flex flex-col overflow-hidden p-5"
+          style={{
+            background:
+              "linear-gradient(160deg, color-mix(in srgb, #8E4EC6 8%, var(--card)), var(--card) 55%)",
+          }}
+        >
+          {/* Oversized arrow watermark — the puzzle motif. */}
+          <MoveUpRight
+            size={96}
+            className="pointer-events-none absolute -top-4 right-3"
+            style={{ color: "color-mix(in srgb, #8E4EC6 10%, transparent)" }}
+            aria-hidden="true"
+          />
+          <div className="relative flex items-start justify-between gap-3">
+            {/* Four direction colours, matching the in-game arrows. */}
+            <span
+              className="grid h-11 w-11 shrink-0 grid-cols-2 overflow-hidden rounded-full text-white"
+              style={{ boxShadow: "0 6px 14px -6px rgba(142, 78, 198, 0.55)" }}
+              aria-hidden="true"
+            >
+              <span className="flex items-center justify-center" style={{ background: "#E5484D" }}>
+                <ArrowUp size={13} />
+              </span>
+              <span className="flex items-center justify-center" style={{ background: "#2FA36B" }}>
+                <ArrowRight size={13} />
+              </span>
+              <span className="flex items-center justify-center" style={{ background: "#3E7BFA" }}>
+                <ArrowDown size={13} />
+              </span>
+              <span className="flex items-center justify-center" style={{ background: "#8E4EC6" }}>
+                <ArrowLeft size={13} />
+              </span>
+            </span>
+          </div>
+          <h3 className="font-serif-d mt-3 text-lg font-semibold">{t.games.arrowsTitle}</h3>
+          <p className="mt-1 flex-1 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
+            {t.games.arrowsDesc}
+          </p>
+          <Link href="/games/arrows-out" className="btn btn-gold mt-4 w-full">
+            <Play size={17} aria-hidden="true" />
+            {t.games.playNow}
           </Link>
         </article>
       </div>

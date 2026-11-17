@@ -1664,3 +1664,25 @@ html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spaci
 @media (prefers-reduced-motion: reduce) {
   .ludo-confetti-piece { animation: none; }
 }
+
+/* ---- Arrows Out: bump shake + hint pulse ---- */
+@keyframes arrows-shake-kf {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+.arrows-shake {
+  animation: arrows-shake-kf 0.32s ease;
+}
+@keyframes arrows-hint-pulse-kf {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 75%, transparent); }
+  50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--gold) 0%, transparent); }
+}
+.arrows-hint {
+  animation: arrows-hint-pulse-kf 0.9s ease-in-out 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  .arrows-shake, .arrows-hint { animation: none; }
+}

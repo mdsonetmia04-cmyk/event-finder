@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Bot, Gamepad2, HelpCircle, PencilLine, Play, Trophy, Users } from "lucide-react";
+import { Bot, Gamepad2, HelpCircle, MessageCircle, PencilLine, Play, Trophy, Users } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
@@ -109,7 +109,7 @@ export default function GamesPage() {
         </div>
       </article>
 
-      {/* Quiz Battle is live; Draw & Guess is still a placeholder: chip only, nothing clickable. */}
+      {/* Quiz Battle and Zone Chat are live; Draw & Guess is still a placeholder: chip only, nothing clickable. */}
       <div className="grid gap-3 sm:grid-cols-2">
         <article className="card card-hover flex flex-col p-5">
           <div className="flex items-start justify-between gap-3">
@@ -127,6 +127,24 @@ export default function GamesPage() {
           <Link href="/games/quiz-battle" className="btn btn-gold mt-4 w-full">
             <Play size={17} aria-hidden="true" />
             {t.games.playVsComputer}
+          </Link>
+        </article>
+        <article className="card card-hover flex flex-col p-5">
+          <div className="flex items-start justify-between gap-3">
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white"
+              style={{ background: "linear-gradient(135deg, #D9A044, #A66A19)" }}
+            >
+              <MessageCircle size={20} aria-hidden="true" />
+            </span>
+          </div>
+          <h3 className="font-serif-d mt-3 text-lg font-semibold">{t.games.chatTitle}</h3>
+          <p className="mt-1 flex-1 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
+            {t.games.chatDesc}
+          </p>
+          <Link href="/games/chat" className="btn btn-gold mt-4 w-full">
+            <MessageCircle size={17} aria-hidden="true" />
+            {t.games.openChat}
           </Link>
         </article>
         <article className="card p-5 opacity-70">

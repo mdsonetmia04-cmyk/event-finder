@@ -9,6 +9,7 @@ import { getSupabase } from "@/lib/supabase";
 import { LudoAvatar } from "@/components/LudoGame";
 import { DrawCanvas, type DrawBroadcastEvent, type DrawCanvasHandle } from "@/components/DrawCanvas";
 import { chooseWords } from "@/lib/draw-guess/words";
+import { GAME_CHAT_PREFILL_KEY } from "@/lib/zone-chat";
 import {
   DRAW_PICK_SECONDS,
   DRAW_REVEAL_SECONDS,
@@ -285,6 +286,20 @@ export default function DrawRoomPage() {
     }
   };
 
+  /* Share the code via Game Chat — manual, like Ludo codes: the
+     share text lands in the chat composer for the player to review
+     and send themselves. Nothing is ever sent automatically. */
+  const sendCodeToChat = () => {
+    if (!room) return;
+    try {
+      sessionStorage.setItem(GAME_CHAT_PREFILL_KEY, t.draw.shareMessage(room.code));
+    } catch {
+      // Storage unavailable (private mode): still navigate; the player
+      // can type the code by hand.
+    }
+    router.push("/games");
+  };
+
   const copyCode = async () => {
     if (!room) return;
     let ok = false;
@@ -412,6 +427,10 @@ export default function DrawRoomPage() {
             <button type="button" className="btn btn-ghost" onClick={() => void copyCode()}>
               {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
               {copied ? t.draw.copied : t.draw.copyCode}
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={() => sendCodeToChat()}>
+              <Send size={16} aria-hidden="true" />
+              {t.draw.sendToChat}
             </button>
           </div>
           <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>

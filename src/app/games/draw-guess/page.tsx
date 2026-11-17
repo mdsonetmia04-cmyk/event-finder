@@ -12,6 +12,7 @@ import { generateRoomCode, isValidRoomCode, normalizeRoomCode } from "@/lib/ludo
 import {
   isDrawRoomFresh,
   parseDrawLobbyRoom,
+  parseDrawRoom,
   parseDrawRoomLookup,
   type DrawLobbyRoom,
 } from "@/lib/draw-guess/room";
@@ -129,7 +130,21 @@ export default function DrawGuessLobbyPage() {
       setError(t.draw.roomNotFound);
       return;
     }
-    if (found.status !== "waiting" || !isDrawRoomFresh(found.updated_at, Date.now())) {
+    if (found.status === "playing" || found.status === "finished") {
+      // A seated player who left the room page can come back via the
+      // code; anyone else gets a clear message, not a stale-room error.
+      const { data: roomData, error: roomError } = await supabase.rpc("get_draw_room", {
+        p_room_id: found.id,
+      });
+      const room = !roomError && roomData ? parseDrawRoom(roomData) : null;
+      if (room && room.players.some((pl) => pl.user_id === session.id)) {
+        router.push(`/games/draw-guess/room/${found.id}`);
+      } else {
+        setError(found.status === "playing" ? t.draw.gameStarted : t.draw.gameFinished);
+      }
+      return;
+    }
+    if (!isDrawRoomFresh(found.updated_at, Date.now())) {
       setError(t.draw.roomStale);
       return;
     }
@@ -138,7 +153,7 @@ export default function DrawGuessLobbyPage() {
       return;
     }
     void joinRoom(found.id);
-  }, [code, joinRoom, session, t]);
+  }, [code, joinRoom, router, session, t]);
 
   const roomAge = (room: DrawLobbyRoom): string => {
     const mins = Math.floor((Date.now() - new Date(room.updated_at).getTime()) / 60_000);

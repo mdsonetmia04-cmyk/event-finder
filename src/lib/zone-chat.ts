@@ -38,6 +38,14 @@ export const ZONE_CHAT_LIMIT = 50;
 /** Composer limit, matching the body check constraint in migration v13. */
 export const ZONE_CHAT_MAX_CHARS = 500;
 
+/** sessionStorage key for the one-time Game Chat composer pre-fill:
+    the Draw & Guess waiting view writes the share text here ONLY when
+    the player taps "Send to Game Chat"; GameChat consumes it once on
+    mount. Never written on room create or page load, and never
+    auto-sent — the player reviews the text and taps Send themselves,
+    or deletes it. */
+export const GAME_CHAT_PREFILL_KEY = "ssc:game-chat-prefill";
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }

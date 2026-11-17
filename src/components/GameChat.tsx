@@ -20,7 +20,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Eye, MessageCircle, Play, Send, Trash2 } from "lucide-react";
+import { Check, Copy, Eye, MessageCircle, Play, Send, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
@@ -29,6 +29,7 @@ import { isRoomFresh, parseRoom } from "@/lib/ludo/room";
 import { isDrawRoomFresh, parseDrawRoomLookup } from "@/lib/draw-guess/room";
 import {
   extractRoomCodes,
+  GAME_CHAT_PREFILL_KEY,
   parseZoneChatMessage,
   splitByRoomCodes,
   ZONE_CHAT_LIMIT,
@@ -66,14 +67,35 @@ export function GameChat() {
   const [sendError, setSendError] = useState(false);
   const [deleteError, setDeleteError] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLInputElement>(null);
   const messagesRef = useRef<ZoneChatMessage[]>([]);
   const markedRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  /* One-time composer pre-fill from the Draw & Guess "Send to Game
+     Chat" button: the player tapped it explicitly, so the share text
+     lands in the composer for review. NEVER sent automatically — the
+     player taps Send themselves, or deletes it. The key is consumed
+     at once so a later visit never refills the composer. */
+  useEffect(() => {
+    let prefill: string | null = null;
+    try {
+      prefill = sessionStorage.getItem(GAME_CHAT_PREFILL_KEY);
+      sessionStorage.removeItem(GAME_CHAT_PREFILL_KEY);
+    } catch {
+      prefill = null;
+    }
+    if (prefill) {
+      setBody(prefill);
+      composerRef.current?.focus();
+    }
+  }, []);
 
   /* ------------------------- Load + live messages ------------------------- */
   useEffect(() => {
@@ -231,8 +253,16 @@ export function GameChat() {
       if (drawRes.error || !drawRes.data) continue;
       for (const row of drawRes.data as unknown[]) {
         const found = parseDrawRoomLookup(row);
+        // Only waiting/playing rooms get a Join chip: a finished room's
+        // code must not offer joining (find_draw_room also returns
+        // finished rooms since migration v19, for code re-entry).
         // Ludo takes precedence when a code somehow exists in both tables.
-        if (found && !next.has(found.code) && isDrawRoomFresh(found.updated_at, now)) {
+        if (
+          found &&
+          (found.status === "waiting" || found.status === "playing") &&
+          !next.has(found.code) &&
+          isDrawRoomFresh(found.updated_at, now)
+        ) {
           next.set(found.code, { kind: "draw", id: found.id, code: found.code });
         }
       }
@@ -298,6 +328,37 @@ export function GameChat() {
     }
     setMessages((prev) => prev.filter((m) => m.id !== id));
   }, [session]);
+
+  /* Copy a room code out of a chat message so the reader can enter
+     the room with it (lobby join-by-code). Sends nothing. */
+  const copyRoomCode = useCallback(async (code: string) => {
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(code);
+      ok = true;
+    } catch {
+      // Fallback for older browsers / contexts without clipboard access:
+      // copy via a temporary off-screen textarea (same pattern as the
+      // room page's copyCode).
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = code;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch {
+        ok = false;
+      }
+    }
+    if (ok) {
+      setCopiedCode(code);
+      window.setTimeout(() => setCopiedCode((prev) => (prev === code ? null : prev)), 2000);
+    }
+  }, []);
 
   const renderSegments = (segments: BodySegment[]) =>
     segments.map((seg, i) =>
@@ -457,7 +518,7 @@ export function GameChat() {
                     {renderSegments(splitByRoomCodes(m.body))}
                   </p>
                   {joinable.map((room) => (
-                    <div key={room.id} className={`mt-1.5 ${mine ? "flex justify-end" : ""}`}>
+                    <div key={room.id} className={`mt-1.5 flex items-center gap-1.5 ${mine ? "justify-end" : ""}`}>
                       <Link
                         href={room.kind === "ludo" ? `/games/ludo/room/${room.id}` : `/games/draw-guess/room/${room.id}`}
                         className="chip !py-1 text-xs font-bold"
@@ -471,6 +532,24 @@ export function GameChat() {
                         <Play size={12} aria-hidden="true" />
                         {room.kind === "ludo" ? t.zoneChat.joinRoom(room.code) : t.zoneChat.joinDrawRoom(room.code)}
                       </Link>
+                      <button
+                        type="button"
+                        onClick={() => void copyRoomCode(room.code)}
+                        title={copiedCode === room.code ? t.draw.copied : t.draw.copyCode}
+                        aria-label={t.draw.copyCode}
+                        className="flex shrink-0 items-center justify-center rounded-full border p-1.5 transition-colors hover:opacity-80"
+                        style={{
+                          color: "var(--muted)",
+                          borderColor: "color-mix(in srgb, var(--gold) 35%, transparent)",
+                          background: "var(--surface)",
+                        }}
+                      >
+                        {copiedCode === room.code ? (
+                          <Check size={12} aria-hidden="true" />
+                        ) : (
+                          <Copy size={12} aria-hidden="true" />
+                        )}
+                      </button>
                     </div>
                   ))}
                   {mine ? (
@@ -539,6 +618,7 @@ export function GameChat() {
           style={{ borderColor: "var(--line)", background: "var(--card)", boxShadow: "0 2px 10px rgba(33, 26, 20, 0.05)" }}
         >
           <input
+            ref={composerRef}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder={t.zoneChat.composerPh}

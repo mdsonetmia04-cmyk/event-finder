@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Check, Copy, LogOut, Play, Send, Users } from "lucide-react";
+import { ArrowLeft, Check, Copy, LogOut, MessageCircle, Play, Send, Users } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
@@ -27,6 +27,7 @@ import {
   type LudoRoom,
   type LudoRoomPlayer,
 } from "@/lib/ludo/room";
+import { GAME_CHAT_PREFILL_KEY } from "@/lib/zone-chat";
 
 const POLL_MS = 2000;
 const CHAT_LIMIT = 50;
@@ -474,10 +475,32 @@ export default function RoomPage() {
 
   const copyCode = async () => {
     if (!room) return;
+    let ok = false;
     try {
       await navigator.clipboard.writeText(room.code);
-      setCopied(true);
+      ok = true;
     } catch {
+      // Fallback for older browsers / contexts without clipboard access:
+      // copy via a temporary off-screen textarea.
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = room.code;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch {
+        ok = false;
+      }
+    }
+    if (ok) {
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } else {
+      // Last resort: select the code text so the user can copy it manually.
       const el = codeTextRef.current;
       if (el) {
         const range = document.createRange();
@@ -487,7 +510,20 @@ export default function RoomPage() {
         sel?.addRange(range);
       }
     }
-    window.setTimeout(() => setCopied(false), 2000);
+  };
+
+  /* Share the code in Game Chat: stash the code, then navigate to /games
+     where GameChat pre-fills the composer with it. Navigating away does
+     NOT touch the room — only the Leave button ends a room (see
+     leaveWaiting), so the room stays open while the code is shared. */
+  const shareInGameChat = () => {
+    if (!room) return;
+    try {
+      sessionStorage.setItem(GAME_CHAT_PREFILL_KEY, room.code);
+    } catch {
+      // Private mode etc: navigate anyway; the composer just stays empty.
+    }
+    router.push("/games");
   };
 
   const sendChat = useCallback(
@@ -595,6 +631,10 @@ export default function RoomPage() {
             <button type="button" className="btn btn-ghost" onClick={() => void copyCode()}>
               {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
               {copied ? t.ludo.copied : t.ludo.copyCode}
+            </button>
+            <button type="button" className="btn btn-gold" onClick={shareInGameChat}>
+              <MessageCircle size={16} aria-hidden="true" />
+              {t.ludo.shareInGameChat}
             </button>
           </div>
           <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>

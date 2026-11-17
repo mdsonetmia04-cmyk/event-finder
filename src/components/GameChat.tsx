@@ -6,6 +6,9 @@
    - Ludo room codes in a message get a "Join room" chip, but only when
      the code matches a currently open (waiting + fresh) room — the room
      page itself handles joining for non-members.
+   - The Ludo waiting room's "Share in Game Chat" button stashes its
+     code in sessionStorage; on mount the composer is pre-filled with
+     a ready message containing the code (only when empty).
    - Seen counts: opening the Gaming Zone records read rows for the
      messages on screen (mark_zone_chat_read RPC, author excluded
      server-side); the count beside each message is other readers,
@@ -18,9 +21,10 @@ import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
 import { LudoAvatar } from "@/components/LudoGame";
-import { isRoomFresh, parseRoom, type LudoRoom } from "@/lib/ludo/room";
+import { isRoomFresh, isValidRoomCode, parseRoom, type LudoRoom } from "@/lib/ludo/room";
 import {
   extractRoomCodes,
+  GAME_CHAT_PREFILL_KEY,
   parseZoneChatMessage,
   splitByRoomCodes,
   ZONE_CHAT_LIMIT,
@@ -54,10 +58,30 @@ export function GameChat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<ZoneChatMessage[]>([]);
   const markedRef = useRef<Set<number>>(new Set());
+  const prefillDoneRef = useRef(false);
 
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  /* Ludo "Share in Game Chat" handoff: the waiting room stores its code
+     in sessionStorage before navigating here. Read it ONCE, clear it,
+     and pre-fill the composer with a ready message — but only when the
+     composer is empty, so typed text is never clobbered. */
+  useEffect(() => {
+    if (prefillDoneRef.current) return;
+    prefillDoneRef.current = true;
+    let stored: string | null = null;
+    try {
+      stored = sessionStorage.getItem(GAME_CHAT_PREFILL_KEY);
+      sessionStorage.removeItem(GAME_CHAT_PREFILL_KEY);
+    } catch {
+      return;
+    }
+    if (!stored || !isValidRoomCode(stored)) return;
+    const code: string = stored;
+    setBody((prev) => (prev.trim().length === 0 ? t.ludo.shareMessage(code) : prev));
+  }, [t]);
 
   /* ------------------------- Load + live messages ------------------------- */
   useEffect(() => {

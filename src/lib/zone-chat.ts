@@ -28,6 +28,13 @@ export const ZONE_CHAT_LIMIT = 50;
 /** Composer limit, matching the body check constraint in migration v13. */
 export const ZONE_CHAT_MAX_CHARS = 500;
 
+/** sessionStorage key for the Ludo "Share in Game Chat" handoff: the
+    waiting room stores its 6-character room code here before navigating
+    to /games; GameChat reads it once on mount, pre-fills the composer,
+    and clears it. Deliberately session-scoped (not localStorage) so a
+    stale code never reappears in a later visit. */
+export const GAME_CHAT_PREFILL_KEY = "game-chat-prefill-code";
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }

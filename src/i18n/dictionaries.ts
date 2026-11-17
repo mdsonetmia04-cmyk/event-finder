@@ -2110,7 +2110,7 @@ export const bn: Dict = {
     createRoom: "রুম বানান",
     creating: "বানানো হচ্ছে…",
     choosePlayers: "এই রুমে খেলোয়াড়:",
-    playersLabel: (n: number) => `${n} জন খেলোয়াড়`,
+    playersLabel: (n: number) => `${n} জন`,
     roundsNote: (n: number) => `সবাই একবার করে আঁকবে — এই খেলায় ${n} রাউন্ড।`,
     joinByCode: "কোড দিয়ে যোগ দিন",
     codePh: "৬ অক্ষরের কোড লিখুন",

@@ -181,14 +181,14 @@ export default function DrawGuessLobbyPage() {
           {t.draw.createRoom}
         </h2>
         <p className="mt-2 text-sm font-medium">{t.draw.choosePlayers}</p>
-        <div className="mt-2 grid max-w-sm grid-cols-5 gap-2" role="group" aria-label={t.draw.choosePlayers}>
+        <div className="mt-2 flex max-w-sm flex-wrap gap-2" role="group" aria-label={t.draw.choosePlayers}>
           {([2, 3, 4, 5, 6] as PlayerCount[]).map((n) => (
             <button
               key={n}
               type="button"
               onClick={() => setCreateCount(n)}
               aria-pressed={createCount === n}
-              className={`btn ${createCount === n ? "btn-active" : "btn-ghost"}`}
+              className={`btn flex-1 ${createCount === n ? "btn-active" : "btn-ghost"}`}
             >
               {t.draw.playersLabel(n)}
             </button>

@@ -885,6 +885,7 @@ const en = {
   zoneChat: {
     title: "Game Chat",
     zoneSub: "Chat with everyone in the Gaming Zone — share Ludo room codes and cheer each other on.",
+    publicNotice: "Everyone can see the messages in this chat.",
     liveTitle: "Live now",
     livePill: "LIVE",
     liveCount: (n: number) => `${n} online`,
@@ -1919,6 +1920,7 @@ export const bn: Dict = {
   zoneChat: {
     title: "গেম চ্যাট",
     zoneSub: "গেমিং জোনের সবাইকে মেসেজ করুন — লুডু রুমের কোড শেয়ার করুন আর সবাইকে উৎসাহ দিন।",
+    publicNotice: "এই চ্যাটবক্সের মেসেজ সবাই দেখতে পারবে।",
     liveTitle: "এখন লাইভ",
     livePill: "লাইভ",
     liveCount: (n: number) => `${n} জন অনলাইন`,

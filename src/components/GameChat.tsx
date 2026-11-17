@@ -9,7 +9,9 @@
    - Seen counts: opening the Gaming Zone records read rows for the
      messages on screen (mark_zone_chat_read RPC, author excluded
      server-side); the count beside each message is other readers,
-     updated live. */
+     updated live.
+   - A notice sits on the chat box's top border: everyone can see
+     the messages in this chat (the publicNotice string). */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -289,6 +291,15 @@ export function GameChat() {
   }
 
   return (
+    <div className="relative">
+      {/* Public-notice caption straddling the chat box's top border. */}
+      <p
+        className="absolute -top-3 left-1/2 z-10 flex max-w-[calc(100%-1.5rem)] -translate-x-1/2 items-center justify-center gap-1.5 rounded-full border px-3 py-1 text-center text-xs leading-snug"
+        style={{ backgroundColor: "var(--surface)", borderColor: "var(--gold)", color: "var(--muted)" }}
+      >
+        <Eye size={13} className="shrink-0" style={{ color: "var(--gold)" }} aria-hidden="true" />
+        {t.zoneChat.publicNotice}
+      </p>
     <section
       className="card flex flex-col overflow-hidden"
       style={{ boxShadow: "0 14px 34px -22px rgba(166, 106, 25, 0.45)" }}
@@ -460,5 +471,6 @@ export function GameChat() {
         </div>
       </form>
     </section>
+    </div>
   );
 }

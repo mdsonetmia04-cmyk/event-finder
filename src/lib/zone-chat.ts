@@ -1,5 +1,6 @@
 /* Shared Gaming Zone chat types + pure helpers (no I/O).
-   Row shapes mirror supabase/add-zone-chat.sql (migration v13).
+   Row shapes mirror supabase/add-zone-chat.sql (migration v13) and
+   supabase/add-zone-presence.sql (migration v14, in_zone flag).
    Room-code detection reuses the Ludo code alphabet so only real
    Ludo codes are ever linkified — never invent a second scheme. */
 
@@ -14,12 +15,16 @@ export interface ZoneChatMessage {
   created_at: string;
 }
 
-/** One row from the get_live_users() RPC: id + name + pic + last beat. */
+/** One row from the get_live_users() RPC: id + name + pic + last beat +
+    whether the user's last heartbeat came from inside the Gaming Zone
+    (migration v14). */
 export interface LiveUser {
   user_id: string;
   display_name: string;
   avatar_url: string | null;
   last_seen: string | null;
+  /** True when the user's last heartbeat path was under /games. */
+  in_zone: boolean;
 }
 
 /** How many recent messages the chat page loads and keeps. */
@@ -27,13 +32,6 @@ export const ZONE_CHAT_LIMIT = 50;
 
 /** Composer limit, matching the body check constraint in migration v13. */
 export const ZONE_CHAT_MAX_CHARS = 500;
-
-/** sessionStorage key for the Ludo "Share in Game Chat" handoff: the
-    waiting room stores its 6-character room code here before navigating
-    to /games; GameChat reads it once on mount, pre-fills the composer,
-    and clears it. Deliberately session-scoped (not localStorage) so a
-    stale code never reappears in a later visit. */
-export const GAME_CHAT_PREFILL_KEY = "game-chat-prefill-code";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -56,7 +54,10 @@ export function parseZoneChatMessage(row: unknown): ZoneChatMessage | null {
   };
 }
 
-/** Validate an untyped get_live_users() row into a LiveUser, or null. */
+/** Validate an untyped get_live_users() row into a LiveUser, or null.
+    The in_zone flag is optional: rows from before migration v14 carry
+    no flag and are treated as not in the zone (empty zone list until
+    v14 is applied — never a crash). */
 export function parseLiveUser(row: unknown): LiveUser | null {
   if (!isRecord(row)) return null;
   if (typeof row.user_id !== "string" || typeof row.display_name !== "string") return null;
@@ -67,6 +68,7 @@ export function parseLiveUser(row: unknown): LiveUser | null {
     display_name: row.display_name,
     avatar_url: row.avatar_url,
     last_seen: row.last_seen,
+    in_zone: row.in_zone === true,
   };
 }
 

@@ -8,7 +8,7 @@ import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
 import { SectionHeader } from "@/components/ui";
 import { GameChat } from "@/components/GameChat";
-import { LiveNowStrip } from "@/components/LiveNowStrip";
+import { LiveUsersCard } from "@/components/LiveUsersCard";
 import { COLOR_HEX } from "@/lib/ludo/room";
 
 /** Decorative CSS mini Ludo board: coloured corner bases + track cross. */
@@ -82,12 +82,14 @@ export default function GamesPage() {
   }, [ready, session]);
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6">
+    <div className="mx-auto flex max-w-3xl flex-col gap-6 lg:max-w-5xl">
       <SectionHeader title={t.games.zoneTitle} subtitle={t.games.zoneSub} />
 
-      {/* Who is live right now, in one row at the top of the zone. */}
-      <LiveNowStrip />
-
+      {/* Two columns on large screens: games + chat on the left, the tall
+          live-users card on the right. Single column on mobile: header →
+          game cards → Game Chat → live card → record section. */}
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="flex min-w-0 flex-col gap-6">
       {/* Ludo card */}
       <article className="card card-hover p-5 sm:p-6">
         <div className="flex items-start gap-4 sm:gap-5">
@@ -153,6 +155,11 @@ export default function GamesPage() {
 
       {/* Game Chat stays open on the zone page — no separate page to visit. */}
       <GameChat />
+        </div>
+
+        {/* Who is live: site-wide + in the Gaming Zone, in one tall card. */}
+        <LiveUsersCard />
+      </div>
 
       {/* My Ludo record: real counts only, friendly empty state otherwise. */}
       <section className="card p-5">

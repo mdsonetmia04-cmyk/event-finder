@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import {
   getSupabase,
   isSupabaseConfigured,
@@ -105,6 +106,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<Profile[]>([]);
   const [session, setSession] = useState<Profile | null>(null);
   const [ready, setReady] = useState(false);
+  // Current route: the heartbeat effect depends on it, so navigating
+  // beats immediately with the new path (zone membership stays fresh).
+  const pathname = usePathname();
   // True while register() is running. Supabase fires SIGNED_IN as soon as
   // signUp succeeds — before the profile row is inserted — and the listener
   // below must NOT treat that as a deleted account and sign out.
@@ -185,16 +189,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Presence heartbeat: while logged in, tell the DB we're active every 60s.
   // The heartbeat() RPC accumulates total_seconds (capped per beat) and stamps
-  // last_seen, which the admin panel uses for "live now" + usage time.
+  // last_seen, which the admin panel uses for "live now" + usage time. Since
+  // migration v14 it also stores the current pathname (last_path), so the
+  // Gaming Zone can tell who is inside the zone. The effect re-runs on route
+  // change, so a navigation beats immediately with the new path. Failures
+  // stay non-fatal; if the v14 function is not deployed yet, the call with
+  // p_path fails and we fall back to the no-arg call so last_seen keeps
+  // updating.
   useEffect(() => {
     const supabase = getSupabase();
     if (!supabase || !session) return;
     let alive = true;
     const beat = () => {
       if (!alive) return;
-      supabase.rpc("heartbeat").then(
+      supabase.rpc("heartbeat", { p_path: window.location.pathname }).then(
         () => {},
-        () => {}
+        () => {
+          if (!alive) return;
+          supabase.rpc("heartbeat").then(
+            () => {},
+            () => {}
+          );
+        }
       );
     };
     beat();
@@ -203,7 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       alive = false;
       clearInterval(timer);
     };
-  }, [session?.id]);
+  }, [session?.id, pathname]);
 
   const login = useCallback(
     async (whatsapp: string, password: string): Promise<AuthError> => {

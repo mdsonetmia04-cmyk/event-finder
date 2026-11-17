@@ -1073,7 +1073,10 @@ const en = {
   arrows: {
     title: "Arrows Out",
     tagline: "Tap the arrows out in the right order — clear the board!",
-    howTo: "Tap an arrow to slide it off the board in the direction it points — but only if its path to the edge is clear. Tapping a blocked arrow costs a heart.",
+    howTo: "Tap a winding arrow to slide it out along its own path — but only if its way out is clear. Tapping a blocked arrow costs a heart.",
+    difficultyNormal: "Normal",
+    difficultyHard: "Hard",
+    difficultySuperHard: "Super Hard",
     level: (n: number) => `Level ${n}`,
     moves: "Moves",
     hints: "Hints",
@@ -2224,7 +2227,10 @@ export const bn: Dict = {
   arrows: {
     title: "অ্যারোজ আউট",
     tagline: "সঠিক ক্রমে তীরগুলো বের করুন — বোর্ড খালি করুন!",
-    howTo: "তীরে ট্যাপ করলে সেটি যেদিকে মুখ করে আছে সেদিকে বোর্ডের বাইরে চলে যাবে — তবে শুধু প্রান্ত পর্যন্ত রাস্তা খালি থাকলে। আটকানো তীরে ট্যাপ করলে একটি হার্ট যাবে।",
+    howTo: "আঁকাবাঁকা তীরে ট্যাপ করলে সেটি নিজের পথ ধরে বেরিয়ে যাবে — তবে শুধু বেরোনোর রাস্তা খালি থাকলে। আটকানো তীরে ট্যাপ করলে একটি হার্ট যাবে।",
+    difficultyNormal: "সাধারণ",
+    difficultyHard: "কঠিন",
+    difficultySuperHard: "খুব কঠিন",
     level: (n: number) => `লেভেল ${n}`,
     moves: "চাল",
     hints: "হিন্ট",

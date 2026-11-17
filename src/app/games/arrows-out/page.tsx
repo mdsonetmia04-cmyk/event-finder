@@ -1,18 +1,18 @@
 "use client";
 
-/* Arrows Out — solo logic puzzle. Tap an arrow to slide it off the
-   board, but only when its straight lane to the edge is clear. A
-   blocked arrow costs a heart (3 per attempt). 30 levels, sequential
-   unlock, stars for hearts remaining. Progress lives in localStorage
-   only (per-device) — no database table, no Supabase calls. */
+/* Arrows Out — solo logic puzzle, winding-arrow maze style. Each
+   arrow is a winding line with an arrowhead; tap one to slide it out
+   along its own path, but only when its way out (the straight lane
+   from its head to the edge) is clear. A blocked arrow costs a
+   heart (3 per attempt). 30 levels in three difficulty bands,
+   sequential unlock, stars for hearts remaining. Progress lives in
+   localStorage only (per-device) — no database table, no Supabase
+   calls. */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowDown,
   ArrowLeft,
-  ArrowRight,
-  ArrowUp,
   Heart,
   Lightbulb,
   Lock,
@@ -26,14 +26,16 @@ import {
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { SectionHeader } from "@/components/ui";
-import { ARROWS_LEVELS, levelBoard } from "@/lib/arrows-out/levels";
+import { ARROWS_LEVELS, levelArrows, levelDifficulty, type ArrowsDifficulty } from "@/lib/arrows-out/levels";
 import {
-  countArrows,
-  findClearableArrow,
-  laneIsClear,
-  type Board,
-  type BoardPos,
+  arrowPathD,
+  arrowheadPoints,
+  DIRECTION_DELTAS,
+  findRemovableArrow,
+  headCell,
+  headLaneClear,
   type Direction,
+  type MazeArrow,
 } from "@/lib/arrows-out/solver";
 import {
   isSoundEnabled,
@@ -48,38 +50,24 @@ import {
 
 const HEARTS_PER_ATTEMPT = 3;
 const HINTS_PER_ATTEMPT = 3;
-const EXIT_MS = 280;
+const EXIT_MS = 480;
 const BUMP_MS = 350;
 const FAIL_DELAY_MS = 450;
 const HINT_GLOW_MS = 2000;
 const NOTE_MS = 3000;
-const STARS_KEY = "ssc:arrows-out:stars";
+/** v2 key: the maze rebuild must not inherit grid-version progress. */
+const STARS_KEY = "ssc:arrows-out:stars-v2";
+/** ViewBox units per grid cell. */
+const CELL = 10;
 
 type StarsMap = Record<number, number>;
 type View = "levels" | "play";
 type Phase = "playing" | "won" | "failed";
 
-/** One consistent colour per direction, readable in both themes. */
-const DIRECTION_COLORS: Record<Direction, string> = {
-  up: "#E5484D",
-  right: "#2FA36B",
-  down: "#3E7BFA",
-  left: "#8E4EC6",
-};
-
-const DIRECTION_ICONS: Record<Direction, typeof ArrowUp> = {
-  up: ArrowUp,
-  right: ArrowRight,
-  down: ArrowDown,
-  left: ArrowLeft,
-};
-
-/** Slide-out distance: far enough to fly visibly off the board. */
-const EXIT_TRANSLATE: Record<Direction, string> = {
-  up: "translateY(-320px)",
-  down: "translateY(320px)",
-  left: "translateX(-320px)",
-  right: "translateX(320px)",
+const DIFFICULTY_DOT: Record<ArrowsDifficulty, string> = {
+  normal: "#2FA36B",
+  hard: "var(--gold-deep)",
+  superHard: "#E5484D",
 };
 
 function loadStars(): StarsMap {
@@ -111,17 +99,19 @@ export default function ArrowsOutPage() {
   const [progressLoaded, setProgressLoaded] = useState(false);
   const [view, setView] = useState<View>("levels");
   const [levelN, setLevelN] = useState(1);
-  const [board, setBoard] = useState<Board>(() => levelBoard(ARROWS_LEVELS[0]));
+  const [arrows, setArrows] = useState<MazeArrow[]>(() => levelArrows(ARROWS_LEVELS[0]));
+  const [removed, setRemoved] = useState<ReadonlySet<number>>(new Set());
   const [hearts, setHearts] = useState(HEARTS_PER_ATTEMPT);
   const [moves, setMoves] = useState(0);
   const [hintsLeft, setHintsLeft] = useState(HINTS_PER_ATTEMPT);
   const [phase, setPhase] = useState<Phase>("playing");
-  const [exiting, setExiting] = useState<(BoardPos & { dir: Direction }) | null>(null);
-  const [bumping, setBumping] = useState<(BoardPos & { key: number }) | null>(null);
-  const [hintCell, setHintCell] = useState<BoardPos | null>(null);
+  const [exitingId, setExitingId] = useState<number | null>(null);
+  const [bumping, setBumping] = useState<{ id: number; key: number } | null>(null);
+  const [hintId, setHintId] = useState<number | null>(null);
   const [hintNote, setHintNote] = useState(false);
 
   const heartsRef = useRef(hearts);
+  const removedRef = useRef<ReadonlySet<number>>(new Set());
   const timersRef = useRef<number[]>([]);
   const bumpKeyRef = useRef(0);
 
@@ -155,36 +145,35 @@ export default function ArrowsOutPage() {
     (n: number) => {
       clearTimers();
       setLevelN(n);
-      setBoard(levelBoard(ARROWS_LEVELS[n - 1]));
+      setArrows(levelArrows(ARROWS_LEVELS[n - 1]));
+      removedRef.current = new Set();
+      setRemoved(new Set());
       setHearts(HEARTS_PER_ATTEMPT);
       setMoves(0);
       setHintsLeft(HINTS_PER_ATTEMPT);
       setPhase("playing");
-      setExiting(null);
+      setExitingId(null);
       setBumping(null);
-      setHintCell(null);
+      setHintId(null);
       setHintNote(false);
       setView("play");
     },
     [clearTimers],
   );
 
-  const saveStars = useCallback(
-    (n: number, earned: number) => {
-      setStars((prev) => {
-        const best = Math.max(prev[n] ?? 0, earned);
-        if (best === prev[n]) return prev;
-        const next = { ...prev, [n]: best };
-        try {
-          window.localStorage.setItem(STARS_KEY, JSON.stringify(next));
-        } catch {
-          // Private mode / quota: progress just won't persist.
-        }
-        return next;
-      });
-    },
-    [],
-  );
+  const saveStars = useCallback((n: number, earned: number) => {
+    setStars((prev) => {
+      const best = Math.max(prev[n] ?? 0, earned);
+      if (best === prev[n]) return prev;
+      const next = { ...prev, [n]: best };
+      try {
+        window.localStorage.setItem(STARS_KEY, JSON.stringify(next));
+      } catch {
+        // Private mode / quota: progress just won't persist.
+      }
+      return next;
+    });
+  }, []);
 
   const toggleSound = useCallback(() => {
     const next = !soundOn;
@@ -194,22 +183,23 @@ export default function ArrowsOutPage() {
   }, [soundOn]);
 
   const handleTap = useCallback(
-    (row: number, col: number) => {
-      if (phase !== "playing" || hearts <= 0 || exiting || bumping) return;
-      const dir = board[row]?.[col];
-      if (!dir) return;
+    (id: number) => {
+      if (phase !== "playing" || hearts <= 0 || exitingId !== null || bumping) return;
+      if (removedRef.current.has(id)) return;
+      const size = ARROWS_LEVELS[levelN - 1].size;
       unlockAudio();
-      if (laneIsClear(board, row, col)) {
+      if (headLaneClear(arrows, size, removedRef.current, id)) {
         playTokenPop();
-        setExiting({ row, col, dir });
+        setExitingId(id);
         setMoves((m) => m + 1);
-        setHintCell(null);
+        setHintId(null);
         later(() => {
-          const next = board.map((r) => [...r]);
-          next[row][col] = null;
-          setBoard(next);
-          setExiting(null);
-          if (countArrows(next) === 0) {
+          const next = new Set(removedRef.current);
+          next.add(id);
+          removedRef.current = next;
+          setRemoved(next);
+          setExitingId(null);
+          if (next.size === arrows.length) {
             setPhase("won");
             playWinFanfare();
             saveStars(levelN, Math.max(1, heartsRef.current));
@@ -218,7 +208,7 @@ export default function ArrowsOutPage() {
       } else {
         playCapture();
         bumpKeyRef.current += 1;
-        setBumping({ row, col, key: bumpKeyRef.current });
+        setBumping({ id, key: bumpKeyRef.current });
         const remaining = heartsRef.current - 1;
         setHearts(remaining);
         later(() => setBumping(null), BUMP_MS);
@@ -227,32 +217,39 @@ export default function ArrowsOutPage() {
         }
       }
     },
-    [board, bumping, exiting, hearts, heartsRef, later, levelN, phase, saveStars],
+    [arrows, bumping, exitingId, hearts, later, levelN, phase, saveStars],
   );
 
   const useHint = useCallback(() => {
-    if (phase !== "playing" || hearts <= 0 || exiting || bumping) return;
+    if (phase !== "playing" || hearts <= 0 || exitingId !== null || bumping) return;
     unlockAudio();
     if (hintsLeft <= 0) {
       setHintNote(true);
       later(() => setHintNote(false), NOTE_MS);
       return;
     }
-    const found = findClearableArrow(board);
-    if (!found) {
+    const size = ARROWS_LEVELS[levelN - 1].size;
+    const found = findRemovableArrow(arrows, size, removedRef.current);
+    if (found === null) {
       setHintNote(true);
       later(() => setHintNote(false), NOTE_MS);
       return;
     }
     playTurnChime();
     setHintsLeft((h) => h - 1);
-    setHintCell(found);
-    later(() => setHintCell(null), HINT_GLOW_MS);
-  }, [board, bumping, exiting, hearts, hintsLeft, later, phase]);
+    setHintId(found);
+    later(() => setHintId(null), HINT_GLOW_MS);
+  }, [arrows, bumping, exitingId, hearts, hintsLeft, later, levelN, phase]);
 
   const dirName = useCallback(
     (dir: Direction) =>
       dir === "up" ? t.arrows.dirUp : dir === "down" ? t.arrows.dirDown : dir === "left" ? t.arrows.dirLeft : t.arrows.dirRight,
+    [t],
+  );
+
+  const difficultyName = useCallback(
+    (d: ArrowsDifficulty) =>
+      d === "normal" ? t.arrows.difficultyNormal : d === "hard" ? t.arrows.difficultyHard : t.arrows.difficultySuperHard,
     [t],
   );
 
@@ -267,8 +264,10 @@ export default function ArrowsOutPage() {
   }
 
   const totalStars = Object.values(stars).reduce((a, b) => a + b, 0);
-  const size = board.length;
+  const size = ARROWS_LEVELS[levelN - 1].size;
+  const difficulty = levelDifficulty(levelN);
   const isLastLevel = levelN >= ARROWS_LEVELS.length;
+  const viewSpan = size * CELL + 12;
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-4">
@@ -309,6 +308,7 @@ export default function ArrowsOutPage() {
             {ARROWS_LEVELS.map((lv) => {
               const unlocked = isUnlocked(lv.n);
               const earned = stars[lv.n] ?? 0;
+              const lvDifficulty = levelDifficulty(lv.n);
               return (
                 <button
                   key={lv.n}
@@ -319,14 +319,12 @@ export default function ArrowsOutPage() {
                     startLevel(lv.n);
                   }}
                   aria-label={
-                    unlocked ? `${t.arrows.level(lv.n)} — ${earned}/3 ${t.arrows.starsLabel}` : `${t.arrows.level(lv.n)} — ${t.arrows.locked}`
+                    unlocked
+                      ? `${t.arrows.level(lv.n)} — ${difficultyName(lvDifficulty)} — ${earned}/3 ${t.arrows.starsLabel}`
+                      : `${t.arrows.level(lv.n)} — ${t.arrows.locked}`
                   }
                   className="card flex aspect-square flex-col items-center justify-center gap-1 p-1 disabled:opacity-50"
-                  style={
-                    unlocked
-                      ? undefined
-                      : { background: "var(--surface2)" }
-                  }
+                  style={unlocked ? undefined : { background: "var(--surface2)" }}
                 >
                   {unlocked ? (
                     <>
@@ -341,6 +339,12 @@ export default function ArrowsOutPage() {
                           />
                         ))}
                       </span>
+                      <span
+                        className="h-[6px] w-[6px] rounded-full"
+                        style={{ background: DIFFICULTY_DOT[lvDifficulty] }}
+                        title={difficultyName(lvDifficulty)}
+                        aria-hidden="true"
+                      />
                     </>
                   ) : (
                     <Lock size={18} style={{ color: "var(--muted)" }} aria-hidden="true" />
@@ -352,7 +356,7 @@ export default function ArrowsOutPage() {
         </>
       ) : (
         <>
-          {/* HUD: back, level title, hearts / moves / hints. */}
+          {/* HUD: back, level title, hearts / moves / hints / difficulty. */}
           <div className="flex items-center justify-between gap-2">
             <button
               type="button"
@@ -360,9 +364,9 @@ export default function ArrowsOutPage() {
               onClick={() => {
                 playButtonClick();
                 clearTimers();
-                setExiting(null);
+                setExitingId(null);
                 setBumping(null);
-                setHintCell(null);
+                setHintId(null);
                 setView("levels");
               }}
             >
@@ -377,11 +381,7 @@ export default function ArrowsOutPage() {
             className="flex flex-wrap items-center justify-between gap-2 rounded-xl px-3 py-2"
             style={{ background: "var(--surface2)" }}
           >
-            <span
-              className="flex items-center gap-1"
-              role="img"
-              aria-label={t.arrows.heartsLeft(hearts)}
-            >
+            <span className="flex items-center gap-1" role="img" aria-label={t.arrows.heartsLeft(hearts)}>
               {[1, 2, 3].map((h) => (
                 <Heart
                   key={h}
@@ -399,53 +399,104 @@ export default function ArrowsOutPage() {
               <Lightbulb size={16} style={{ color: "var(--gold-deep)" }} aria-hidden="true" />
               {t.arrows.hints}: {hintsLeft}
             </span>
+            <span
+              className="rounded-full px-2 py-0.5 text-xs font-semibold"
+              style={{
+                color: DIFFICULTY_DOT[difficulty],
+                background: "color-mix(in srgb, currentColor 12%, transparent)",
+              }}
+            >
+              {difficultyName(difficulty)}
+            </span>
           </div>
 
           {phase === "playing" ? (
             <>
               <div
-                className="mx-auto grid w-full max-w-[480px] gap-1 sm:gap-1.5"
-                style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}
-                role="group"
-                aria-label={t.arrows.boardLabel}
+                className="mx-auto w-full max-w-[480px] rounded-2xl border p-2 sm:p-3"
+                style={{ background: "var(--card)", borderColor: "var(--line)" }}
               >
-                {board.map((row, r) =>
-                  row.map((cell, c) => {
-                    if (cell === null) {
-                      return (
-                        <span
-                          key={`${r}-${c}`}
-                          className="aspect-square rounded-lg"
-                          style={{ background: "var(--surface2)" }}
-                          aria-hidden="true"
-                        />
-                      );
-                    }
-                    const Icon = DIRECTION_ICONS[cell];
-                    const isExiting = exiting?.row === r && exiting?.col === c;
-                    const isBumping = bumping?.row === r && bumping?.col === c;
-                    const isHint = hintCell?.row === r && hintCell?.col === c;
+                <svg
+                  viewBox={`-6 -6 ${viewSpan} ${viewSpan}`}
+                  className="block h-auto w-full"
+                  role="group"
+                  aria-label={t.arrows.boardLabel}
+                >
+                  {arrows.map((arrow) => {
+                    if (removed.has(arrow.id)) return null;
+                    const isExiting = exitingId === arrow.id;
+                    const isBumping = bumping?.id === arrow.id;
+                    const isHint = hintId === arrow.id;
+                    const d = arrowPathD(arrow, CELL);
+                    const head = headCell(arrow);
+                    const { dr, dc } = DIRECTION_DELTAS[arrow.headDir];
+                    const ink = isBumping ? "#E5484D" : isHint ? "var(--gold)" : undefined;
                     return (
-                      <button
-                        key={`${r}-${c}`}
-                        type="button"
-                        onClick={() => handleTap(r, c)}
-                        aria-label={t.arrows.arrowAt(dirName(cell), r + 1, c + 1)}
-                        className={`flex aspect-square items-center justify-center rounded-lg text-white transition-all duration-300 ${
-                          isBumping ? "arrows-shake" : ""
-                        } ${isHint ? "arrows-hint" : ""}`}
-                        style={{
-                          background: DIRECTION_COLORS[cell],
-                          transform: isExiting ? EXIT_TRANSLATE[cell] : undefined,
-                          opacity: isExiting ? 0 : 1,
-                          boxShadow: isBumping ? "0 0 0 3px #E5484D" : undefined,
-                        }}
+                      <g
+                        key={arrow.id}
+                        className={isBumping ? "arrows-maze-shake" : isHint ? "arrows-maze-hint" : undefined}
                       >
-                        <Icon className="h-[62%] w-[62%]" aria-hidden="true" />
-                      </button>
+                        {/* Visible winding line. On exit it retreats along its
+                            own path (dashoffset 0 -> 1 with pathLength 1),
+                            like a snake leaving head-first. */}
+                        <path
+                          d={d}
+                          pathLength={1}
+                          fill="none"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          pointerEvents="none"
+                          className={`arrows-ink ${isExiting ? "arrows-maze-exit" : ""}`}
+                          style={{
+                            stroke: ink,
+                            strokeWidth: isHint ? 3 : 2.2,
+                            strokeDasharray: "1 1",
+                            strokeDashoffset: isExiting ? 1 : 0,
+                            transition: isExiting ? "stroke-dashoffset 0.45s linear" : undefined,
+                          }}
+                        />
+                        {/* Arrowhead: fades and drifts out along the head
+                            direction while the line retreats. */}
+                        <polygon
+                          points={arrowheadPoints(arrow, CELL)}
+                          pointerEvents="none"
+                          className="arrows-ink-fill"
+                          style={{
+                            fill: ink,
+                            opacity: isExiting ? 0 : 1,
+                            transform: isExiting ? `translate(${dc * 6}px, ${dr * 6}px)` : undefined,
+                            transition: isExiting
+                              ? "opacity 0.15s ease, transform 0.45s linear"
+                              : undefined,
+                          }}
+                        />
+                        {/* Fat invisible tap target over the same path. */}
+                        <path
+                          d={d}
+                          fill="none"
+                          stroke="transparent"
+                          strokeWidth={7.5}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          pointerEvents="stroke"
+                          className="cursor-pointer"
+                          role="button"
+                          tabIndex={0}
+                          aria-label={t.arrows.arrowAt(dirName(arrow.headDir), head.row + 1, head.col + 1)}
+                          onClick={() => handleTap(arrow.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handleTap(arrow.id);
+                            }
+                          }}
+                        >
+                          <title>{t.arrows.arrowAt(dirName(arrow.headDir), head.row + 1, head.col + 1)}</title>
+                        </path>
+                      </g>
                     );
-                  }),
-                )}
+                  })}
+                </svg>
               </div>
 
               <div className="flex gap-2">

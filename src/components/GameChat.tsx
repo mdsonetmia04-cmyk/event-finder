@@ -11,11 +11,15 @@
      server-side); the count beside each message is other readers,
      updated live.
    - A notice sits on the chat box's top border: everyone can see
-     the messages in this chat (the publicNotice string). */
+     the messages in this chat (the publicNotice string).
+   - Own messages carry a trash button: the author can delete their
+     own message at once (migration v17 policy, author-only); the
+     deletion also arrives live on other clients via a realtime
+     DELETE subscription on the same channel. */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Eye, MessageCircle, Play, Send } from "lucide-react";
+import { Eye, MessageCircle, Play, Send, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
@@ -51,6 +55,7 @@ export function GameChat() {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState(false);
+  const [deleteError, setDeleteError] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -101,6 +106,17 @@ export function GameChat() {
           setMessages((prev) =>
             prev.some((x) => x.id === m.id) ? prev : [...prev.slice(-(ZONE_CHAT_LIMIT - 1)), m],
           );
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "zone_chat_messages" },
+        (payload) => {
+          // DELETE payloads carry only the old row's id (default replica
+          // identity) — drop the message by it, on every open client.
+          const id = (payload.old as { id?: unknown } | null)?.id;
+          if (typeof id !== "number") return;
+          setMessages((prev) => prev.filter((m) => m.id !== id));
         },
       )
       .subscribe();
@@ -243,6 +259,21 @@ export function GameChat() {
     }
     setBody("");
   }, [body, sending, session]);
+
+  /* --------------------------- Delete own message ------------------------- */
+  const deleteOwnMessage = useCallback(async (id: number) => {
+    const supabase = getSupabase();
+    if (!supabase || !session) return;
+    setDeleteError(false);
+    const { error } = await supabase.from("zone_chat_messages").delete().eq("id", id);
+    if (error) {
+      // Keep the message on screen and show the error line, the same
+      // pattern as a failed send.
+      setDeleteError(true);
+      return;
+    }
+    setMessages((prev) => prev.filter((m) => m.id !== id));
+  }, [session]);
 
   const renderSegments = (segments: BodySegment[]) =>
     segments.map((seg, i) =>
@@ -418,14 +449,42 @@ export function GameChat() {
                       </Link>
                     </div>
                   ))}
-                  {seen > 0 && (
-                    <p
-                      className={`mt-1 flex items-center gap-1 px-1 text-[11px] ${mine ? "justify-end" : ""}`}
-                      style={{ color: "var(--muted)" }}
-                    >
-                      <Eye size={12} aria-hidden="true" />
-                      {t.zoneChat.seenBy(seen)}
-                    </p>
+                  {mine ? (
+                    <div className="mt-1 flex items-center justify-end gap-2 px-1">
+                      {seen > 0 && (
+                        <span
+                          className="flex items-center gap-1 text-[11px]"
+                          style={{ color: "var(--muted)" }}
+                        >
+                          <Eye size={12} aria-hidden="true" />
+                          {t.zoneChat.seenBy(seen)}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => void deleteOwnMessage(m.id)}
+                        title={t.zoneChat.deleteMessage}
+                        aria-label={t.zoneChat.deleteMessage}
+                        className="flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] transition-colors hover:opacity-80"
+                        style={{
+                          color: "var(--muted)",
+                          borderColor: "color-mix(in srgb, var(--gold) 35%, transparent)",
+                        }}
+                      >
+                        <Trash2 size={12} aria-hidden="true" />
+                        {t.zoneChat.deleteMessage}
+                      </button>
+                    </div>
+                  ) : (
+                    seen > 0 && (
+                      <p
+                        className="mt-1 flex items-center gap-1 px-1 text-[11px]"
+                        style={{ color: "var(--muted)" }}
+                      >
+                        <Eye size={12} aria-hidden="true" />
+                        {t.zoneChat.seenBy(seen)}
+                      </p>
+                    )
                   )}
                 </div>
               </div>
@@ -436,6 +495,11 @@ export function GameChat() {
       {sendError && (
         <p role="alert" className="px-4 pt-3 text-sm font-medium sm:px-5" style={{ color: "#C44D45" }}>
           {t.zoneChat.sendFailed}
+        </p>
+      )}
+      {deleteError && (
+        <p role="alert" className="px-4 pt-3 text-sm font-medium sm:px-5" style={{ color: "#C44D45" }}>
+          {t.zoneChat.deleteFailed}
         </p>
       )}
       <form

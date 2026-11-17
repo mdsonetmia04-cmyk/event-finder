@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import AppShell from "@/components/AppShell";
 import { SWRegister } from "@/components/SWRegister";
+import SplashGate from "@/components/SplashGate";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -71,6 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${inter.variable} ${fraunces.variable}`} suppressHydrationWarning>
         <SWRegister />
+        <SplashGate />
         <AppShell>{children}</AppShell>
       </body>
     </html>

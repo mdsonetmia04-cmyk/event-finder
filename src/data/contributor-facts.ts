@@ -80,7 +80,7 @@ export const CONTRIBUTOR_FACTS: FactSection[] = [
   {
     title: "Metadata rules",
     facts: [
-      "Up to 50 keywords per asset, ordered by relevance.",
+      "Up to 49 keywords per asset, ordered by relevance.",
       "The first 10 keywords are prioritized in search results.",
       "Titles should be specific and descriptive; avoid keyword stuffing.",
     ],

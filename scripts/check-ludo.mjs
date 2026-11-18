@@ -20,6 +20,9 @@
  *       of two colours;
  *   (c) capture-heavy and blockade-heavy crafted starts, fuzzed the
  *       same way, plus a determinism check (same seed, same game).
+ *   (d) rollDie fairness: 60,000 rolls must be uniform over 1-6 with
+ *       a chance-level repeat rate (repeats by chance are legitimate;
+ *       a stuck or biased source would show ~0 or ~1 repeats).
  */
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -81,6 +84,7 @@ const {
   botMove,
   createGame,
   legalMoves,
+  rollDie,
   SAFE_CELLS,
   trackIndex,
 } = eng;
@@ -122,6 +126,32 @@ console.log("rule checks:");
   check("createGame: phase roll, turn 0, move_no 0", g2.phase === "roll" && g2.turn === 0 && g2.move_no === 0);
   const g4 = createGame(4);
   check("createGame(4): 4 colours in order", g4.players.map((p) => p.color).join(",") === "red,green,yellow,blue");
+}
+
+/* --- rollDie fairness: the single roll source for every roll path
+ * (solo human/bot/timeout, room human/timeout). Uniform 1-6, with a
+ * chance-level repeat rate — repeats by chance are legitimate dice
+ * behaviour and are NOT suppressed. Tolerances are many sigma wide
+ * at N=60000, so a fair die never trips them. --- */
+{
+  const N = 60000;
+  const counts = [0, 0, 0, 0, 0, 0];
+  let repeats = 0;
+  let prev = -1;
+  let inRange = true;
+  for (let i = 0; i < N; i++) {
+    const r = rollDie();
+    if (!Number.isInteger(r) || r < 1 || r > 6) inRange = false;
+    else counts[r - 1] += 1;
+    if (r === prev) repeats += 1;
+    prev = r;
+  }
+  const expected = N / 6;
+  const uniform = counts.every((c) => Math.abs(c - expected) <= expected * 0.1);
+  check("rollDie: integers 1-6 only", inRange);
+  check(`rollDie: uniform over ${N} rolls`, uniform, counts.join(","));
+  const repeatRate = repeats / (N - 1);
+  check("rollDie: repeat rate near 1/6 (chance repeats, no forcing)", repeatRate > 0.13 && repeatRate < 0.2, repeatRate.toFixed(3));
 }
 
 /* --- trackIndex boundaries --- */

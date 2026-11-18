@@ -142,6 +142,11 @@ function Dice({
 }) {
   const [rest, setRest] = useState<[number, number]>(() => DICE_ORIENTATION[value] ?? [0, 0]);
   const [tumbling, setTumbling] = useState(false);
+  /* Bumps on every roll start: the cube span remounts, so the CSS
+     tumble animation restarts deterministically on EVERY click — even
+     if React batches the class toggle, the spin visibly starts at
+     once instead of continuing (or freezing on) the old animation. */
+  const [tumbleKey, setTumbleKey] = useState(0);
   const spinRef = useRef(0);
   const prevRollingRef = useRef(rolling);
 
@@ -149,6 +154,7 @@ function Dice({
     if (rolling) {
       if (!prevRollingRef.current) {
         setTumbling(true);
+        setTumbleKey((k) => k + 1);
         playDiceRoll();
       }
     } else {
@@ -181,6 +187,7 @@ function Dice({
     >
       <span className="ludo-dice-scene" aria-hidden="true">
         <span
+          key={tumbleKey}
           className={`ludo-dice-cube ${tumbling ? "ludo-dice-cube-tumble" : ""}`}
           style={{ transform: `rotateX(${rest[0]}deg) rotateY(${rest[1]}deg)` }}
         >

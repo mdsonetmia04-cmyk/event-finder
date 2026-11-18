@@ -336,6 +336,7 @@ export default function RoomPage() {
     if (diceTimerRef.current !== null) window.clearTimeout(diceTimerRef.current);
     setDiceRolling(true);
     const roll = rollDie();
+    const startedAt = Date.now();
     try {
       await submitState(applyRoll(st, roll), moveNo, (fresh) =>
         fresh.move_no === moveNo && fresh.phase === "roll" && fresh.turn === myIdx
@@ -343,8 +344,14 @@ export default function RoomPage() {
           : null,
       );
     } finally {
-      // The dice must always settle, even if the write throws.
-      diceTimerRef.current = window.setTimeout(() => setDiceRolling(false), 800);
+      // The dice must always settle, even if the write throws. The
+      // tumble runs at least 800ms measured from the CLICK — not from
+      // when the write lands — so the number comes up promptly even on
+      // a slow connection. The settle never fires before the write
+      // completes (this finally runs after the await), so the settled
+      // face is always the authoritative rolled value.
+      const remaining = 800 - (Date.now() - startedAt);
+      diceTimerRef.current = window.setTimeout(() => setDiceRolling(false), Math.max(0, remaining));
     }
   };
 

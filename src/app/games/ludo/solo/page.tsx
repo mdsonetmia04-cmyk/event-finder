@@ -26,6 +26,8 @@ export default function SoloLudoPage() {
   const [playerCount, setPlayerCount] = useState<PlayerCount>(4);
   const [game, setGame] = useState<LudoState | null>(null);
   const [diceRolling, setDiceRolling] = useState(false);
+  /** Bumps on every new game so each game is a distinct win. */
+  const [gameKey, setGameKey] = useState(0);
   const timersRef = useRef<number[]>([]);
 
   useEffect(() => {
@@ -138,7 +140,14 @@ export default function SoloLudoPage() {
           <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
             {t.games.rulesNote}
           </p>
-          <button type="button" className="btn btn-gold mt-5 w-full" onClick={() => setGame(createGame(playerCount))}>
+          <button
+            type="button"
+            className="btn btn-gold mt-5 w-full"
+            onClick={() => {
+              setGameKey((k) => k + 1);
+              setGame(createGame(playerCount));
+            }}
+          >
             <Play size={17} aria-hidden="true" />
             {t.ludo.startGame}
           </button>
@@ -180,6 +189,7 @@ export default function SoloLudoPage() {
         onPlayAgain={() => setGame(null)}
         onExit={() => router.push("/games")}
         exitLabel={t.games.backToZone}
+        winIdentity={`solo:${gameKey}`}
       />
     </div>
   );

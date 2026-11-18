@@ -705,6 +705,7 @@ export default function RoomPage() {
         onExit={() => router.push("/games/ludo/friends")}
         exitLabel={t.ludo.backToLobby}
         chat={chatNode}
+        winIdentity={`${room.id}:${room.updated_at}`}
       />
       {state.phase !== "finished" && (
         <div className="card p-4">

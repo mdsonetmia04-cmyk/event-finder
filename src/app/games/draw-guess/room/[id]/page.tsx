@@ -10,6 +10,7 @@ import { LudoAvatar } from "@/components/LudoGame";
 import { DrawCanvas, type DrawBroadcastEvent, type DrawCanvasHandle } from "@/components/DrawCanvas";
 import { chooseWords } from "@/lib/draw-guess/words";
 import { GAME_CHAT_PREFILL_KEY } from "@/lib/zone-chat";
+import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, recordWin } from "@/lib/games/win-motivation";
 import {
   DRAW_PICK_SECONDS,
   DRAW_REVEAL_SECONDS,
@@ -170,6 +171,8 @@ export default function DrawRoomPage() {
   const [copied, setCopied] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [playingAgain, setPlayingAgain] = useState(false);
+  /** Adobe Stock nudge: shown from the 3rd session win onward. */
+  const [showNudge, setShowNudge] = useState(false);
 
   const roomRef = useRef<DrawRoom | null>(null);
   const fetchingRef = useRef(false);
@@ -231,6 +234,26 @@ export default function DrawRoomPage() {
   const amDrawer = room?.current_drawer_id === session?.id;
   const drawer = room ? drawerOf(room) : undefined;
   const me = room && session ? room.players.find((p) => p.user_id === session.id) : undefined;
+
+  /* Session win counter for the Adobe Stock nudge: counts only when
+     the viewing player ranked #1. Count-once identity is room + the
+     finish timestamp — updated_at never changes for a finished room
+     (joins/leaves only touch waiting rooms; only Play Again rewrites
+     it), so reloads showing the same scoreboard never double-count,
+     and a replayed game is a new identity. */
+  const drawWinnerId =
+    room?.status === "finished"
+      ? [...room.players].sort((a, b) => b.score - a.score || a.seat - b.seat)[0]?.user_id ?? null
+      : null;
+  const iWonDraw = drawWinnerId !== null && session !== null && drawWinnerId === session.id;
+  useEffect(() => {
+    if (!iWonDraw || !room) {
+      setShowNudge(false);
+      return;
+    }
+    const { count } = recordWin("draw-guess", `draw-guess:${room.id}:${room.updated_at}`);
+    setShowNudge(count >= NUDGE_AFTER_WINS);
+  }, [iWonDraw, room]);
 
   /* Stroke broadcast channel: guessers render what the drawer sends. */
   useEffect(() => {
@@ -664,6 +687,14 @@ export default function DrawRoomPage() {
           {winner && (
             <p className="mt-2 text-sm font-medium">
               {winner.user_id === session.id ? t.draw.youWon : t.draw.winnerWon(winner.name)}
+            </p>
+          )}
+          {winner && winner.user_id === session.id && showNudge && (
+            <p
+              className="mt-3 rounded-xl px-3 py-2 text-sm font-semibold"
+              style={{ background: "var(--surface2)", color: "var(--gold-deep)" }}
+            >
+              {ADOBE_STOCK_NUDGE}
             </p>
           )}
           <div className="mt-4 grid gap-2">

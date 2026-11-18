@@ -28,6 +28,7 @@ import {
   setSoundEnabled,
   unlockAudio,
 } from "@/lib/ludo/sounds";
+import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, recordWin } from "@/lib/games/win-motivation";
 
 export interface LudoPlayerMeta {
   name: string;
@@ -53,6 +54,11 @@ export interface LudoGameProps {
   onExit: () => void;
   exitLabel: string;
   chat?: ReactNode;
+  /** Stable identity of this game instance (e.g. room id + finish
+      timestamp, or a solo game key). The session win counter counts
+      each identity once, so reloads showing the same finished game
+      never double-count. Omit to disable win counting. */
+  winIdentity?: string;
 }
 
 /** Round avatar: the player's picture, or a gold initial-letter circle. */
@@ -694,11 +700,14 @@ export default function LudoGame(props: LudoGameProps) {
     onExit,
     exitLabel,
     chat,
+    winIdentity,
   } = props;
   const { t } = useLang();
 
   /* Input locks while a token animation is playing. */
   const [animating, setAnimating] = useState(false);
+  /** Adobe Stock nudge: shown from the 3rd session win onward. */
+  const [showNudge, setShowNudge] = useState(false);
   const onAnimatingChange = useCallback((v: boolean) => setAnimating(v), []);
   const effCanRoll = canRoll && !animating;
   const effCanMove = canMove && !animating;
@@ -775,6 +784,19 @@ export default function LudoGame(props: LudoGameProps) {
     }
     prevFinishedRef.current = finished;
   }, [finished]);
+
+  /* Session win counter for the Adobe Stock nudge. Counts only when
+     the viewing player won; recordWin dedupes reloads/re-renders via
+     the win identity, and a new game is a new identity. */
+  const iWon = finished && state.winner !== null && metas[state.winner]?.isYou === true;
+  useEffect(() => {
+    if (!iWon || !winIdentity) {
+      setShowNudge(false);
+      return;
+    }
+    const { count } = recordWin("ludo", winIdentity);
+    setShowNudge(count >= NUDGE_AFTER_WINS);
+  }, [iWon, winIdentity]);
 
   const diceValue = state.lastRoll ?? state.roll ?? 6;
   const bonus = state.lastBonus;
@@ -986,6 +1008,14 @@ export default function LudoGame(props: LudoGameProps) {
                 ? t.ludo.youWon
                 : t.ludo.winnerWon(metas[state.winner]?.name ?? "")}
             </p>
+            {metas[state.winner]?.isYou && showNudge && (
+              <p
+                className="mt-3 rounded-xl px-3 py-2 text-sm font-semibold"
+                style={{ background: "var(--surface2)", color: "var(--gold-deep)" }}
+              >
+                {ADOBE_STOCK_NUDGE}
+              </p>
+            )}
             <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
               <button type="button" className="btn btn-gold" onClick={onPlayAgain}>
                 {t.ludo.playAgain}

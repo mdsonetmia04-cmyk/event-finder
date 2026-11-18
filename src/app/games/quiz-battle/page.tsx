@@ -38,6 +38,7 @@ import {
   setSoundEnabled,
   unlockAudio,
 } from "@/lib/ludo/sounds";
+import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, recordWin } from "@/lib/games/win-motivation";
 
 const QUESTION_COUNT = 10;
 const QUESTION_MS = 15000;
@@ -90,6 +91,8 @@ export default function QuizBattlePage() {
   const [roundResult, setRoundResult] = useState<RoundResult | null>(null);
   const [review, setReview] = useState<RoundRecord[]>([]);
   const [soundOn, setSoundOn] = useState<boolean>(() => isSoundEnabled());
+  /** Adobe Stock nudge: shown from the 3rd session win onward. */
+  const [showNudge, setShowNudge] = useState(false);
 
   /* Refs mirror the values timers need, so callbacks never read stale state. */
   const phaseRef = useRef<Phase>("setup");
@@ -103,6 +106,8 @@ export default function QuizBattlePage() {
   const intervalRef = useRef<number | null>(null);
   const botTimeoutRef = useRef<number | null>(null);
   const revealTimeoutRef = useRef<number | null>(null);
+  /** Bumps on every startBattle so each battle is a distinct win. */
+  const battleIdRef = useRef(0);
 
   const clearTimers = useCallback(() => {
     if (intervalRef.current !== null) window.clearInterval(intervalRef.current);
@@ -173,7 +178,13 @@ export default function QuizBattlePage() {
       if (qIndexRef.current >= battleRef.current.length - 1) {
         phaseRef.current = "results";
         setPhase("results");
-        if (scoreRef.current.player > scoreRef.current.bot) playWinFanfare();
+        if (scoreRef.current.player > scoreRef.current.bot) {
+          playWinFanfare();
+          /* Count-once win identity: battle instance. Wins only —
+             a loss or tie never counts and never shows the nudge. */
+          const { count } = recordWin("quiz-battle", `quiz-battle:${battleIdRef.current}`);
+          setShowNudge(count >= NUDGE_AFTER_WINS);
+        }
         return;
       }
       startQuestion(qIndexRef.current + 1, battleRef.current);
@@ -260,6 +271,8 @@ export default function QuizBattlePage() {
     unlockAudio();
     playButtonClick();
     clearTimers();
+    battleIdRef.current += 1;
+    setShowNudge(false);
     const questions = drawBattleQuestions(QUESTION_COUNT);
     battleRef.current = questions;
     scoreRef.current = { player: 0, bot: 0 };
@@ -384,6 +397,14 @@ export default function QuizBattlePage() {
           <h2 className="font-serif-d mt-3 text-2xl font-semibold">
             {draw ? t.quiz.draw : won ? t.quiz.youWin : t.quiz.botWins}
           </h2>
+          {won && showNudge && (
+            <p
+              className="mt-3 rounded-xl px-3 py-2 text-sm font-semibold"
+              style={{ background: "var(--surface2)", color: "var(--gold-deep)" }}
+            >
+              {ADOBE_STOCK_NUDGE}
+            </p>
+          )}
           <div className="mt-5 grid grid-cols-2 gap-3">
             <div className="rounded-xl p-4" style={{ background: "var(--surface2)" }}>
               <p className="text-xs" style={{ color: "var(--muted)" }}>

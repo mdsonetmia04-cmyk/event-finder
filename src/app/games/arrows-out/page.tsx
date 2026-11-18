@@ -47,6 +47,7 @@ import {
   setSoundEnabled,
   unlockAudio,
 } from "@/lib/ludo/sounds";
+import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, recordWin } from "@/lib/games/win-motivation";
 
 const HEARTS_PER_ATTEMPT = 3;
 const HINTS_PER_ATTEMPT = 3;
@@ -109,11 +110,15 @@ export default function ArrowsOutPage() {
   const [bumping, setBumping] = useState<{ id: number; key: number } | null>(null);
   const [hintId, setHintId] = useState<number | null>(null);
   const [hintNote, setHintNote] = useState(false);
+  /** Adobe Stock nudge: shown from the 3rd session win onward. */
+  const [showNudge, setShowNudge] = useState(false);
 
   const heartsRef = useRef(hearts);
   const removedRef = useRef<ReadonlySet<number>>(new Set());
   const timersRef = useRef<number[]>([]);
   const bumpKeyRef = useRef(0);
+  /** Bumps on every startLevel so each attempt is a distinct win. */
+  const attemptRef = useRef(0);
 
   useEffect(() => {
     heartsRef.current = hearts;
@@ -144,6 +149,7 @@ export default function ArrowsOutPage() {
   const startLevel = useCallback(
     (n: number) => {
       clearTimers();
+      attemptRef.current += 1;
       setLevelN(n);
       setArrows(levelArrows(ARROWS_LEVELS[n - 1]));
       removedRef.current = new Set();
@@ -203,6 +209,9 @@ export default function ArrowsOutPage() {
             setPhase("won");
             playWinFanfare();
             saveStars(levelN, Math.max(1, heartsRef.current));
+            /* Count-once win identity: level + attempt. */
+            const { count } = recordWin("arrows-out", `arrows-out:${levelN}:${attemptRef.current}`);
+            setShowNudge(count >= NUDGE_AFTER_WINS);
           }
         }, EXIT_MS);
       } else {
@@ -555,6 +564,14 @@ export default function ArrowsOutPage() {
               <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>
                 {t.arrows.winSub(moves)}
               </p>
+              {showNudge && (
+                <p
+                  className="mt-3 rounded-xl px-3 py-2 text-sm font-semibold"
+                  style={{ background: "var(--surface2)", color: "var(--gold-deep)" }}
+                >
+                  {ADOBE_STOCK_NUDGE}
+                </p>
+              )}
               {isLastLevel && (
                 <p className="mt-1 text-sm font-semibold" style={{ color: "var(--gold-deep)" }}>
                   {t.arrows.allCleared}

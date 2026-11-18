@@ -1069,6 +1069,11 @@ const en = {
     eraser: "Eraser",
     clearCanvas: "Clear canvas",
     canvasLabel: "Drawing canvas",
+    chatTitle: "Room chat",
+    chatHint: "Only players in this room can see these messages.",
+    chatEmpty: "No messages yet — say hello!",
+    chatPh: "Write a message…",
+    chatSend: "Send",
   },
   arrows: {
     title: "Arrows Out",
@@ -2223,6 +2228,11 @@ export const bn: Dict = {
     eraser: "রাবার",
     clearCanvas: "ক্যানভাস মুছুন",
     canvasLabel: "আঁকার ক্যানভাস",
+    chatTitle: "রুম চ্যাট",
+    chatHint: "এই রুমের খেলোয়াড়রাই শুধু এই মেসেজগুলো দেখতে পারবে।",
+    chatEmpty: "এখনো মেসেজ নেই — হ্যালো বলুন!",
+    chatPh: "মেসেজ লিখুন…",
+    chatSend: "পাঠান",
   },
   arrows: {
     title: "অ্যারোজ আউট",

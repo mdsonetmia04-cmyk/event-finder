@@ -73,6 +73,19 @@ export interface DrawRoomLookup {
   updated_at: string;
 }
 
+/** One row of the per-room chat — mirrors ludo_messages (migration
+    v11). Row shape mirrors supabase/add-draw-chat.sql (migration v21):
+    the sender's name/avatar are snapshotted at send time. */
+export interface DrawMessage {
+  id: number;
+  room_id: string;
+  user_id: string;
+  name: string;
+  avatar_url: string | null;
+  body: string;
+  created_at: string;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -168,6 +181,25 @@ export function parseDrawRoomLookup(row: unknown): DrawRoomLookup | null {
     player_count: row.player_count,
     max_players: row.max_players,
     updated_at: row.updated_at,
+  };
+}
+
+/** Validate an untyped draw_messages row (initial load or realtime
+    payload) into a DrawMessage, or null if malformed. */
+export function parseDrawMessage(row: unknown): DrawMessage | null {
+  if (!isRecord(row)) return null;
+  if (typeof row.id !== "number" || typeof row.room_id !== "string") return null;
+  if (typeof row.user_id !== "string" || typeof row.name !== "string") return null;
+  if (typeof row.body !== "string" || typeof row.created_at !== "string") return null;
+  if (row.avatar_url !== null && typeof row.avatar_url !== "string") return null;
+  return {
+    id: row.id,
+    room_id: row.room_id,
+    user_id: row.user_id,
+    name: row.name,
+    avatar_url: row.avatar_url,
+    body: row.body,
+    created_at: row.created_at,
   };
 }
 

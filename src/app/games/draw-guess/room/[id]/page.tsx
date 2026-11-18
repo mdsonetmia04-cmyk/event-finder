@@ -17,11 +17,14 @@ import {
   drawerOf,
   drawSeatIndex,
   isDrawRoomFresh,
+  parseDrawMessage,
   parseDrawRoom,
+  type DrawMessage,
   type DrawRoom,
 } from "@/lib/draw-guess/room";
 
 const POLL_MS = 2000;
+const CHAT_LIMIT = 50;
 const AUTO_PICK_SECONDS = 5;
 
 type LoadStatus = "loading" | "ready" | "gone";
@@ -51,6 +54,97 @@ function parseBroadcastEvent(value: unknown): DrawBroadcastEvent | null {
   };
 }
 
+/** Per-room chat, mirroring Ludo's RoomChat: only players seated in
+    this room can read or send (enforced by the draw_messages RLS
+    policies, migration v21). Core chat only — messages + composer. */
+function RoomChat({
+  messages,
+  sessionId,
+  onSend,
+}: {
+  messages: DrawMessage[];
+  sessionId: string;
+  onSend: (body: string) => Promise<boolean>;
+}) {
+  const { t } = useLang();
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages]);
+
+  const send = async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || sending) return;
+    setSending(true);
+    const ok = await onSend(trimmed);
+    if (ok) setBody("");
+    setSending(false);
+  };
+
+  return (
+    <section className="card flex flex-col p-4">
+      <h2 className="font-serif-d text-lg font-semibold">{t.draw.chatTitle}</h2>
+      <p className="mt-0.5 text-xs" style={{ color: "var(--muted)" }}>
+        {t.draw.chatHint}
+      </p>
+      <div ref={scrollRef} className="mt-3 max-h-64 min-h-24 flex-1 space-y-3 overflow-y-auto pr-1">
+        {messages.length === 0 ? (
+          <p className="text-sm" style={{ color: "var(--muted)" }}>
+            {t.draw.chatEmpty}
+          </p>
+        ) : (
+          messages.map((m) => {
+            const mine = m.user_id === sessionId;
+            return (
+              <div key={m.id} className={`flex gap-2 ${mine ? "flex-row-reverse" : ""}`}>
+                <LudoAvatar url={m.avatar_url} name={m.name} size={28} />
+                <div className={`max-w-[75%] ${mine ? "text-right" : ""}`}>
+                  <p className="text-[11px] font-medium" style={{ color: "var(--muted)" }}>
+                    {m.name}
+                  </p>
+                  <p
+                    className="mt-0.5 inline-block break-words rounded-2xl px-3 py-1.5 text-sm"
+                    style={{
+                      background: mine ? "var(--gold)" : "var(--surface2)",
+                      color: mine ? "#FFF9EC" : "var(--text)",
+                    }}
+                  >
+                    {m.body}
+                  </p>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+      <form
+        className="mt-3 flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void send(body);
+        }}
+      >
+        <input
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder={t.draw.chatPh}
+          maxLength={200}
+          className="min-w-0 flex-1 rounded-full border px-4 py-2 text-sm outline-none"
+          style={{ borderColor: "var(--line)", background: "var(--surface)", color: "var(--text)" }}
+        />
+        <button type="submit" className="btn btn-gold shrink-0" disabled={sending || body.trim().length === 0}>
+          <Send size={15} aria-hidden="true" />
+          {t.draw.chatSend}
+        </button>
+      </form>
+    </section>
+  );
+}
+
 export default function DrawRoomPage() {
   const params = useParams();
   const rawId = params.id;
@@ -60,6 +154,7 @@ export default function DrawRoomPage() {
   const router = useRouter();
 
   const [room, setRoom] = useState<DrawRoom | null>(null);
+  const [messages, setMessages] = useState<DrawMessage[]>([]);
   const [status, setStatus] = useState<LoadStatus>("loading");
   const [goneStarted, setGoneStarted] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -163,6 +258,52 @@ export default function DrawRoomPage() {
     if (!channel || !subscribedRef.current) return;
     void channel.send({ type: "broadcast", event: "draw", payload: ev });
   }, []);
+
+  /* Room chat: load the last 50 messages, then stay live on INSERTs
+     (GameChat pattern; the subscription is filtered to this room). */
+  useEffect(() => {
+    if (!ready || !session || !roomId) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
+    let cancelled = false;
+    supabase
+      .from("draw_messages")
+      .select("*")
+      .eq("room_id", roomId)
+      .order("created_at", { ascending: false })
+      .limit(CHAT_LIMIT)
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (!error && data) {
+          const parsed: DrawMessage[] = [];
+          for (const row of data as unknown[]) {
+            const m = parseDrawMessage(row);
+            if (m) parsed.push(m);
+          }
+          parsed.reverse();
+          setMessages(parsed);
+        }
+      });
+    const channel = supabase
+      .channel(`draw-chat:${roomId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "draw_messages", filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          const m = parseDrawMessage(payload.new);
+          if (!m) return;
+          // Dedupe by id: realtime can replay an event on reconnect.
+          setMessages((prev) =>
+            prev.some((x) => x.id === m.id) ? prev : [...prev.slice(-(CHAT_LIMIT - 1)), m],
+          );
+        },
+      )
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [ready, session, roomId]);
 
   /* Wipe the canvas when a new round starts (or the game resets). The
      drawing stays visible through the reveal phase of the same round. */
@@ -286,6 +427,26 @@ export default function DrawRoomPage() {
     }
   };
 
+  /* Room chat send, mirroring Ludo's sendChat: the name/avatar are
+     snapshotted from the session; the realtime INSERT subscription
+     delivers the new message to every open client in this room. */
+  const sendChat = useCallback(
+    async (body: string): Promise<boolean> => {
+      const supabase = getSupabase();
+      const trimmed = body.trim();
+      if (!supabase || !session || trimmed.length === 0 || trimmed.length > 200) return false;
+      const { error } = await supabase.from("draw_messages").insert({
+        room_id: roomId,
+        user_id: session.id,
+        name: session.name,
+        avatar_url: session.avatar_url ?? null,
+        body: trimmed,
+      });
+      return !error;
+    },
+    [roomId, session],
+  );
+
   /* Share the code via Game Chat — manual, like Ludo codes: the
      share text lands in the chat composer for the player to review
      and send themselves. Nothing is ever sent automatically. */
@@ -370,6 +531,8 @@ export default function DrawRoomPage() {
       </div>
     );
   }
+
+  const chatNode = <RoomChat messages={messages} sessionId={session.id} onSend={sendChat} />;
 
   /* Non-member view of a room: offer to join a waiting room. */
   if (!isMember) {
@@ -482,6 +645,7 @@ export default function DrawRoomPage() {
             </button>
           </div>
         </div>
+        {chatNode}
       </div>
     );
   }
@@ -545,169 +709,175 @@ export default function DrawRoomPage() {
   const iGuessed = me?.has_guessed === true;
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4">
+    <div className="mx-auto flex max-w-5xl flex-col gap-4">
       {actionError && (
         <p role="alert" className="card p-3 text-sm font-medium" style={{ color: "#C44D45" }}>
           {actionError}
         </p>
       )}
 
-      <section className="card p-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h1 className="font-serif-d flex items-center gap-2 text-lg font-semibold">
-            <PencilLine size={20} style={{ color: "var(--gold-deep)" }} aria-hidden="true" />
-            {t.draw.roundOf(room.round_no, room.max_rounds)}
-          </h1>
-          <p className="flex items-center gap-1.5 text-sm font-bold" style={{ color: "var(--gold-deep)" }}>
-            <Clock size={16} aria-hidden="true" />
-            {remainingSec}s
-          </p>
-        </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full" style={{ background: "var(--surface2)" }}>
-          <div
-            className="h-full rounded-full transition-[width] duration-500"
-            style={{ width: `${barPct}%`, background: "linear-gradient(90deg, var(--gold-2), var(--gold))" }}
-          />
-        </div>
+      {/* Board + chat: beside the board on desktop, below it on mobile (Ludo layout). */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+        <div className="flex min-w-0 flex-1 flex-col gap-4">
+          <section className="card p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h1 className="font-serif-d flex items-center gap-2 text-lg font-semibold">
+                <PencilLine size={20} style={{ color: "var(--gold-deep)" }} aria-hidden="true" />
+                {t.draw.roundOf(room.round_no, room.max_rounds)}
+              </h1>
+              <p className="flex items-center gap-1.5 text-sm font-bold" style={{ color: "var(--gold-deep)" }}>
+                <Clock size={16} aria-hidden="true" />
+                {remainingSec}s
+              </p>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full" style={{ background: "var(--surface2)" }}>
+              <div
+                className="h-full rounded-full transition-[width] duration-500"
+                style={{ width: `${barPct}%`, background: "linear-gradient(90deg, var(--gold-2), var(--gold))" }}
+              />
+            </div>
 
-        {/* Phase panel: word, choices, hint, or reveal. */}
-        <div className="mt-4">
-          {room.phase === "picking" &&
-            (amDrawer ? (
-              <div>
-                <p className="text-sm font-semibold">{t.draw.yourTurnDraw}</p>
-                <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
-                  {t.draw.chooseWord}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {choices.map((word) => (
-                    <button
-                      key={word}
-                      type="button"
-                      className="btn btn-gold"
-                      disabled={picking}
-                      onClick={() => void pickWord(word, false)}
-                    >
-                      {word}
-                    </button>
-                  ))}
+            {/* Phase panel: word, choices, hint, or reveal. */}
+            <div className="mt-4">
+              {room.phase === "picking" &&
+                (amDrawer ? (
+                  <div>
+                    <p className="text-sm font-semibold">{t.draw.yourTurnDraw}</p>
+                    <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
+                      {t.draw.chooseWord}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {choices.map((word) => (
+                        <button
+                          key={word}
+                          type="button"
+                          className="btn btn-gold"
+                          disabled={picking}
+                          onClick={() => void pickWord(word, false)}
+                        >
+                          {word}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-xs" style={{ color: "var(--muted)" }}>
+                      {t.draw.pickTimeNote}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm font-medium">
+                    {drawer ? t.draw.drawerPicking(drawer.name) : t.draw.loading}
+                  </p>
+                ))}
+
+              {room.phase === "drawing" &&
+                (amDrawer ? (
+                  <div>
+                    <p className="text-sm font-semibold">{t.draw.youAreDrawing}</p>
+                    <p className="font-serif-d mt-1 text-3xl font-bold tracking-wide" style={{ color: "var(--gold-deep)" }}>
+                      {room.current_word ? t.draw.drawWord(room.current_word) : t.draw.loading}
+                    </p>
+                    <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>
+                      {t.draw.drawerHint}
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-sm font-semibold">
+                      {drawer ? t.draw.drawingNow(drawer.name) : t.draw.loading}
+                    </p>
+                    <p className="mt-1 font-mono text-2xl font-bold tracking-[0.35em] select-none" aria-label={t.draw.guessing}>
+                      {room.word_hint ?? ""}
+                    </p>
+                    <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>
+                      {t.draw.guessing}
+                    </p>
+                  </div>
+                ))}
+
+              {room.phase === "reveal" && (
+                <div>
+                  <p className="font-serif-d text-2xl font-bold" style={{ color: "var(--gold-deep)" }}>
+                    {room.current_word ? t.draw.revealWord(room.current_word) : ""}
+                  </p>
+                  <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
+                    {t.draw.nextRoundSoon}
+                  </p>
                 </div>
-                <p className="mt-2 text-xs" style={{ color: "var(--muted)" }}>
-                  {t.draw.pickTimeNote}
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm font-medium">
-                {drawer ? t.draw.drawerPicking(drawer.name) : t.draw.loading}
-              </p>
-            ))}
-
-          {room.phase === "drawing" &&
-            (amDrawer ? (
-              <div>
-                <p className="text-sm font-semibold">{t.draw.youAreDrawing}</p>
-                <p className="font-serif-d mt-1 text-3xl font-bold tracking-wide" style={{ color: "var(--gold-deep)" }}>
-                  {room.current_word ? t.draw.drawWord(room.current_word) : t.draw.loading}
-                </p>
-                <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>
-                  {t.draw.drawerHint}
-                </p>
-              </div>
-            ) : (
-              <div>
-                <p className="text-sm font-semibold">
-                  {drawer ? t.draw.drawingNow(drawer.name) : t.draw.loading}
-                </p>
-                <p className="mt-1 font-mono text-2xl font-bold tracking-[0.35em] select-none" aria-label={t.draw.guessing}>
-                  {room.word_hint ?? ""}
-                </p>
-                <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>
-                  {t.draw.guessing}
-                </p>
-              </div>
-            ))}
-
-          {room.phase === "reveal" && (
-            <div>
-              <p className="font-serif-d text-2xl font-bold" style={{ color: "var(--gold-deep)" }}>
-                {room.current_word ? t.draw.revealWord(room.current_word) : ""}
-              </p>
-              <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
-                {t.draw.nextRoundSoon}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Scoreboard strip. */}
-        <div className="mt-4 flex flex-wrap gap-2">
-          {room.players.map((p) => (
-            <div
-              key={p.user_id}
-              className="flex items-center gap-2 rounded-full border px-2.5 py-1"
-              style={{ borderColor: "var(--line)", background: "var(--surface)" }}
-            >
-              <LudoAvatar url={p.avatar_url} name={p.name} size={24} />
-              <span className="max-w-24 truncate text-xs font-semibold">{p.name}</span>
-              <span className="text-xs font-bold" style={{ color: "var(--gold-deep)" }}>
-                {t.draw.points(p.score)}
-              </span>
-              {p.user_id === room.current_drawer_id && (
-                <span className="text-[11px] font-semibold" style={{ color: "var(--gold-deep)" }}>
-                  ✏️ {t.draw.drawerLabel}
-                </span>
-              )}
-              {p.user_id !== room.current_drawer_id && p.has_guessed && room.phase !== "picking" && (
-                <Check size={13} style={{ color: "#2FA36B" }} aria-label={t.draw.guessedIt} />
               )}
             </div>
-          ))}
+
+            {/* Scoreboard strip. */}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {room.players.map((p) => (
+                <div
+                  key={p.user_id}
+                  className="flex items-center gap-2 rounded-full border px-2.5 py-1"
+                  style={{ borderColor: "var(--line)", background: "var(--surface)" }}
+                >
+                  <LudoAvatar url={p.avatar_url} name={p.name} size={24} />
+                  <span className="max-w-24 truncate text-xs font-semibold">{p.name}</span>
+                  <span className="text-xs font-bold" style={{ color: "var(--gold-deep)" }}>
+                    {t.draw.points(p.score)}
+                  </span>
+                  {p.user_id === room.current_drawer_id && (
+                    <span className="text-[11px] font-semibold" style={{ color: "var(--gold-deep)" }}>
+                      ✏️ {t.draw.drawerLabel}
+                    </span>
+                  )}
+                  {p.user_id !== room.current_drawer_id && p.has_guessed && room.phase !== "picking" && (
+                    <Check size={13} style={{ color: "#2FA36B" }} aria-label={t.draw.guessedIt} />
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="card p-4">
+            <DrawCanvas ref={canvasRef} editable={canDraw} onLocalEvent={sendDrawEvent} />
+
+            {/* Guess box: guessers only, while drawing, until they guess it. */}
+            {room.phase === "drawing" && !amDrawer && (
+              <div className="mt-4">
+                {iGuessed ? (
+                  <p className="rounded-xl px-3 py-2 text-center text-sm font-semibold" style={{ background: "var(--surface2)" }}>
+                    ✅ {t.draw.guessedIt}
+                  </p>
+                ) : (
+                  <form
+                    className="flex gap-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void submitGuess();
+                    }}
+                  >
+                    <input
+                      value={guess}
+                      onChange={(e) => setGuess(e.target.value)}
+                      placeholder={t.draw.guessPh}
+                      maxLength={40}
+                      autoComplete="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
+                      className="min-w-0 flex-1 rounded-full border px-4 py-2.5 text-sm outline-none"
+                      style={{ borderColor: "var(--line)", background: "var(--surface)", color: "var(--text)" }}
+                    />
+                    <button type="submit" className="btn btn-gold shrink-0" disabled={guessing || guess.trim().length === 0}>
+                      <Send size={15} aria-hidden="true" />
+                      {t.draw.guessButton}
+                    </button>
+                  </form>
+                )}
+                {guessMiss && (
+                  <p role="alert" className="mt-2 text-center text-sm font-medium" style={{ color: "#C44D45" }}>
+                    {t.draw.guessMiss}
+                  </p>
+                )}
+              </div>
+            )}
+          </section>
         </div>
-      </section>
-
-      <section className="card p-4">
-        <DrawCanvas ref={canvasRef} editable={canDraw} onLocalEvent={sendDrawEvent} />
-
-        {/* Guess box: guessers only, while drawing, until they guess it. */}
-        {room.phase === "drawing" && !amDrawer && (
-          <div className="mt-4">
-            {iGuessed ? (
-              <p className="rounded-xl px-3 py-2 text-center text-sm font-semibold" style={{ background: "var(--surface2)" }}>
-                ✅ {t.draw.guessedIt}
-              </p>
-            ) : (
-              <form
-                className="flex gap-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void submitGuess();
-                }}
-              >
-                <input
-                  value={guess}
-                  onChange={(e) => setGuess(e.target.value)}
-                  placeholder={t.draw.guessPh}
-                  maxLength={40}
-                  autoComplete="off"
-                  autoCapitalize="off"
-                  spellCheck={false}
-                  className="min-w-0 flex-1 rounded-full border px-4 py-2.5 text-sm outline-none"
-                  style={{ borderColor: "var(--line)", background: "var(--surface)", color: "var(--text)" }}
-                />
-                <button type="submit" className="btn btn-gold shrink-0" disabled={guessing || guess.trim().length === 0}>
-                  <Send size={15} aria-hidden="true" />
-                  {t.draw.guessButton}
-                </button>
-              </form>
-            )}
-            {guessMiss && (
-              <p role="alert" className="mt-2 text-center text-sm font-medium" style={{ color: "#C44D45" }}>
-                {t.draw.guessMiss}
-              </p>
-            )}
-          </div>
-        )}
-      </section>
+        <div className="w-full lg:w-[340px] lg:shrink-0">{chatNode}</div>
+      </div>
 
       <div className="card p-4">
         <p className="text-sm leading-relaxed" style={{ color: "var(--muted)" }}>

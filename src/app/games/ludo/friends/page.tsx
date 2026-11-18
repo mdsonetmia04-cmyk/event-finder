@@ -47,7 +47,7 @@ export default function FriendsLobbyPage() {
     const { data, error: fetchError } = await supabase
       .from("ludo_rooms")
       .select("*")
-      .eq("status", "waiting")
+      .in("status", ["waiting", "playing"])
       .gte("updated_at", freshSince)
       .order("updated_at", { ascending: false })
       .limit(20);
@@ -294,6 +294,8 @@ export default function FriendsLobbyPage() {
                         {room.code}
                       </span>
                       <span>{t.ludo.seatsTaken(room.players.length, room.max_players)}</span>
+                      <span aria-hidden="true">·</span>
+                      <span>{room.status === "playing" ? t.ludo.roomPlaying : t.ludo.roomWaiting}</span>
                       <span aria-hidden="true">·</span>
                       <span>{roomAge(room)}</span>
                       <span className="flex gap-1" aria-hidden="true">

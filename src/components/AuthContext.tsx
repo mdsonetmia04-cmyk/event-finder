@@ -10,6 +10,7 @@ import {
   markSignupEnd,
   markSignupStart,
   normalizeWhatsapp,
+  normalizeWhatsappInput,
   syntheticEmail,
   type Profile,
 } from "@/lib/supabase";
@@ -23,6 +24,8 @@ export type AuthError =
   | "no_user"
   | "wrong_password"
   | "signup_failed"
+  | "no_approved_account"
+  | "reset_failed"
   | null;
 
 interface AuthCtx {
@@ -32,6 +35,14 @@ interface AuthCtx {
   session: Profile | null;
   login: (whatsapp: string, password: string) => Promise<AuthError>;
   register: (name: string, whatsapp: string, password: string) => Promise<AuthError>;
+  /** Forgot-password reset: asks the reset_password_by_whatsapp RPC to
+      generate a new 6-digit password for an approved account. On success the
+      code is returned for display on screen; it is the account's password
+      going forward. Unknown/pending/rejected numbers yield
+      "no_approved_account" and no code is generated. */
+  requestPasswordReset: (
+    whatsapp: string
+  ) => Promise<{ ok: true; code: string; whatsapp: string } | { ok: false; error: AuthError }>;
   logout: () => void;
   approve: (id: string) => void;
   reject: (id: string) => void;
@@ -299,6 +310,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [refresh]
   );
 
+  const requestPasswordReset = useCallback(async (whatsapp: string) => {
+    const supabase = getSupabase();
+    if (!supabase) return { ok: false, error: "not_configured" } as const;
+    const wa = normalizeWhatsappInput(whatsapp);
+    if (!isValidWhatsapp(wa)) return { ok: false, error: "invalid_whatsapp" } as const;
+    const { data, error } = await supabase.rpc("reset_password_by_whatsapp", { p_whatsapp: wa });
+    // Any RPC error (including 42883 when migration v25 has not been run
+    // yet) is a generic failure: never surface internals on the login screen.
+    if (error) return { ok: false, error: "reset_failed" } as const;
+    // NULL means no approved profile for the number: no code was generated.
+    if (!data) return { ok: false, error: "no_approved_account" } as const;
+    return { ok: true, code: data as string, whatsapp: wa } as const;
+  }, []);
+
   const logout = useCallback(() => {
     const supabase = getSupabase();
     if (supabase) void supabase.auth.signOut();
@@ -411,6 +436,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         login,
         register,
+        requestPasswordReset,
         logout,
         approve,
         reject,

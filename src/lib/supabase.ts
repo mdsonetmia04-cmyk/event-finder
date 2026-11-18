@@ -73,6 +73,18 @@ export function normalizeWhatsapp(s: string): string {
   return s.trim();
 }
 
+/** Lenient WhatsApp normalization for the forgot-password form only: trim,
+    strip spaces/dashes, and convert +880/880 prefixes to the stored 01...
+    form. Login itself only trims; the reset RPC normalizes the same way
+    server-side, so this just lets the UI validate and echo the exact number
+    the student must type at login. */
+export function normalizeWhatsappInput(s: string): string {
+  let wa = s.trim().replace(/[\s-]/g, "");
+  if (wa.startsWith("+880")) wa = "0" + wa.slice(4);
+  else if (wa.startsWith("880")) wa = "0" + wa.slice(3);
+  return wa;
+}
+
 /**
  * Cross-tab registration guard. Supabase broadcasts auth events to every open
  * tab of the site; a second tab must not treat a fresh sign-up's not-yet-

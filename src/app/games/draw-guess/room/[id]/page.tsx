@@ -10,7 +10,7 @@ import { LudoAvatar } from "@/components/LudoGame";
 import { DrawCanvas, type DrawBroadcastEvent, type DrawCanvasHandle } from "@/components/DrawCanvas";
 import { chooseWords } from "@/lib/draw-guess/words";
 import { GAME_CHAT_PREFILL_KEY } from "@/lib/zone-chat";
-import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, pickPostMatchLine, recordWin } from "@/lib/games/win-motivation";
+import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, pickPostMatchLine, pickTeamLine, recordWin } from "@/lib/games/win-motivation";
 import {
   DRAW_PICK_SECONDS,
   DRAW_REVEAL_SECONDS,
@@ -717,6 +717,11 @@ export default function DrawRoomPage() {
                 winner.user_id === session.id ? "win" : "loss",
                 `draw-guess:${room.id}:${room.updated_at}`,
               )}
+            </p>
+          )}
+          {isMember && (
+            <p className="mt-2 text-sm font-semibold" style={{ color: "var(--gold-deep)" }}>
+              {pickTeamLine(`draw-guess:${room.id}:${room.updated_at}`)}
             </p>
           )}
           {isMember && winner && winner.user_id === session.id && showNudge && (

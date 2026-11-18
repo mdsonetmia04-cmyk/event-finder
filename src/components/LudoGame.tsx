@@ -28,7 +28,7 @@ import {
   setSoundEnabled,
   unlockAudio,
 } from "@/lib/ludo/sounds";
-import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, pickPostMatchLine, recordWin } from "@/lib/games/win-motivation";
+import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, pickPostMatchLine, pickTeamLine, recordWin } from "@/lib/games/win-motivation";
 
 export interface LudoPlayerMeta {
   name: string;
@@ -59,6 +59,12 @@ export interface LudoGameProps {
       each identity once, so reloads showing the same finished game
       never double-count. Omit to disable win counting. */
   winIdentity?: string;
+  /** Identity for the shared team advice line (room id + finish
+      timestamp). When set, non-spectators see the same team line in
+      the win overlay, picked deterministically from this key so all
+      players in the room resolve the same line. Room games only —
+      solo callers omit it. */
+  teamLineKey?: string;
   /** Spectator mode: the board renders live but the viewer cannot
       roll, move, or reset the game. The win overlay shows only the
       exit button, and the dice prompt becomes a watching note. The
@@ -829,6 +835,7 @@ export default function LudoGame(props: LudoGameProps) {
     exitLabel,
     chat,
     winIdentity,
+    teamLineKey,
     spectator = false,
   } = props;
   const { t } = useLang();
@@ -1146,6 +1153,11 @@ export default function LudoGame(props: LudoGameProps) {
                   metas[state.winner]?.isYou ? "win" : "loss",
                   winIdentity ?? `ludo:finished:${state.move_no}:${state.winner}`,
                 )}
+              </p>
+            )}
+            {!spectator && teamLineKey && (
+              <p className="mt-2 text-sm font-semibold" style={{ color: "var(--gold-deep)" }}>
+                {pickTeamLine(teamLineKey)}
               </p>
             )}
             {metas[state.winner]?.isYou && showNudge && (

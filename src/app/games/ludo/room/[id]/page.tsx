@@ -869,6 +869,7 @@ export default function RoomPage() {
         exitLabel={t.ludo.backToLobby}
         chat={chatNode}
         winIdentity={`${room.id}:${room.updated_at}`}
+        teamLineKey={`${room.id}:${room.updated_at}`}
       />
       {state.phase !== "finished" && (
         <div className="card p-4">

@@ -21,7 +21,13 @@
    recordWin, where one exists). The picked line is stored per key, so
    re-renders, overlay re-opens and reloads showing the same finished
    match always show the SAME line, while a new match picks a fresh
-   one (never repeating the previous line of that pool). */
+   one (never repeating the previous line of that pool).
+
+   Room games ALSO show one shared team advice line to every player
+   at match end, picked with pickTeamLine(key): the pick is a pure
+   hash of the match identity, so all players in the room resolve the
+   SAME line. See pickTeamLine for why the per-client no-repeat rule
+   cannot apply there. */
 
 export type WinGameId = "bubble-shooter" | "arrows-out" | "quiz-battle" | "ludo" | "draw-guess" | "chess";
 
@@ -77,6 +83,25 @@ export const POST_MATCH_LOSS_LINES: readonly string[] = [
   "হেরে গেলেন? ভালোই হলো — এখন সময়টা কাজে লাগিয়ে ২টা অ্যাসেট বানিয়ে ফেলুন।",
   "গেম শেষ, এবার আসল খেলা — ডিজাইন বানিয়ে ডলার আয় করুন!",
   "ম্যাচটা গেল, কিন্তু আজকের আপলোডটা যেন না যায় — এখনই বানাতে বসুন।",
+];
+
+/** Bengali team advice lines for ROOM games, shown verbatim in both
+    language modes to every player in the room at match end, in
+    addition to each player's own win/loss post-match line. Approved
+    by the owner 2026-11-18 — do not paraphrase. */
+export const TEAM_ADVICE_LINES: readonly string[] = [
+  "আপনারা সবাই ভালো খেলেছেন। এবার অ্যাডোবি স্টক থেকে আয় করার কথা ভাবুন। আয় বাড়ান।",
+  "দারুণ খেলেছেন সবাই! এবার একসাথে ট্রেন্ডিং টপিকে ডিজাইন বানান, আয় বাড়বে।",
+  "সবাই চমৎকার খেলেছেন! এবার গিয়ে EPS ডিজাইন করুন — প্রতিটা বিক্রি মানেই আয়।",
+  "কী সুন্দর খেলা হলো! এবার এই সময়টা কাজে লাগিয়ে JPG বানান, অ্যাডোবি স্টকে আয় করুন।",
+  "আপনারা সবাই দারুণ! এবার ক্যালেন্ডারের সিজনাল টপিক দেখে অ্যাসেট বানান, আয় বাড়ান।",
+  "দারুণ টিম খেলা! এবার গিয়ে পোর্টফোলিও বড় করুন — বেশি ডিজাইন, বেশি আয়।",
+  "সবাই ভালো খেলেছেন! এবার টাইটেল আর কীওয়ার্ড ঠিক করে আপলোড দিন, বিক্রি বাড়বে।",
+  "চমৎকার ম্যাচ! এবার গিয়ে নতুন ডিজাইন বানান — আজকের আপলোড, আগামীর আয়।",
+  "আপনারা সবাই চ্যাম্পিয়ন! এবার অ্যাডোবি স্টকে নিয়মিত আপলোডের অভ্যাস করুন, আয় বাড়বে।",
+  "দারুণ খেলেছেন! এবার গিয়ে পুরনো ডিজাইনের নতুন ভার্সন বানান — এক ডিজাইন, বারবার আয়।",
+  "সবাই অসাধারণ খেলেছেন! এবার ট্রেন্ডিং নিশে একটা সেট বানিয়ে ফেলুন, আয় বাড়ান।",
+  "কী দারুণ খেলা! এবার গিয়ে দেখুন কোন ডিজাইন বিক্রি হলো, আর সেই ধারায় আরও বানান।",
 ];
 
 /** Win-screen nudge, shown from the 3rd session win onward in every
@@ -167,6 +192,35 @@ export function pickPostMatchLine(outcome: PostMatchOutcome, key: string): strin
   memoryLines.set(marker, idx);
   sessionSet(marker, String(idx));
   return pool[idx];
+}
+
+/** FNV-1a 32-bit hash: deterministic across clients, reloads and
+    browsers, so every player in a room resolves the same team line
+    for the same match key. */
+function hashTeamKey(key: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return h >>> 0;
+}
+
+/**
+ * Pick the shared team advice line for one finished room match. The
+ * pick is a pure function of `key` (room id + finish timestamp), so
+ * all players in the room see the SAME line, and re-renders, overlay
+ * re-opens and reloads never swap it. Different matches hash to
+ * different lines (pseudo-random spread over the pool).
+ *
+ * Deliberately NOT a random per-client pick with a no-repeat rule:
+ * each client's "previous line" differs, so a no-repeat adjustment
+ * would make players in the same room see different lines. The
+ * same-line-per-match guarantee takes precedence; consecutive
+ * matches repeat a line only by hash chance (1 in 12).
+ */
+export function pickTeamLine(key: string): string {
+  return TEAM_ADVICE_LINES[hashTeamKey(key) % TEAM_ADVICE_LINES.length];
 }
 
 /**

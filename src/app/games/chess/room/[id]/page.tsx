@@ -36,7 +36,7 @@ import { getSupabase } from "@/lib/supabase";
 import { LudoAvatar } from "@/components/LudoGame";
 import { ChessBoard, ChessMoveList, PieceView, type BoardMove } from "@/components/ChessBoard";
 import { GAME_CHAT_PREFILL_KEY } from "@/lib/zone-chat";
-import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, pickPostMatchLine, recordWin } from "@/lib/games/win-motivation";
+import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, pickPostMatchLine, pickTeamLine, recordWin } from "@/lib/games/win-motivation";
 import { capturedPieces, chessFromFen, gameOverFromHistory, materialDiff, START_FEN } from "@/lib/chess/position";
 import {
   chessSeatOf,
@@ -822,6 +822,11 @@ export default function ChessRoomPage() {
                 room.winner_id !== null && room.winner_id !== session.id ? "loss" : "win",
                 `chess:${room.id}:${room.updated_at}`,
               )}
+            </p>
+          )}
+          {isMember && (
+            <p className="mx-auto mt-2 max-w-md text-sm font-semibold" style={{ color: "var(--gold-deep)" }}>
+              {pickTeamLine(`chess:${room.id}:${room.updated_at}`)}
             </p>
           )}
           {iWonRoom && showNudge && (

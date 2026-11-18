@@ -11,6 +11,65 @@ export const START_OFFSETS: Record<LudoColor, number> = {
 
 export const SAFE_CELLS: number[] = [0, 8, 13, 21, 26, 34, 39, 47];
 
+/** Starting squares (one per colour) — safe under classic rules. */
+export const START_CELLS: number[] = [0, 13, 26, 39];
+
+/** Star squares — safe under classic rules. */
+export const STAR_CELLS: number[] = [8, 21, 34, 47];
+
+/**
+ * Configurable rule set. Classic defaults match the behaviour the
+ * game has always had; friends rooms always play classic (their
+ * stored states carry no rules field, which resolves to classic).
+ * Local games may customise via the pre-match settings panel; the
+ * rules are locked for the whole match once it starts.
+ */
+export interface LudoRules {
+  /** Tokens leave base only on a 6. Off: a 1 also brings a token out. */
+  entryOnSix: boolean;
+  /** Rolling a 6 earns another roll after the move. */
+  bonusOnSix: boolean;
+  /** Capturing an opponent earns another roll. */
+  bonusOnCapture: boolean;
+  /** Bringing a token home earns another roll. */
+  bonusOnHome: boolean;
+  /** A third consecutive 6 cancels the turn (the 6 can't be used). */
+  threeSixes: boolean;
+  /** Star squares (★) protect tokens from capture. */
+  safeStars: boolean;
+  /** Starting squares protect tokens from capture. */
+  safeStarts: boolean;
+  /** Two same-colour tokens on a square block opponents from passing
+      or landing on it. */
+  blockade: boolean;
+}
+
+export const CLASSIC_RULES: LudoRules = {
+  entryOnSix: true,
+  bonusOnSix: true,
+  bonusOnCapture: true,
+  bonusOnHome: true,
+  threeSixes: true,
+  safeStars: true,
+  safeStarts: true,
+  blockade: true,
+};
+
+/** Rules in force for a state — classic when the state predates the
+    rules field (all friends-room states). Never mutates the input. */
+export function resolveRules(state: LudoState): LudoRules {
+  return state.rules ?? CLASSIC_RULES;
+}
+
+/** Track cells that protect tokens under `rules`. Home lanes are
+    always safe (they are off-track) regardless of these toggles. */
+export function effectiveSafeCells(rules: LudoRules): number[] {
+  const cells: number[] = [];
+  if (rules.safeStarts) cells.push(...START_CELLS);
+  if (rules.safeStars) cells.push(...STAR_CELLS);
+  return cells;
+}
+
 export const TRACK_CELLS: [number, number][] = [
   [6, 1],
   [6, 2],
@@ -120,6 +179,11 @@ export interface LudoState {
   winner: number | null;
   move_no: number;
   lastBonus?: LudoBonus | null;
+  /** Rule set in force for this game. Absent = classic rules (all
+      friends-room states and every state created before the rules
+      field existed). Local games store their chosen rules here so
+      every transition — and every save/resume — uses the same rules. */
+  rules?: LudoRules;
 }
 
 export interface LudoMove {
@@ -134,7 +198,7 @@ function clonePlayers(players: LudoPlayerState[]): LudoPlayerState[] {
   return copy;
 }
 
-export function createGame(playerCount: 2 | 3 | 4): LudoState {
+export function createGame(playerCount: 2 | 3 | 4, rules?: LudoRules): LudoState {
   const players: LudoPlayerState[] = [];
   for (let i = 0; i < playerCount; i++) {
     players.push({ color: COLORS[i], tokens: [-1, -1, -1, -1] });
@@ -149,6 +213,7 @@ export function createGame(playerCount: 2 | 3 | 4): LudoState {
     winner: null,
     move_no: 0,
     lastBonus: null,
+    ...(rules ? { rules: { ...rules } } : {}),
   };
 }
 
@@ -166,6 +231,9 @@ export function trackIndex(color: LudoColor, progress: number): number | null {
  * home-column cells can never hold a blockade (single colour only).
  */
 export function blockadeCells(state: LudoState, playerIndex: number): number[] {
+  if (!resolveRules(state).blockade) {
+    return [];
+  }
   const blocked: number[] = [];
   for (let p = 0; p < state.players.length; p++) {
     if (p === playerIndex) {
@@ -209,7 +277,8 @@ function pathClear(
 }
 
 export function legalMoves(state: LudoState, roll: number): number[] {
-  if (roll === 6 && state.sixes >= 2) {
+  const rules = resolveRules(state);
+  if (rules.threeSixes && roll === 6 && state.sixes >= 2) {
     return [];
   }
   const player: LudoPlayerState = state.players[state.turn];
@@ -218,7 +287,8 @@ export function legalMoves(state: LudoState, roll: number): number[] {
   for (let i = 0; i < player.tokens.length; i++) {
     const progress: number = player.tokens[i];
     if (progress === -1) {
-      if (roll === 6) {
+      const canExit = roll === 6 || (!rules.entryOnSix && roll === 1);
+      if (canExit) {
         const destCell: number | null = trackIndex(player.color, 0);
         if (destCell === null || blocked.indexOf(destCell) === -1) {
           moves.push(i);
@@ -241,7 +311,7 @@ export function applyRoll(state: LudoState, roll: number): LudoState {
   if (state.phase !== "roll") {
     return state;
   }
-  if (roll === 6 && state.sixes >= 2) {
+  if (resolveRules(state).threeSixes && roll === 6 && state.sixes >= 2) {
     return {
       players: clonePlayers(state.players),
       turn: (state.turn + 1) % state.players.length,
@@ -252,6 +322,7 @@ export function applyRoll(state: LudoState, roll: number): LudoState {
       winner: state.winner,
       move_no: state.move_no + 1,
       lastBonus: "forfeit",
+      rules: state.rules,
     };
   }
   return {
@@ -264,6 +335,7 @@ export function applyRoll(state: LudoState, roll: number): LudoState {
     winner: state.winner,
     move_no: state.move_no + 1,
     lastBonus: state.lastBonus ?? null,
+    rules: state.rules,
   };
 }
 
@@ -272,6 +344,7 @@ export function applyMove(state: LudoState, move: LudoMove): LudoState {
     return state;
   }
   const roll: number = state.roll;
+  const rules = resolveRules(state);
   if (move.token === null) {
     return {
       players: clonePlayers(state.players),
@@ -283,6 +356,7 @@ export function applyMove(state: LudoState, move: LudoMove): LudoState {
       winner: state.winner,
       move_no: state.move_no + 1,
       lastBonus: null,
+      rules: state.rules,
     };
   }
   const legal: number[] = legalMoves(state, roll);
@@ -301,8 +375,9 @@ export function applyMove(state: LudoState, move: LudoMove): LudoState {
   }
   current.tokens[tokenIndex] = dest;
   let captured = false;
+  const safeCells = effectiveSafeCells(rules);
   const destCell: number | null = trackIndex(current.color, dest);
-  if (destCell !== null && SAFE_CELLS.indexOf(destCell) === -1) {
+  if (destCell !== null && safeCells.indexOf(destCell) === -1) {
     for (let p = 0; p < players.length; p++) {
       if (p === state.turn) {
         continue;
@@ -334,16 +409,21 @@ export function applyMove(state: LudoState, move: LudoMove): LudoState {
       winner: state.turn,
       move_no: state.move_no + 1,
       lastBonus: null,
+      rules: state.rules,
     };
   }
-  /* Extra turn: rolling a 6, capturing, or bringing a token home. The
-     three-six counter only counts consecutive sixes. */
+  /* Extra turn: rolling a 6, capturing, or bringing a token home —
+     each only when its rule toggle is on. The three-six counter only
+     counts consecutive sixes. The bonus label names the highest-
+     priority bonus actually granted (six > capture > home). */
   const reachedHome = dest === 57;
-  if (roll === 6 || captured || reachedHome) {
+  const keepTurn =
+    (roll === 6 && rules.bonusOnSix) || (captured && rules.bonusOnCapture) || (reachedHome && rules.bonusOnHome);
+  if (keepTurn) {
     let bonus: LudoBonus = "home";
-    if (roll === 6) {
+    if (roll === 6 && rules.bonusOnSix) {
       bonus = "six";
-    } else if (captured) {
+    } else if (captured && rules.bonusOnCapture) {
       bonus = "capture";
     }
     return {
@@ -356,6 +436,7 @@ export function applyMove(state: LudoState, move: LudoMove): LudoState {
       winner: state.winner,
       move_no: state.move_no + 1,
       lastBonus: bonus,
+      rules: state.rules,
     };
   }
   return {
@@ -368,6 +449,7 @@ export function applyMove(state: LudoState, move: LudoMove): LudoState {
     winner: state.winner,
     move_no: state.move_no + 1,
     lastBonus: null,
+    rules: state.rules,
   };
 }
 
@@ -413,6 +495,7 @@ export function botMove(state: LudoState, roll: number): number | null {
   if (legal.length === 0) {
     return null;
   }
+  const safeCells = effectiveSafeCells(resolveRules(state));
   const player: LudoPlayerState = state.players[state.turn];
   let bestToken: number | null = null;
   let bestScore: number = 0;
@@ -430,7 +513,7 @@ export function botMove(state: LudoState, roll: number): number | null {
     const destCell: number | null = trackIndex(player.color, dest);
     const fromCell: number | null = trackIndex(player.color, progress);
     /* Capture. */
-    if (destCell !== null && SAFE_CELLS.indexOf(destCell) === -1) {
+    if (destCell !== null && safeCells.indexOf(destCell) === -1) {
       let captures: boolean = false;
       for (let p = 0; p < state.players.length; p++) {
         if (p === state.turn) {
@@ -469,11 +552,11 @@ export function botMove(state: LudoState, roll: number): number | null {
       score -= 15;
     }
     /* Escape danger / avoid walking into danger. */
-    if (fromCell !== null && SAFE_CELLS.indexOf(fromCell) === -1 && cellThreatened(state, state.turn, fromCell)) {
+    if (fromCell !== null && safeCells.indexOf(fromCell) === -1 && cellThreatened(state, state.turn, fromCell)) {
       score += 30;
     }
     if (destCell !== null) {
-      if (SAFE_CELLS.indexOf(destCell) !== -1) {
+      if (safeCells.indexOf(destCell) !== -1) {
         score += 12;
       } else if (cellThreatened(state, state.turn, destCell)) {
         score -= 30;

@@ -1519,6 +1519,20 @@ html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spaci
   .ludo-pin-movable { animation: none; }
 }
 
+/* ---- Ludo: expanded touch target for movable tokens. The pin
+   itself is small on phones, so an invisible ::after pad extends
+   the tappable area to roughly 44px without moving the pin or
+   covering neighbouring cells (only movable tokens get it). ---- */
+.ludo-token-hitbox {
+  position: relative;
+}
+.ludo-token-hitbox::after {
+  content: "";
+  position: absolute;
+  inset: -12px -10px -4px -10px;
+  display: block;
+}
+
 /* ---- Ludo v2: token hop while moving (two identical keyframe sets so
    alternating classes restart the bounce on every step) ---- */
 @keyframes ludo-token-hop-kf-a {

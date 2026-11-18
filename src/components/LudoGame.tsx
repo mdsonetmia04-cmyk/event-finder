@@ -70,6 +70,51 @@ export interface LudoGameProps {
       exit button, and the dice prompt becomes a watching note. The
       caller also passes canRoll/canMove false and no chat. */
   spectator?: boolean;
+  /** Hop duration (ms) for step-by-step token movement. Defaults to
+      135 — the timing the game has always used. The local game
+      passes the value for the player's animation-speed setting. */
+  hopMs?: number;
+  /** Fly-home duration (ms) for a captured token's return to base.
+      Defaults to 550. See hopMs. */
+  flyHomeMs?: number;
+  /** Track cells that protect tokens, rendered with a star. Defaults
+      to the classic safe cells. The local game passes the effective
+      set for its chosen rules so the board always shows exactly the
+      squares the rules protect. */
+  safeCells?: number[];
+  /** Pass-and-play override for the turn prompts: when set, the
+      current seat is treated as a local player (turn chime, turn
+      dot, "tap the dice" prompts) regardless of the seat's isYou
+      flag. Omitted = the seat's isYou flag decides (rooms, 1P). */
+  localTurn?: boolean;
+  /** Outcome used for the post-match advice line. Omitted = a win
+      line when the viewing player won, a loss line otherwise. The
+      local game passes "win" for pass-and-play (a local player
+      always wins) and the 1P result otherwise. */
+  postMatchOutcome?: "win" | "loss";
+  /** Per-player token counts on the corner cards (tokens still in
+      base). Local games only; rooms omit it and keep the current
+      home-pips-only cards. */
+  showBaseCount?: boolean;
+  /** Match statistics table in the win overlay. Local games only;
+      rooms omit it. */
+  winStats?: LudoWinStats;
+}
+
+/** One row of the win-overlay statistics table (local games). */
+export interface LudoWinStatsRow {
+  name: string;
+  color: LudoColor;
+  moves: number;
+  captures: number;
+  sixes: number;
+  home: number;
+}
+
+export interface LudoWinStats {
+  rows: LudoWinStatsRow[];
+  /** Pre-formatted match duration, e.g. "4:32". */
+  durationLabel: string;
 }
 
 /** Round avatar: the player's picture, or a gold initial-letter circle. */
@@ -339,6 +384,9 @@ function Board({
   colorNames,
   capturedLabel,
   onAnimatingChange,
+  hopMs = HOP_MS,
+  flyHomeMs = FLY_HOME_MS,
+  safeCells = SAFE_CELLS,
 }: {
   state: LudoState;
   movable: number[];
@@ -347,6 +395,9 @@ function Board({
   colorNames: Record<LudoColor, string>;
   capturedLabel: string;
   onAnimatingChange: (animating: boolean) => void;
+  hopMs?: number;
+  flyHomeMs?: number;
+  safeCells?: number[];
 }) {
   /* Displayed token positions — animated toward the real state. */
   const [shown, setShown] = useState<ProgressGrid>(() => snapshot(state));
@@ -418,7 +469,7 @@ function Board({
           playTokenStep();
         }
         i++;
-        timersRef.current.push(window.setTimeout(runStep, HOP_MS));
+        timersRef.current.push(window.setTimeout(runStep, hopMs));
       } else {
         setHop(null);
         if (victims.length > 0) {
@@ -438,7 +489,7 @@ function Board({
               setFlyHome(new Set());
               setBurst(null);
               onAnimatingRef.current(false);
-            }, FLY_HOME_MS),
+            }, flyHomeMs),
           );
         } else {
           if (m.to === 57) {
@@ -574,7 +625,7 @@ function Board({
         {/* Track cells */}
         {TRACK_CELLS.map(([r, c], i) => {
           const start = startColorOf(i);
-          const safe = SAFE_CELLS.includes(i);
+          const safe = safeCells.includes(i);
           const arrow = HOME_ARROWS[i];
           return (
             <div
@@ -690,8 +741,8 @@ function Board({
                 /* The pin's tip plants on the cell centre. */
                 transform: "translate(-50%, -100%)",
                 transition: isFlying
-                  ? "left 0.55s ease-in-out, top 0.55s ease-in-out"
-                  : "left 0.13s ease-out, top 0.13s ease-out",
+                  ? `left ${flyHomeMs}ms ease-in-out, top ${flyHomeMs}ms ease-in-out`
+                  : `left ${hopMs}ms ease-out, top ${hopMs}ms ease-out`,
                 zIndex: isHopping ? 6 : isMovable ? 5 : 2,
               }}
             >
@@ -700,7 +751,7 @@ function Board({
                   type="button"
                   onClick={() => onToken(p.token)}
                   aria-label={`${colorNames[p.color]} ${p.token + 1}`}
-                  className={`pointer-events-auto ${pinClass}`}
+                  className={`ludo-token-hitbox pointer-events-auto ${pinClass}`}
                   style={{ cursor: "pointer" }}
                 >
                   {pin}
@@ -747,11 +798,14 @@ function PlayerCornerCard({
   meta,
   color,
   home,
+  base,
   active,
 }: {
   meta: LudoPlayerMeta;
   color: LudoColor;
   home: number;
+  /** Tokens still in base — shown only when provided (local games). */
+  base?: number;
   active: boolean;
 }) {
   const { t } = useLang();
@@ -783,6 +837,9 @@ function PlayerCornerCard({
             ))}
           </span>
           <span className="hidden min-[420px]:inline">{t.ludo.tokensHome(home)}</span>
+          {base !== undefined && (
+            <span className="hidden min-[420px]:inline">· {t.ludo.tokensBase(base)}</span>
+          )}
         </p>
       </div>
       {(meta.isYou || meta.isBot) && (
@@ -837,6 +894,13 @@ export default function LudoGame(props: LudoGameProps) {
     winIdentity,
     teamLineKey,
     spectator = false,
+    hopMs,
+    flyHomeMs,
+    safeCells,
+    localTurn,
+    postMatchOutcome,
+    showBaseCount = false,
+    winStats,
   } = props;
   const { t } = useLang();
 
@@ -899,7 +963,11 @@ export default function LudoGame(props: LudoGameProps) {
   const finished = state.phase === "finished";
   const turnMeta = metas[state.turn];
   const turnColor = state.players[state.turn]?.color ?? "red";
-  const isYourTurn = turnMeta?.isYou === true;
+  /* In pass-and-play the caller says the current seat is local; in
+     rooms and 1P the seat's isYou flag decides. The heading keeps
+     using the isYou flag so pass-and-play shows the player's name. */
+  const isYourTurn = localTurn ?? turnMeta?.isYou === true;
+  const isYouSeat = turnMeta?.isYou === true;
 
   /* Chime when the player's own turn begins (not on first render). */
   const prevTurnRef = useRef<{ turn: number; phase: string } | null>(null);
@@ -973,6 +1041,7 @@ export default function LudoGame(props: LudoGameProps) {
         meta={meta}
         color={color}
         home={state.players[i].tokens.filter((p) => p === 57).length}
+        base={showBaseCount ? state.players[i].tokens.filter((p) => p === -1).length : undefined}
         active={!finished && i === state.turn}
       />
     );
@@ -983,7 +1052,10 @@ export default function LudoGame(props: LudoGameProps) {
   const bottomRight = cornerCard("yellow");
 
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      style={{ touchAction: "manipulation", paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       {/* Turn indicator + timer */}
       <div className="card p-3">
         <div className="flex items-center gap-3">
@@ -995,7 +1067,7 @@ export default function LudoGame(props: LudoGameProps) {
               {isYourTurn && !finished && <span className="ludo-turn-dot" aria-hidden="true" />}
               {finished
                 ? t.ludo.winnerTitle
-                : isYourTurn
+                : isYouSeat
                   ? t.ludo.yourTurn
                   : t.ludo.turnOf(turnMeta?.name ?? "")}
             </p>
@@ -1094,6 +1166,9 @@ export default function LudoGame(props: LudoGameProps) {
                 colorNames={t.ludo.colors}
                 capturedLabel={t.ludo.capturedLabel}
                 onAnimatingChange={onAnimatingChange}
+                hopMs={hopMs}
+                flyHomeMs={flyHomeMs}
+                safeCells={safeCells}
               />
             </div>
             {(bottomLeft || bottomRight) && (
@@ -1150,7 +1225,7 @@ export default function LudoGame(props: LudoGameProps) {
             {!spectator && (
               <p className="mt-2 text-base font-bold" style={{ color: "var(--gold-deep)" }}>
                 {pickPostMatchLine(
-                  metas[state.winner]?.isYou ? "win" : "loss",
+                  postMatchOutcome ?? (metas[state.winner]?.isYou ? "win" : "loss"),
                   winIdentity ?? `ludo:finished:${state.move_no}:${state.winner}`,
                 )}
               </p>
@@ -1159,6 +1234,42 @@ export default function LudoGame(props: LudoGameProps) {
               <p className="mt-2 text-sm font-semibold" style={{ color: "var(--gold-deep)" }}>
                 {pickTeamLine(teamLineKey)}
               </p>
+            )}
+            {!spectator && winStats && (
+              <div className="mt-4 text-left">
+                <p className="text-center text-xs font-semibold tracking-wide uppercase" style={{ color: "var(--muted)" }}>
+                  {t.ludo.statsTitle} · {winStats.durationLabel}
+                </p>
+                <table className="mt-2 w-full text-xs">
+                  <thead>
+                    <tr style={{ color: "var(--muted)" }}>
+                      <th className="py-1 pr-2 text-left font-semibold">{t.ludo.statsPlayer}</th>
+                      <th className="py-1 text-center font-semibold">{t.ludo.statsMoves}</th>
+                      <th className="py-1 text-center font-semibold">{t.ludo.statsCaptures}</th>
+                      <th className="py-1 text-center font-semibold">{t.ludo.statsSixes}</th>
+                      <th className="py-1 text-center font-semibold">{t.ludo.statsHome}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {winStats.rows.map((row) => (
+                      <tr key={row.color} style={{ borderTop: "1px solid var(--line)" }}>
+                        <td className="py-1 pr-2 font-semibold">
+                          <span
+                            className="mr-1.5 inline-block h-2.5 w-2.5 rounded-full align-middle"
+                            style={{ background: COLOR_HEX[row.color] }}
+                            aria-hidden="true"
+                          />
+                          {row.name}
+                        </td>
+                        <td className="py-1 text-center tabular-nums">{row.moves}</td>
+                        <td className="py-1 text-center tabular-nums">{row.captures}</td>
+                        <td className="py-1 text-center tabular-nums">{row.sixes}</td>
+                        <td className="py-1 text-center tabular-nums">{row.home}/4</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
             {metas[state.winner]?.isYou && showNudge && (
               <p

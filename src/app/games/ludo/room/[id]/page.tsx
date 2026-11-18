@@ -144,6 +144,9 @@ export default function RoomPage() {
   const { t } = useLang();
   const { ready, session } = useAuth();
   const router = useRouter();
+  /* Stable id for fetchAll's deps: the session object identity must
+     never restart the poll interval. */
+  const sessionId = session?.id ?? null;
 
   const [room, setRoom] = useState<LudoRoom | null>(null);
   const [messages, setMessages] = useState<LudoMessage[]>([]);
@@ -177,15 +180,7 @@ export default function RoomPage() {
     if (!supabase || !roomId || fetchingRef.current) return;
     fetchingRef.current = true;
     try {
-      const [roomRes, msgRes] = await Promise.all([
-        supabase.from("ludo_rooms").select("*").eq("id", roomId).maybeSingle(),
-        supabase
-          .from("ludo_messages")
-          .select("*")
-          .eq("room_id", roomId)
-          .order("created_at", { ascending: false })
-          .limit(CHAT_LIMIT),
-      ]);
+      const roomRes = await supabase.from("ludo_rooms").select("*").eq("id", roomId).maybeSingle();
       if (!roomRes.error) {
         const freshRoom = roomRes.data ? parseRoom(roomRes.data) : null;
         if (!freshRoom) {
@@ -207,24 +202,42 @@ export default function RoomPage() {
           setStatus("ready");
         }
       }
-      if (!msgRes.error && msgRes.data) {
-        const parsed: LudoMessage[] = [];
-        for (const row of msgRes.data as unknown[]) {
-          const m = parseMessage(row);
-          if (m) parsed.push(m);
-        }
-        parsed.reverse();
-        setMessages((prev) => {
-          if (prev.length === parsed.length && prev[prev.length - 1]?.id === parsed[parsed.length - 1]?.id) {
-            return prev;
+      /* Room chat is players-only: fetch messages only when the viewer
+         holds a seat. Spectators never fetch them (the RLS policies
+         would deny them anyway) and never see the chat UI. The cached
+         room covers a failed room fetch, so a transient error can't
+         leak messages to a spectator or hide them from a player. */
+      const knownRoom = roomRef.current;
+      const memberNow =
+        !!sessionId && !!knownRoom && knownRoom.players.some((p) => p.user_id === sessionId);
+      if (memberNow) {
+        const msgRes = await supabase
+          .from("ludo_messages")
+          .select("*")
+          .eq("room_id", roomId)
+          .order("created_at", { ascending: false })
+          .limit(CHAT_LIMIT);
+        if (!msgRes.error && msgRes.data) {
+          const parsed: LudoMessage[] = [];
+          for (const row of msgRes.data as unknown[]) {
+            const m = parseMessage(row);
+            if (m) parsed.push(m);
           }
-          return parsed;
-        });
+          parsed.reverse();
+          setMessages((prev) => {
+            if (prev.length === parsed.length && prev[prev.length - 1]?.id === parsed[parsed.length - 1]?.id) {
+              return prev;
+            }
+            return parsed;
+          });
+        }
+      } else {
+        setMessages((prev) => (prev.length === 0 ? prev : []));
       }
     } finally {
       fetchingRef.current = false;
     }
-  }, [roomId]);
+  }, [roomId, sessionId]);
 
   useEffect(() => {
     if (status === "gone") return;

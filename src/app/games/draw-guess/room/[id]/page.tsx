@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Check, Clock, Copy, LogOut, PencilLine, Play, Send, Trophy, Users } from "lucide-react";
+import { ArrowLeft, Check, Clock, Copy, Eye, LogOut, PencilLine, Play, Send, Trophy, Users } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
@@ -282,10 +282,12 @@ export default function DrawRoomPage() {
     void channel.send({ type: "broadcast", event: "draw", payload: ev });
   }, []);
 
-  /* Room chat: load the last 50 messages, then stay live on INSERTs
-     (GameChat pattern; the subscription is filtered to this room). */
+  /* Room chat: players only. The effect never mounts for
+     spectators, so they neither fetch nor subscribe to room messages
+     (the RLS policies would deny them anyway). It mounts when a
+     waiting-room viewer joins and becomes a member. */
   useEffect(() => {
-    if (!ready || !session || !roomId) return;
+    if (!ready || !session || !roomId || !isMember) return;
     const supabase = getSupabase();
     if (!supabase) return;
     let cancelled = false;
@@ -326,7 +328,7 @@ export default function DrawRoomPage() {
       cancelled = true;
       supabase.removeChannel(channel);
     };
-  }, [ready, session, roomId]);
+  }, [ready, session, roomId, isMember]);
 
   /* Wipe the canvas when a new round starts (or the game resets). The
      drawing stays visible through the reveal phase of the same round. */
@@ -557,8 +559,25 @@ export default function DrawRoomPage() {
 
   const chatNode = <RoomChat messages={messages} sessionId={session.id} onSend={sendChat} />;
 
-  /* Non-member view of a room: offer to join a waiting room. */
-  if (!isMember) {
+  const spectatorBanner = (
+    <div
+      className="card flex items-start gap-3 p-4"
+      style={{ background: "color-mix(in srgb, var(--gold) 8%, var(--card))" }}
+    >
+      <Eye size={19} className="mt-0.5 shrink-0" style={{ color: "var(--gold-deep)" }} aria-hidden="true" />
+      <div>
+        <p className="text-sm font-semibold">{t.draw.spectatorBanner}</p>
+        <p className="mt-0.5 text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
+          {t.draw.spectatorNote}
+        </p>
+      </div>
+    </div>
+  );
+
+  /* Non-member view of a WAITING room: offer to join. Non-members
+     opening a playing or finished room fall through to the spectator
+     views below — live canvas + scores, no controls, no chat. */
+  if (!isMember && room.status === "waiting") {
     const seatFree =
       room.status === "waiting" && room.players.length < room.max_players && isDrawRoomFresh(room.updated_at, Date.now());
     return (
@@ -673,12 +692,15 @@ export default function DrawRoomPage() {
     );
   }
 
-  /* Finished view: final scoreboard. */
+  /* Finished view: final scoreboard. Spectators see the same
+     scoreboard but no post-match line, no nudge and no Play Again —
+     they didn't play. */
   if (room.status === "finished") {
     const ranked = [...room.players].sort((a, b) => b.score - a.score || a.seat - b.seat);
     const winner = ranked[0];
     return (
       <div className="mx-auto flex max-w-3xl flex-col gap-4">
+        {!isMember && spectatorBanner}
         <div className="card p-5 sm:p-6">
           <h1 className="font-serif-d flex items-center gap-2 text-2xl font-semibold">
             <Trophy size={22} style={{ color: "var(--gold-deep)" }} aria-hidden="true" />
@@ -689,7 +711,7 @@ export default function DrawRoomPage() {
               {winner.user_id === session.id ? t.draw.youWon : t.draw.winnerWon(winner.name)}
             </p>
           )}
-          {winner && (
+          {isMember && winner && (
             <p className="mt-2 text-base font-bold" style={{ color: "var(--gold-deep)" }}>
               {pickPostMatchLine(
                 winner.user_id === session.id ? "win" : "loss",
@@ -697,7 +719,7 @@ export default function DrawRoomPage() {
               )}
             </p>
           )}
-          {winner && winner.user_id === session.id && showNudge && (
+          {isMember && winner && winner.user_id === session.id && showNudge && (
             <p
               className="mt-3 rounded-xl px-3 py-2 text-sm font-semibold"
               style={{ background: "var(--surface2)", color: "var(--gold-deep)" }}
@@ -723,14 +745,23 @@ export default function DrawRoomPage() {
             ))}
           </div>
           <div className="mt-5 flex flex-wrap gap-2">
-            <button type="button" className="btn btn-gold" onClick={() => void playAgain()} disabled={playingAgain}>
-              <Play size={17} aria-hidden="true" />
-              {t.draw.playAgain}
-            </button>
-            <button type="button" className="btn btn-ghost" onClick={() => router.push("/games/draw-guess")}>
-              <LogOut size={16} aria-hidden="true" />
-              {t.draw.leaveRoom}
-            </button>
+            {isMember ? (
+              <>
+                <button type="button" className="btn btn-gold" onClick={() => void playAgain()} disabled={playingAgain}>
+                  <Play size={17} aria-hidden="true" />
+                  {t.draw.playAgain}
+                </button>
+                <button type="button" className="btn btn-ghost" onClick={() => router.push("/games/draw-guess")}>
+                  <LogOut size={16} aria-hidden="true" />
+                  {t.draw.leaveRoom}
+                </button>
+              </>
+            ) : (
+              <button type="button" className="btn btn-ghost" onClick={() => router.push("/games/draw-guess")}>
+                <ArrowLeft size={16} aria-hidden="true" />
+                {t.draw.backToLobby}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -754,6 +785,11 @@ export default function DrawRoomPage() {
           {actionError}
         </p>
       )}
+      {/* Spectators watch the same live board: the phase panel below
+          already shows the guesser-safe view (hint, never the word —
+          the RPC hides current_word from non-drawers), the canvas is
+          read-only, and there is no guess box or chat. */}
+      {!isMember && spectatorBanner}
 
       {/* Board + chat: beside the board on desktop, below it on mobile (Ludo layout). */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
@@ -874,8 +910,9 @@ export default function DrawRoomPage() {
           <section className="card p-4">
             <DrawCanvas ref={canvasRef} editable={canDraw} onLocalEvent={sendDrawEvent} />
 
-            {/* Guess box: guessers only, while drawing, until they guess it. */}
-            {room.phase === "drawing" && !amDrawer && (
+            {/* Guess box: seated guessers only, while drawing, until
+                they guess it. Spectators never see it. */}
+            {room.phase === "drawing" && !amDrawer && isMember && (
               <div className="mt-4">
                 {iGuessed ? (
                   <p className="rounded-xl px-3 py-2 text-center text-sm font-semibold" style={{ background: "var(--surface2)" }}>
@@ -915,18 +952,27 @@ export default function DrawRoomPage() {
             )}
           </section>
         </div>
-        <div className="w-full lg:w-[340px] lg:shrink-0">{chatNode}</div>
+        {isMember && <div className="w-full lg:w-[340px] lg:shrink-0">{chatNode}</div>}
       </div>
 
-      <div className="card p-4">
-        <p className="text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
-          {t.draw.leaveGameNote}
-        </p>
-        <button type="button" className="btn btn-ghost mt-3" onClick={() => router.push("/games/draw-guess")}>
-          <LogOut size={16} aria-hidden="true" />
-          {t.draw.leaveRoom}
-        </button>
-      </div>
+      {isMember ? (
+        <div className="card p-4">
+          <p className="text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
+            {t.draw.leaveGameNote}
+          </p>
+          <button type="button" className="btn btn-ghost mt-3" onClick={() => router.push("/games/draw-guess")}>
+            <LogOut size={16} aria-hidden="true" />
+            {t.draw.leaveRoom}
+          </button>
+        </div>
+      ) : (
+        <div>
+          <button type="button" className="btn btn-ghost" onClick={() => router.push("/games/draw-guess")}>
+            <ArrowLeft size={16} aria-hidden="true" />
+            {t.draw.backToLobby}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
   Bot,
   Circle,
   Crown,
+  Eye,
   HelpCircle,
   MoveUpRight,
   PencilLine,
@@ -168,10 +169,19 @@ export default function GamesPage() {
             <Bot size={17} aria-hidden="true" />
             {t.games.playVsComputer}
           </Link>
-          <Link href="/games/ludo/friends" className="btn btn-ghost flex-1">
-            <Users size={17} aria-hidden="true" />
-            {t.games.playWithFriends}
-          </Link>
+          {/* Watch-live sits directly above Play-with-friends: the
+              right column stacks on desktop, and the whole row
+              stacks on mobile — the order never changes. */}
+          <div className="flex flex-1 flex-col gap-2">
+            <Link href="/games/live" className="btn btn-ghost flex-1">
+              <Eye size={17} aria-hidden="true" />
+              {t.liveWatch.button}
+            </Link>
+            <Link href="/games/ludo/friends" className="btn btn-ghost flex-1">
+              <Users size={17} aria-hidden="true" />
+              {t.games.playWithFriends}
+            </Link>
+          </div>
         </div>
       </article>
 

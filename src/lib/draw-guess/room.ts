@@ -73,6 +73,26 @@ export interface DrawRoomLookup {
   updated_at: string;
 }
 
+/** One player row inside a list_live_draw_rooms() result: the same
+    spectator-safe fields get_draw_room() already exposes to
+    non-members — name, avatar, score, seat. No word, ever. */
+export interface DrawLivePlayer {
+  user_id: string;
+  name: string;
+  avatar_url: string | null;
+  score: number;
+  seat: number;
+}
+
+/** One row from the list_live_draw_rooms() RPC (migration v24): a
+    playing room for the /games/live spectator list. */
+export interface DrawLiveRoom {
+  id: string;
+  code: string;
+  updated_at: string;
+  players: DrawLivePlayer[];
+}
+
 /** One row of the per-room chat — mirrors ludo_messages (migration
     v11). Row shape mirrors supabase/add-draw-chat.sql (migration v21):
     the sender's name/avatar are snapshotted at send time. */
@@ -182,6 +202,29 @@ export function parseDrawRoomLookup(row: unknown): DrawRoomLookup | null {
     max_players: row.max_players,
     updated_at: row.updated_at,
   };
+}
+
+/** Validate an untyped list_live_draw_rooms() row, or null. */
+export function parseLiveDrawRoom(row: unknown): DrawLiveRoom | null {
+  if (!isRecord(row)) return null;
+  if (typeof row.id !== "string" || typeof row.code !== "string") return null;
+  if (typeof row.updated_at !== "string") return null;
+  if (!Array.isArray(row.players)) return null;
+  const players: DrawLivePlayer[] = [];
+  for (const entry of row.players) {
+    if (!isRecord(entry)) return null;
+    if (typeof entry.user_id !== "string" || typeof entry.name !== "string") return null;
+    if (entry.avatar_url !== null && typeof entry.avatar_url !== "string") return null;
+    if (typeof entry.score !== "number" || typeof entry.seat !== "number") return null;
+    players.push({
+      user_id: entry.user_id,
+      name: entry.name,
+      avatar_url: entry.avatar_url,
+      score: entry.score,
+      seat: entry.seat,
+    });
+  }
+  return { id: row.id, code: row.code, updated_at: row.updated_at, players };
 }
 
 /** Validate an untyped draw_messages row (initial load or realtime

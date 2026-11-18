@@ -8,6 +8,7 @@ import {
   ArrowRight,
   ArrowUp,
   Bot,
+  Circle,
   HelpCircle,
   MoveUpRight,
   PencilLine,
@@ -266,6 +267,52 @@ export default function GamesPage() {
             {t.games.arrowsDesc}
           </p>
           <Link href="/games/arrows-out" className="btn btn-gold mt-4 w-full">
+            <Play size={17} aria-hidden="true" />
+            {t.games.playNow}
+          </Link>
+        </article>
+
+        {/* Bubble Shooter card: bubble-cluster badge + blue wash + watermark bubble. */}
+        <article
+          className="card card-hover relative flex flex-col overflow-hidden p-5"
+          style={{
+            background:
+              "linear-gradient(160deg, color-mix(in srgb, #3E7BFA 8%, var(--card)), var(--card) 55%)",
+          }}
+        >
+          {/* Oversized bubble watermark — the shooter motif. */}
+          <Circle
+            size={96}
+            className="pointer-events-none absolute -top-4 right-3"
+            style={{ color: "color-mix(in srgb, #3E7BFA 10%, transparent)" }}
+            aria-hidden="true"
+          />
+          <div className="relative flex items-start justify-between gap-3">
+            {/* Three glossy mini bubbles in a cluster, matching the in-game palette. */}
+            <span
+              className="relative h-11 w-11 shrink-0"
+              style={{ filter: "drop-shadow(0 6px 8px rgba(62, 123, 250, 0.35))" }}
+              aria-hidden="true"
+            >
+              <span
+                className="absolute left-1/2 top-0 h-6 w-6 -translate-x-1/2 rounded-full"
+                style={{ background: "radial-gradient(circle at 32% 30%, #F6B0B3 0%, #E5484D 55%, #9B1C21 100%)" }}
+              />
+              <span
+                className="absolute bottom-0 left-0 h-6 w-6 rounded-full"
+                style={{ background: "radial-gradient(circle at 32% 30%, #F5D9A3 0%, #D9A044 55%, #8A5A12 100%)" }}
+              />
+              <span
+                className="absolute bottom-0 right-0 h-6 w-6 rounded-full"
+                style={{ background: "radial-gradient(circle at 32% 30%, #A8C4F8 0%, #3E7BFA 55%, #1C3F9B 100%)" }}
+              />
+            </span>
+          </div>
+          <h3 className="font-serif-d mt-3 text-lg font-semibold">{t.games.bubbleTitle}</h3>
+          <p className="mt-1 flex-1 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
+            {t.games.bubbleDesc}
+          </p>
+          <Link href="/games/bubble-shooter" className="btn btn-gold mt-4 w-full">
             <Play size={17} aria-hidden="true" />
             {t.games.playNow}
           </Link>

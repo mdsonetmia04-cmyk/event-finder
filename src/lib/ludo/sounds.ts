@@ -210,3 +210,65 @@ export function playWinFanfare(): void {
 export function playButtonClick(): void {
   tone({ freq: 500, freqEnd: 380, type: "sine", dur: 0.05, vol: 0.22 });
 }
+
+/* ---- Bubble Shooter effects (same synth style, no audio files). ---- */
+
+/** Guard against clipping when a big cascade fires many pop sounds
+    at once: at most 4 pop calls per 120ms window. */
+let popCallTimes: number[] = [];
+
+function popAllowed(): boolean {
+  const now = Date.now();
+  popCallTimes = popCallTimes.filter((t) => now - t < 120);
+  if (popCallTimes.length >= 4) return false;
+  popCallTimes.push(now);
+  return true;
+}
+
+/** Whoosh + blip when a bubble launches. */
+export function playBubbleShoot(): void {
+  noise({ dur: 0.12, vol: 0.3, freq: 1400, q: 0.7 });
+  tone({ freq: 300, freqEnd: 900, type: "sine", dur: 0.12, vol: 0.3 });
+}
+
+/** Bright pop; pitch rises a semitone per combo step. */
+export function playBubblePop(comboStep: number): void {
+  if (!popAllowed()) return;
+  const base = 520 * Math.pow(2, Math.min(comboStep, 8) / 12);
+  tone({ freq: base, freqEnd: base * 1.5, type: "sine", dur: 0.1, vol: 0.38 });
+  noise({ dur: 0.05, vol: 0.18, freq: 3200, q: 0.8 });
+}
+
+/** Short tick when the flying ball bounces off a wall. */
+export function playBubbleBounce(): void {
+  tone({ freq: 900, freqEnd: 700, type: "sine", dur: 0.05, vol: 0.25 });
+  noise({ dur: 0.025, vol: 0.12, freq: 2600, q: 1 });
+}
+
+/** Falling whistle when a cut-off cluster drops. */
+export function playBubbleDrop(): void {
+  tone({ freq: 800, freqEnd: 200, type: "sine", dur: 0.3, vol: 0.28 });
+  noise({ dur: 0.2, vol: 0.12, freq: 900, q: 0.6 });
+}
+
+/** Low warning thud when the ceiling pushes a new row in. */
+export function playCeilingPush(): void {
+  tone({ freq: 140, freqEnd: 60, type: "square", dur: 0.25, vol: 0.25 });
+  noise({ dur: 0.15, vol: 0.2, freq: 300, q: 0.6 });
+  tone({ freq: 320, freqEnd: 180, type: "sine", at: 0.08, dur: 0.18, vol: 0.2 });
+}
+
+/** Bass drop + noise wash for avalanches (8+ balls dropping). */
+export function playAvalanche(): void {
+  tone({ freq: 220, freqEnd: 40, type: "sawtooth", dur: 0.4, vol: 0.3 });
+  noise({ dur: 0.35, vol: 0.3, freq: 500, q: 0.5 });
+  tone({ freq: 660, freqEnd: 990, type: "sine", at: 0.15, dur: 0.2, vol: 0.25 });
+}
+
+/** Descending minor phrase when the bubbles cross the danger line. */
+export function playLose(): void {
+  const notes = [392, 370, 349, 311];
+  notes.forEach((f, i) => {
+    tone({ freq: f, type: "triangle", at: i * 0.14, dur: 0.22, vol: 0.32 });
+  });
+}

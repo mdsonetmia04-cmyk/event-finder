@@ -9,6 +9,7 @@ import {
   ArrowUp,
   Bot,
   Circle,
+  Crown,
   HelpCircle,
   MoveUpRight,
   PencilLine,
@@ -58,6 +59,25 @@ function MiniBoard() {
         />
       ))}
     </div>
+  );
+}
+
+/** Decorative CSS mini chess board: 4x4 wood-tone checkerboard. */
+function MiniChessboard() {
+  return (
+    <span
+      className="grid h-11 w-11 shrink-0 grid-cols-4 overflow-hidden rounded-full"
+      style={{ boxShadow: "0 6px 14px -6px rgba(124, 79, 39, 0.55)" }}
+      aria-hidden="true"
+    >
+      {Array.from({ length: 16 }, (_, i) => {
+        const r = Math.floor(i / 4);
+        const c = i % 4;
+        return (
+          <span key={i} style={{ background: (r + c) % 2 === 0 ? "#EBD0A0" : "#9C6B41" }} />
+        );
+      })}
+    </span>
   );
 }
 
@@ -313,6 +333,34 @@ export default function GamesPage() {
             {t.games.bubbleDesc}
           </p>
           <Link href="/games/bubble-shooter" className="btn btn-gold mt-4 w-full">
+            <Play size={17} aria-hidden="true" />
+            {t.games.playNow}
+          </Link>
+        </article>
+
+        {/* Chess card: checkerboard badge + crown + wood-tone wash. */}
+        <article
+          className="card card-hover relative flex flex-col overflow-hidden p-5"
+          style={{
+            background:
+              "linear-gradient(160deg, color-mix(in srgb, #9C6B41 10%, var(--card)), var(--card) 55%)",
+          }}
+        >
+          {/* Oversized crown watermark — the chess motif. */}
+          <Crown
+            size={96}
+            className="pointer-events-none absolute -top-4 right-3"
+            style={{ color: "color-mix(in srgb, #9C6B41 12%, transparent)" }}
+            aria-hidden="true"
+          />
+          <div className="relative flex items-start justify-between gap-3">
+            <MiniChessboard />
+          </div>
+          <h3 className="font-serif-d mt-3 text-lg font-semibold">{t.games.chessTitle}</h3>
+          <p className="mt-1 flex-1 text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
+            {t.games.chessDesc}
+          </p>
+          <Link href="/games/chess" className="btn btn-gold mt-4 w-full">
             <Play size={17} aria-hidden="true" />
             {t.games.playNow}
           </Link>

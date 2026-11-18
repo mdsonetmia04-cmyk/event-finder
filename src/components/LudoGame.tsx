@@ -59,6 +59,11 @@ export interface LudoGameProps {
       each identity once, so reloads showing the same finished game
       never double-count. Omit to disable win counting. */
   winIdentity?: string;
+  /** Spectator mode: the board renders live but the viewer cannot
+      roll, move, or reset the game. The win overlay shows only the
+      exit button, and the dice prompt becomes a watching note. The
+      caller also passes canRoll/canMove false and no chat. */
+  spectator?: boolean;
 }
 
 /** Round avatar: the player's picture, or a gold initial-letter circle. */
@@ -701,6 +706,7 @@ export default function LudoGame(props: LudoGameProps) {
     exitLabel,
     chat,
     winIdentity,
+    spectator = false,
   } = props;
   const { t } = useLang();
 
@@ -982,9 +988,9 @@ export default function LudoGame(props: LudoGameProps) {
                 onRoll={handleRoll}
               />
             </div>
-            <p className="text-sm font-semibold">{t.ludo.rollDice}</p>
+            <p className="text-sm font-semibold">{spectator ? t.ludo.spectating : t.ludo.rollDice}</p>
             <p className="text-center text-xs" style={{ color: "var(--muted)" }}>
-              {t.ludo.firstWinnerNote} {t.ludo.rollSixToStart}
+              {spectator ? t.ludo.spectatingNote : `${t.ludo.firstWinnerNote} ${t.ludo.rollSixToStart}`}
             </p>
           </div>
         </div>
@@ -1017,9 +1023,11 @@ export default function LudoGame(props: LudoGameProps) {
               </p>
             )}
             <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-              <button type="button" className="btn btn-gold" onClick={onPlayAgain}>
-                {t.ludo.playAgain}
-              </button>
+              {!spectator && (
+                <button type="button" className="btn btn-gold" onClick={onPlayAgain}>
+                  {t.ludo.playAgain}
+                </button>
+              )}
               <button type="button" className="btn btn-ghost" onClick={onExit}>
                 {exitLabel}
               </button>

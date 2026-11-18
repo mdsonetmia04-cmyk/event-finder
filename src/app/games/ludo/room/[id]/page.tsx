@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Check, Copy, LogOut, Play, Send, Users } from "lucide-react";
+import { ArrowLeft, Check, Copy, Eye, LogOut, Play, Send, Users } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
@@ -20,6 +20,7 @@ import {
 import {
   COLOR_HEX,
   isRoomFresh,
+  normalizeRoomCode,
   parseMessage,
   parseRoom,
   seatIndex,
@@ -155,6 +156,7 @@ export default function RoomPage() {
   const [leaving, setLeaving] = useState(false);
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [joinCode, setJoinCode] = useState("");
 
   const roomRef = useRef<LudoRoom | null>(null);
   const fetchingRef = useRef(false);
@@ -460,6 +462,18 @@ export default function RoomPage() {
     setJoining(false);
   };
 
+  /* Spectator "Join as player": the code IS the invite — it must
+     match this room's code before the guarded seat-taking join runs. */
+  const joinAsPlayer = async () => {
+    const cur = roomRef.current;
+    if (!cur) return;
+    if (normalizeRoomCode(joinCode) !== cur.code) {
+      setJoinError(t.ludo.wrongCode);
+      return;
+    }
+    await joinThisRoom();
+  };
+
   const playAgain = async () => {
     const supabase = getSupabase();
     if (!supabase) return;
@@ -565,29 +579,129 @@ export default function RoomPage() {
 
   const chatNode = <RoomChat messages={messages} sessionId={session.id} onSend={sendChat} />;
 
-  /* Non-member view of a waiting room: offer to join. */
+  const spectatorBanner = (
+    <div
+      className="card flex items-start gap-3 p-4"
+      style={{ background: "color-mix(in srgb, var(--gold) 8%, var(--card))" }}
+    >
+      <Eye size={19} className="mt-0.5 shrink-0" style={{ color: "var(--gold-deep)" }} aria-hidden="true" />
+      <div>
+        <p className="text-sm font-semibold">{t.ludo.spectating}</p>
+        <p className="mt-0.5 text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
+          {t.ludo.spectatingNote}
+        </p>
+      </div>
+    </div>
+  );
+
+  /* Spectator view: anyone without a seat watches the live game — no
+     controls, no room chat. A waiting room also offers "Join as
+     player" behind the room code (the invite). */
   if (!isMember) {
     const seatFree = room.status === "waiting" && room.players.length < room.max_players && isRoomFresh(room, Date.now());
-    return (
-      <div className="mx-auto flex max-w-xl flex-col gap-4">
-        <div className="card p-5">
-          <p className="text-sm font-medium">{seatFree ? t.ludo.waitingTitle : t.ludo.notMember}</p>
-          <p className="mt-2 font-mono text-3xl font-bold tracking-[0.3em]">{room.code}</p>
-          <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>
-            {t.ludo.seatsTaken(room.players.length, room.max_players)}
-          </p>
-          {joinError && (
-            <p role="alert" className="mt-2 text-sm font-medium" style={{ color: "#C44D45" }}>
-              {joinError}
+    if (room.status === "waiting" || !state) {
+      return (
+        <div className="mx-auto flex max-w-xl flex-col gap-4">
+          {spectatorBanner}
+          <div className="card p-5">
+            <p className="text-sm font-medium">{t.ludo.waitingTitle}</p>
+            <p className="mt-2 font-mono text-3xl font-bold tracking-[0.3em]">{room.code}</p>
+            <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>
+              {t.ludo.seatsTaken(room.players.length, room.max_players)}
             </p>
-          )}
-          {seatFree && (
-            <button type="button" className="btn btn-gold mt-4" onClick={() => void joinThisRoom()} disabled={joining}>
-              {joining ? t.ludo.joining : t.ludo.joinRoom}
-            </button>
-          )}
+            <div className="mt-4 grid gap-2">
+              {room.players.map((p) => (
+                <div
+                  key={p.user_id}
+                  className="flex items-center gap-3 rounded-xl px-3 py-2"
+                  style={{ background: "var(--surface2)" }}
+                >
+                  <LudoAvatar url={p.avatar_url} name={p.name} size={36} ringColor={COLOR_HEX[p.color]} />
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">{p.name}</span>
+                  <span className="chip">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: COLOR_HEX[p.color] }} aria-hidden="true" />
+                    {t.ludo.colors[p.color]}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {seatFree && (
+              <div className="mt-5">
+                <p className="text-sm font-medium">{t.ludo.enterCodeToJoin}</p>
+                <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                  <input
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                    placeholder={t.ludo.codePh}
+                    maxLength={6}
+                    autoCapitalize="characters"
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="min-w-0 flex-1 rounded-full border px-4 py-2.5 text-center text-lg font-bold tracking-[0.3em] uppercase outline-none"
+                    style={{ borderColor: "var(--line)", background: "var(--surface)", color: "var(--text)" }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-gold"
+                    onClick={() => void joinAsPlayer()}
+                    disabled={joining || joinCode.trim().length === 0}
+                  >
+                    {joining ? t.ludo.joining : t.ludo.joinAsPlayer}
+                  </button>
+                </div>
+                {joinError && (
+                  <p role="alert" className="mt-2 text-sm font-medium" style={{ color: "#C44D45" }}>
+                    {joinError}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+          <button type="button" className="btn btn-ghost self-start" onClick={() => router.push("/games/ludo/friends")}>
+            <ArrowLeft size={16} aria-hidden="true" />
+            {t.ludo.backToLobby}
+          </button>
         </div>
-        <button type="button" className="btn btn-ghost" onClick={() => router.push("/games/ludo/friends")}>
+      );
+    }
+
+    /* Spectating a live or finished game: the board, the dice and the
+       turn indicator render live; nothing is clickable and no chat
+       renders. The turn timer still runs so timed-out turns keep
+       auto-playing for the players. */
+    const watchMetas: LudoPlayerMeta[] = room.players.map((p) => ({
+      name: p.name,
+      avatar_url: p.avatar_url,
+      isBot: false,
+      isYou: false,
+    }));
+    return (
+      <div className="mx-auto flex max-w-5xl flex-col gap-4">
+        {spectatorBanner}
+        {syncError && (
+          <p role="alert" className="card p-3 text-sm font-medium" style={{ color: "#C44D45" }}>
+            {t.ludo.syncError}
+          </p>
+        )}
+        <LudoGame
+          state={state}
+          metas={watchMetas}
+          canRoll={false}
+          canMove={false}
+          movable={[]}
+          diceRolling={diceRolling}
+          timerKey={state.move_no}
+          timerSeconds={30}
+          timerActive={state.phase !== "finished"}
+          onRoll={() => {}}
+          onToken={() => {}}
+          onTimeout={handleTimeout}
+          onPlayAgain={() => {}}
+          onExit={() => router.push("/games/ludo/friends")}
+          exitLabel={t.ludo.backToLobby}
+          spectator
+        />
+        <button type="button" className="btn btn-ghost self-start" onClick={() => router.push("/games/ludo/friends")}>
           <ArrowLeft size={16} aria-hidden="true" />
           {t.ludo.backToLobby}
         </button>

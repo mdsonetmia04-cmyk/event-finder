@@ -1,0 +1,10 @@
+Chess piece images in this folder (wk/wq/wr/wb/wn/wp/bk/bq/br/bb/bn/bp.svg)
+are the "Cburnett" chess set, fetched from Wikimedia Commons and bundled
+locally so the game has no runtime CDN dependency.
+
+Author: Cburnett (Wikipedia user).
+Source: https://commons.wikimedia.org/wiki/Category:Chess_pieces_by_Cburnett
+Licence: multi-licensed under the GNU Free Documentation License (GFDL),
+the BSD licence, and the GNU General Public License (GPL) — see the file
+description pages on Wikimedia Commons. Redistribution with this
+attribution is permitted under any of those licences.

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, RefreshCw, Users } from "lucide-react";
+import { ArrowLeft, Eye, Plus, RefreshCw, Users } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
@@ -282,8 +282,6 @@ export default function FriendsLobbyPage() {
           <div className="mt-3 grid gap-3">
             {rooms.map((room) => {
               const creator = room.players[0];
-              const isMember = room.players.some((p) => p.user_id === session.id);
-              const full = room.players.length >= room.max_players;
               return (
                 <article key={room.id} className="card flex flex-wrap items-center gap-3 p-4">
                   {creator && <LudoAvatar url={creator.avatar_url} name={creator.name} size={40} />}
@@ -309,13 +307,16 @@ export default function FriendsLobbyPage() {
                       </span>
                     </p>
                   </div>
+                  {/* Open rooms open as a spectator view; joining as a
+                      player happens only via the join-by-code flow —
+                      the code IS the invite. */}
                   <button
                     type="button"
                     className="btn btn-gold"
-                    disabled={joining || (full && !isMember)}
-                    onClick={() => void joinRoom(room.id)}
+                    onClick={() => router.push(`/games/ludo/room/${room.id}`)}
                   >
-                    {joining ? t.ludo.joining : t.ludo.join}
+                    <Eye size={16} aria-hidden="true" />
+                    {t.ludo.watch}
                   </button>
                 </article>
               );

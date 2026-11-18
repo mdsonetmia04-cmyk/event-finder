@@ -13,7 +13,7 @@
    via a per-win marker. A new game/replay/level is a new identity and
    counts again. */
 
-export type WinGameId = "bubble-shooter" | "arrows-out" | "quiz-battle" | "ludo" | "draw-guess";
+export type WinGameId = "bubble-shooter" | "arrows-out" | "quiz-battle" | "ludo" | "draw-guess" | "chess";
 
 /** Bengali motivation lines for Bubble Shooter wins, shown verbatim in
     both language modes. One random line per win. */

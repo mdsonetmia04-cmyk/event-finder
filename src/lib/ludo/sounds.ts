@@ -272,3 +272,32 @@ export function playLose(): void {
     tone({ freq: f, type: "triangle", at: i * 0.14, dur: 0.22, vol: 0.32 });
   });
 }
+
+/* ---- Chess effects (same synth style, no audio files). ---- */
+
+/** Woody knock when a piece lands on a square. */
+export function playChessMove(): void {
+  tone({ freq: 260, freqEnd: 170, type: "triangle", dur: 0.08, vol: 0.42 });
+  noise({ dur: 0.03, vol: 0.2, freq: 1800, q: 1 });
+}
+
+/** Sharper thud + sweep when a piece is captured. */
+export function playChessCapture(): void {
+  tone({ freq: 420, freqEnd: 110, type: "triangle", dur: 0.16, vol: 0.42 });
+  noise({ dur: 0.1, vol: 0.3, freq: 800, q: 0.7 });
+  tone({ freq: 240, freqEnd: 150, type: "sine", at: 0.04, dur: 0.1, vol: 0.3 });
+}
+
+/** Bright two-note alert when a king is put in check. */
+export function playChessCheck(): void {
+  tone({ freq: 880, type: "sine", dur: 0.12, vol: 0.34 });
+  tone({ freq: 1174, type: "sine", at: 0.1, dur: 0.18, vol: 0.3 });
+}
+
+/** Short rising fanfare when a chess game is won. */
+export function playChessWin(): void {
+  const notes = [523, 659, 784, 1046];
+  notes.forEach((f, i) => {
+    tone({ freq: f, type: "triangle", at: i * 0.12, dur: 0.22, vol: 0.36 });
+  });
+}

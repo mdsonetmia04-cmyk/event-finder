@@ -1681,10 +1681,10 @@ html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spaci
 }
 @keyframes arrows-maze-shake-kf {
   0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-1.2px); }
-  40% { transform: translateX(1.2px); }
-  60% { transform: translateX(-0.9px); }
-  80% { transform: translateX(0.9px); }
+  20% { transform: translateX(-2.2px); }
+  40% { transform: translateX(2.2px); }
+  60% { transform: translateX(-1.6px); }
+  80% { transform: translateX(1.6px); }
 }
 .arrows-maze-shake {
   animation: arrows-maze-shake-kf 0.32s ease;
@@ -1695,6 +1695,15 @@ html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spaci
 }
 .arrows-maze-hint {
   animation: arrows-maze-hint-kf 0.9s ease-in-out 2;
+}
+/* Tap targets: no browser focus capsule around the arrow (it looked
+   like a stray outline); keyboard focus gets a soft gold halo. */
+.arrows-tap {
+  outline: none;
+}
+.arrows-tap:focus-visible {
+  stroke: var(--gold);
+  stroke-opacity: 0.3;
 }
 @media (prefers-reduced-motion: reduce) {
   .arrows-maze-shake, .arrows-maze-hint { animation: none; }

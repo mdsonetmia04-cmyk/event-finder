@@ -1073,7 +1073,7 @@ const en = {
   arrows: {
     title: "Arrows Out",
     tagline: "Tap the arrows out in the right order — clear the board!",
-    howTo: "Tap a winding arrow to slide it out along its own path — but only if its way out is clear. Tapping a blocked arrow costs a heart.",
+    howTo: "Tap a winding arrow to send it flying straight out of the board — but only if its way out is clear. Tapping a blocked arrow costs a heart.",
     difficultyNormal: "Normal",
     difficultyHard: "Hard",
     difficultySuperHard: "Super Hard",
@@ -2227,7 +2227,7 @@ export const bn: Dict = {
   arrows: {
     title: "অ্যারোজ আউট",
     tagline: "সঠিক ক্রমে তীরগুলো বের করুন — বোর্ড খালি করুন!",
-    howTo: "আঁকাবাঁকা তীরে ট্যাপ করলে সেটি নিজের পথ ধরে বেরিয়ে যাবে — তবে শুধু বেরোনোর রাস্তা খালি থাকলে। আটকানো তীরে ট্যাপ করলে একটি হার্ট যাবে।",
+    howTo: "আঁকাবাঁকা তীরে ট্যাপ করলে সেটি সোজা বোর্ডের বাইরে ছুটে বেরিয়ে যাবে — তবে শুধু বেরোনোর রাস্তা খালি থাকলে। আটকানো তীরে ট্যাপ করলে একটি হার্ট যাবে।",
     difficultyNormal: "সাধারণ",
     difficultyHard: "কঠিন",
     difficultySuperHard: "খুব কঠিন",

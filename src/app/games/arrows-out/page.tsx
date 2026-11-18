@@ -1,13 +1,13 @@
 "use client";
 
 /* Arrows Out — solo logic puzzle, winding-arrow maze style. Each
-   arrow is a winding line with an arrowhead; tap one to slide it out
-   along its own path, but only when its way out (the straight lane
-   from its head to the edge) is clear. A blocked arrow costs a
-   heart (3 per attempt). 30 levels in three difficulty bands,
-   sequential unlock, stars for hearts remaining. Progress lives in
-   localStorage only (per-device) — no database table, no Supabase
-   calls. */
+   arrow is a winding line with an arrowhead; tap one to send it
+   flying straight out of the board in its head direction, but only
+   when its way out (the straight lane from its head to the edge) is
+   clear. A blocked arrow costs a heart (3 per attempt). 30 levels in
+   three difficulty bands, sequential unlock, stars for hearts
+   remaining. Progress lives in localStorage only (per-device) — no
+   database table, no Supabase calls. */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -422,64 +422,74 @@ export default function ArrowsOutPage() {
                   role="group"
                   aria-label={t.arrows.boardLabel}
                 >
-                  {arrows.map((arrow) => {
-                    if (removed.has(arrow.id)) return null;
-                    const isExiting = exitingId === arrow.id;
-                    const isBumping = bumping?.id === arrow.id;
-                    const isHint = hintId === arrow.id;
-                    const d = arrowPathD(arrow, CELL);
-                    const head = headCell(arrow);
-                    const { dr, dc } = DIRECTION_DELTAS[arrow.headDir];
-                    const ink = isBumping ? "#E5484D" : isHint ? "var(--gold)" : undefined;
-                    return (
-                      <g
-                        key={arrow.id}
-                        className={isBumping ? "arrows-maze-shake" : isHint ? "arrows-maze-hint" : undefined}
-                      >
-                        {/* Visible winding line. On exit it retreats along its
-                            own path (dashoffset 0 -> 1 with pathLength 1),
-                            like a snake leaving head-first. */}
-                        <path
-                          d={d}
-                          pathLength={1}
-                          fill="none"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          pointerEvents="none"
-                          className={`arrows-ink ${isExiting ? "arrows-maze-exit" : ""}`}
-                          style={{
-                            stroke: ink,
-                            strokeWidth: isHint ? 3 : 2.2,
-                            strokeDasharray: "1 1",
-                            strokeDashoffset: isExiting ? 1 : 0,
-                            transition: isExiting ? "stroke-dashoffset 0.45s linear" : undefined,
-                          }}
-                        />
-                        {/* Arrowhead: fades and drifts out along the head
-                            direction while the line retreats. */}
-                        <polygon
-                          points={arrowheadPoints(arrow, CELL)}
-                          pointerEvents="none"
-                          className="arrows-ink-fill"
-                          style={{
-                            fill: ink,
-                            opacity: isExiting ? 0 : 1,
-                            transform: isExiting ? `translate(${dc * 6}px, ${dr * 6}px)` : undefined,
-                            transition: isExiting
-                              ? "opacity 0.15s ease, transform 0.45s linear"
-                              : undefined,
-                          }}
-                        />
-                        {/* Fat invisible tap target over the same path. */}
-                        <path
-                          d={d}
-                          fill="none"
-                          stroke="transparent"
-                          strokeWidth={7.5}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          pointerEvents="stroke"
-                          className="cursor-pointer"
+                  {/* Exiting arrow paints last so it flies over the rest. */}
+                  {[...arrows]
+                    .sort((a, b) => Number(a.id === exitingId) - Number(b.id === exitingId))
+                    .map((arrow) => {
+                      if (removed.has(arrow.id)) return null;
+                      const isExiting = exitingId === arrow.id;
+                      const isBumping = bumping?.id === arrow.id;
+                      const isHint = hintId === arrow.id;
+                      const d = arrowPathD(arrow, CELL);
+                      const head = headCell(arrow);
+                      const { dr, dc } = DIRECTION_DELTAS[arrow.headDir];
+                      const ink = isBumping ? "#E5484D" : isHint ? "var(--gold)" : undefined;
+                      return (
+                        <g
+                          key={arrow.id}
+                          className={
+                            isExiting
+                              ? "arrows-maze-exit"
+                              : isBumping
+                                ? "arrows-maze-shake"
+                                : isHint
+                                  ? "arrows-maze-hint"
+                                  : undefined
+                          }
+                          style={
+                            isExiting
+                              ? {
+                                  /* Fly straight out of the board in the head
+                                     direction, fading near the end. The travel
+                                     distance clears the whole viewport from
+                                     any position. */
+                                  transform: `translate(${dc * (viewSpan + 24)}px, ${dr * (viewSpan + 24)}px)`,
+                                  opacity: 0,
+                                  transition: "transform 0.45s ease-in, opacity 0.3s ease 0.18s",
+                                }
+                              : undefined
+                          }
+                        >
+                          {/* Visible winding line. */}
+                          <path
+                            d={d}
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            pointerEvents="none"
+                            className="arrows-ink"
+                            style={{
+                              stroke: ink,
+                              strokeWidth: isHint ? 3 : 2.2,
+                            }}
+                          />
+                          {/* Arrowhead: travels with the group. */}
+                          <polygon
+                            points={arrowheadPoints(arrow, CELL)}
+                            pointerEvents="none"
+                            className="arrows-ink-fill"
+                            style={{ fill: ink }}
+                          />
+                          {/* Fat invisible tap target over the same path. */}
+                          <path
+                            d={d}
+                            fill="none"
+                            stroke="transparent"
+                            strokeWidth={7.5}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            pointerEvents="stroke"
+                            className="arrows-tap cursor-pointer"
                           role="button"
                           tabIndex={0}
                           aria-label={t.arrows.arrowAt(dirName(arrow.headDir), head.row + 1, head.col + 1)}

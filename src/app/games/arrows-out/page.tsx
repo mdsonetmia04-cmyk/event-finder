@@ -47,7 +47,7 @@ import {
   setSoundEnabled,
   unlockAudio,
 } from "@/lib/ludo/sounds";
-import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, recordWin } from "@/lib/games/win-motivation";
+import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, pickPostMatchLine, recordWin } from "@/lib/games/win-motivation";
 
 const HEARTS_PER_ATTEMPT = 3;
 const HINTS_PER_ATTEMPT = 3;
@@ -550,6 +550,9 @@ export default function ArrowsOutPage() {
             <div className="card p-5 text-center sm:p-6">
               <Trophy size={32} className="mx-auto" style={{ color: "var(--gold-deep)" }} aria-hidden="true" />
               <h2 className="font-serif-d mt-2 text-2xl font-semibold">{t.arrows.winTitle}</h2>
+              <p className="mt-2 text-base font-bold" style={{ color: "var(--gold-deep)" }}>
+                {pickPostMatchLine("win", `arrows-out:${levelN}:${attemptRef.current}`)}
+              </p>
               <p className="mt-2 flex items-center justify-center gap-1" aria-label={`${hearts}/3 ${t.arrows.starsLabel}`}>
                 {[1, 2, 3].map((s) => (
                   <Star
@@ -618,6 +621,9 @@ export default function ArrowsOutPage() {
             <div className="card p-5 text-center sm:p-6">
               <Heart size={32} className="mx-auto" style={{ color: "#E5484D" }} aria-hidden="true" />
               <h2 className="font-serif-d mt-2 text-2xl font-semibold">{t.arrows.failTitle}</h2>
+              <p className="mt-2 text-base font-bold" style={{ color: "var(--gold-deep)" }}>
+                {pickPostMatchLine("loss", `arrows-out:${levelN}:${attemptRef.current}`)}
+              </p>
               <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>
                 {t.arrows.failSub}
               </p>

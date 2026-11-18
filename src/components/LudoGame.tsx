@@ -28,7 +28,7 @@ import {
   setSoundEnabled,
   unlockAudio,
 } from "@/lib/ludo/sounds";
-import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, recordWin } from "@/lib/games/win-motivation";
+import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, pickPostMatchLine, recordWin } from "@/lib/games/win-motivation";
 
 export interface LudoPlayerMeta {
   name: string;
@@ -1133,6 +1133,14 @@ export default function LudoGame(props: LudoGameProps) {
                 ? t.ludo.youWon
                 : t.ludo.winnerWon(metas[state.winner]?.name ?? "")}
             </p>
+            {!spectator && (
+              <p className="mt-2 text-base font-bold" style={{ color: "var(--gold-deep)" }}>
+                {pickPostMatchLine(
+                  metas[state.winner]?.isYou ? "win" : "loss",
+                  winIdentity ?? `ludo:finished:${state.move_no}:${state.winner}`,
+                )}
+              </p>
+            )}
             {metas[state.winner]?.isYou && showNudge && (
               <p
                 className="mt-3 rounded-xl px-3 py-2 text-sm font-semibold"

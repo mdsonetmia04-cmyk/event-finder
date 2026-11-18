@@ -38,7 +38,7 @@ import {
   setSoundEnabled,
   unlockAudio,
 } from "@/lib/ludo/sounds";
-import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, recordWin } from "@/lib/games/win-motivation";
+import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, pickPostMatchLine, recordWin } from "@/lib/games/win-motivation";
 
 const QUESTION_COUNT = 10;
 const QUESTION_MS = 15000;
@@ -397,6 +397,9 @@ export default function QuizBattlePage() {
           <h2 className="font-serif-d mt-3 text-2xl font-semibold">
             {draw ? t.quiz.draw : won ? t.quiz.youWin : t.quiz.botWins}
           </h2>
+          <p className="mt-2 text-base font-bold" style={{ color: "var(--gold-deep)" }}>
+            {pickPostMatchLine(won || draw ? "win" : "loss", `quiz-battle:${battleIdRef.current}`)}
+          </p>
           {won && showNudge && (
             <p
               className="mt-3 rounded-xl px-3 py-2 text-sm font-semibold"

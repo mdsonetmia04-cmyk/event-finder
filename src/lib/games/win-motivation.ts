@@ -1,9 +1,12 @@
-/* Win-screen motivation + Adobe Stock nudge for the Gaming Zone.
-   Owner's order (2026-11-18): every Bubble Shooter win shows ONE
-   Bengali motivation line; from the 3rd win in a session onward, EVERY
-   game's win screen also tells the player to go make Adobe Stock
-   assets. Both texts stay in Bengali in BOTH site language modes, so
-   they live here as constants — never in the EN/BN dictionaries.
+/* Post-match Adobe Stock lines + 3rd-win nudge for the Gaming Zone.
+   Owner's order (2026-11-18): after EVERY match ends, in EVERY game,
+   show ONE Bengali line — a win-pool line for a win (draws/ties count
+   as wins), a loss-pool line for a clear loss. The line is never the
+   same twice in a row within a session, per pool. From the 3rd win in
+   a session onward, every game's win screen ALSO shows the Adobe
+   Stock nudge banner. All texts stay in Bengali in BOTH site language
+   modes, so they live here as constants — never in the EN/BN
+   dictionaries.
 
    Win counting is session-scoped (sessionStorage): closing the tab
    resets it. A loss never resets the counter. Each distinct win counts
@@ -11,37 +14,69 @@
    or room + finish timestamp), and recordWin dedupes re-renders,
    overlay re-opens and page reloads showing the same finished state
    via a per-win marker. A new game/replay/level is a new identity and
-   counts again. */
+   counts again.
+
+   Post-match lines are picked with pickPostMatchLine(outcome, key):
+   the key is the match identity (same identity the caller uses for
+   recordWin, where one exists). The picked line is stored per key, so
+   re-renders, overlay re-opens and reloads showing the same finished
+   match always show the SAME line, while a new match picks a fresh
+   one (never repeating the previous line of that pool). */
 
 export type WinGameId = "bubble-shooter" | "arrows-out" | "quiz-battle" | "ludo" | "draw-guess" | "chess";
 
-/** Bengali motivation lines for Bubble Shooter wins, shown verbatim in
-    both language modes. One random line per win. */
-export const WIN_MOTIVATION_LINES: readonly string[] = [
-  "চমৎকার!",
-  "অসাধারণ!",
-  "দারুণ খেলেছেন!",
-  "আপনি অনেক ভালো পারেন দেখছি!",
-  "ওয়াও, কী দারুণ খেলা!",
-  "বাহ, চমৎকার!",
-  "অসাধারণ পারফরম্যান্স!",
-  "দারুণ, এভাবেই চালিয়ে যান!",
-  "কী দারুণ খেললেন!",
-  "আপনার নিশানা একদম নিখুঁত!",
-  "চোখ ধাঁধানো খেলা!",
-  "আপনি তো চ্যাম্পিয়ন!",
-  "এমন খেলা সবাই পারে না!",
-  "দারুণ বুদ্ধির খেলা!",
-  "কী সুন্দর করে জিতলেন!",
-  "এই তো, আসল খেলোয়াড়!",
-  "বাহ, কী চমৎকার জয়!",
-  "আপনি সত্যিই দারুণ খেলেন!",
-  "একদম পারফেক্ট!",
-  "জয়ের ধারা ধরে রাখুন!",
-  "আপনার মনোযোগ দেখার মতো!",
-  "দারুণ কৌশল!",
-  "ওয়াও, আবার জিতে গেলেন!",
-  "প্রতিটা শট একদম ঠিক জায়গায়!",
+/** Outcome of a finished match from the viewing player's side.
+    Draws/ties are reported as "win" (positive framing). */
+export type PostMatchOutcome = "win" | "loss";
+
+/** Bengali post-match lines for wins, shown verbatim in both language
+    modes. Approved by the owner 2026-11-18 — do not paraphrase. */
+export const POST_MATCH_WIN_LINES: readonly string[] = [
+  "আমরা জানি আপনি অনেক ভালো খেলেন, এখন ট্রেন্ডিং টপিক নিয়ে কিছু EPS ডিজাইন করে আসুন।",
+  "আপনি ভালো খেলেছেন, এবার JPG করে আসুন।",
+  "দারুণ খেলেছেন! এবার গিয়ে কিছু PNG আর SVG বানিয়ে আসুন।",
+  "চমৎকার জয়! ক্যালেন্ডারে আগামী সিজনটা দেখে একটা অ্যাসেট বানিয়ে ফেলুন।",
+  "অসাধারণ! এই ভালো মন নিয়ে এখন টাইটেল আর কীওয়ার্ড লিখে ফেলুন।",
+  "আপনি তো চ্যাম্পিয়ন! এবার পুরনো ডিজাইনের নতুন ভার্সন বানিয়ে আপলোড করুন।",
+  "দারুণ জয়! এই হাতেই এখন একটা EPS বানিয়ে ফেলুন — ট্রেন্ডিং টপিকে!",
+  "কী খেললেন! এবার গিয়ে JPG বানান, অ্যাডোবি স্টকে বিক্রি হবে।",
+  "বাহ, চ্যাম্পিয়ন! এখন ক্যালেন্ডার খুলে সামনের সিজনের ডিজাইন শুরু করুন।",
+  "অসাধারণ! জয়ের আনন্দে একটা আইকন সেট বানিয়ে ফেলুন।",
+  "আপনি তো আগুন! এই গতি ধরে রেখে আজই ৫টা ডিজাইন আপলোড করুন।",
+  "চমৎকার! এবার গিয়ে ব্যাকগ্রাউন্ড আর প্যাটার্ন ডিজাইন করুন — খুব চলে!",
+  "কী দারুণ বুদ্ধি! এই বুদ্ধি দিয়ে এখন একটা ভেক্টর ইলাস্ট্রেশন বানান।",
+  "জিতে গেলেন! এবার গিয়ে ডিজাইনের টাইটেলটা ঝকঝকে করে লিখুন আর ৪৯টা কীওয়ার্ড বসান।",
+  "দারুণ খেলেছেন! ট্রেন্ডিং টপিকটা দেখে এখনই একটা সেট বানিয়ে আসুন।",
+  "ওয়াও! এত ভালো খেলেন, এবার অ্যাডোবি স্টকে আপনার নাম ছড়িয়ে দিন।",
+  "পারফেক্ট খেলা! এখন গিয়ে পুরনো ডিজাইনের রঙ বদলে নতুন ভার্সন বানান।",
+  "বাহ! এই জয়ের খুশিতে একটা সিজনাল পোস্টার ডিজাইন করুন।",
+  "আপনি সত্যিই দারুণ! এবার গিয়ে PNG কাটআউট বানান — ক্রেতারা খোঁজে!",
+  "চোখ ধাঁধানো জয়! এখন একটা মিনিমাল লোগো সেট বানিয়ে ফেলুন।",
+  "কী সুন্দর করে জিতলেন! এবার গিয়ে আজকের আপলোডটা শেষ করুন।",
+  "দারুণ কৌশল! এই কৌশলেই এখন ট্রেন্ডিং নিশে ১০টা ডিজাইন বানান।",
+  "জয়ের ধারা ধরে রাখুন! আর অ্যাডোবি স্টকে প্রতিদিন আপলোডের ধারাটাও।",
+  "আপনি অনেক ভালো পারেন দেখছি! এবার গিয়ে একটা ইনফোগ্রাফিক টেমপ্লেট বানান।",
+  "একদম পারফেক্ট! এখন গিয়ে আপনার পোর্টফোলিওতে আরও ৩টা ডিজাইন যোগ করুন।",
+  "বাহ, কী চমৎকার জয়! এবার গিয়ে দেখুন কোন ডিজাইনটা বিক্রি হলো!",
+];
+
+/** Bengali post-match lines for losses, shown verbatim in both
+    language modes. Approved by the owner 2026-11-18 — do not
+    paraphrase. */
+export const POST_MATCH_LOSS_LINES: readonly string[] = [
+  "আপনি পারবেন না, তার চেয়ে এখন গিয়ে অ্যাসেট বানান, অ্যাডোবিতে বিক্রি করতে পারবেন।",
+  "এই ম্যাচটা জেতা হলো না — মন খারাপ নয়, এখন গিয়ে একটা ডিজাইন বানান, সেটাই আসল জয়।",
+  "হার মানেই শেষ নয় — এখন ট্রেন্ডিং টপিকে একটা EPS বানিয়ে ফেলুন।",
+  "এই ম্যাচটা হলো না — তবে অ্যাসেট বানালে হার বলে কিছু নেই, ওখানে শুধু আয়!",
+  "হারলেন তো কী! এখন গিয়ে একটা EPS বানান, সেটা সারাজীবন বিক্রি হবে।",
+  "গেমে হারলেন, তাতে কী — একটা ভালো ডিজাইন বানিয়ে আজকের দিনটা জিতে নিন।",
+  "এবার হলো না, পরেরবার হবে। তার আগে একটা JPG বানিয়ে আপলোড দিয়ে আসুন।",
+  "খেলায় হার, কাজে জয় — এখন গিয়ে ট্রেন্ডিং টপিকে ডিজাইন বানান।",
+  "এই হারটা ভুলে যান, একটা সুন্দর ভেক্টর বানালে মন ভালো হয়ে যাবে।",
+  "পারলেন না তো কী হয়েছে! অ্যাডোবি স্টকে আপনার ডিজাইন ঠিকই পারবে।",
+  "হেরে গেলেন? ভালোই হলো — এখন সময়টা কাজে লাগিয়ে ২টা অ্যাসেট বানিয়ে ফেলুন।",
+  "গেম শেষ, এবার আসল খেলা — ডিজাইন বানিয়ে ডলার আয় করুন!",
+  "ম্যাচটা গেল, কিন্তু আজকের আপলোডটা যেন না যায় — এখনই বানাতে বসুন।",
 ];
 
 /** Win-screen nudge, shown from the 3rd session win onward in every
@@ -54,13 +89,17 @@ export const NUDGE_AFTER_WINS = 3;
 
 const COUNT_KEY_PREFIX = "ssc:win-count:";
 const COUNTED_KEY_PREFIX = "ssc:win-counted:";
-const LAST_LINE_KEY = "ssc:win-motivation:last";
+const LINE_KEY_PREFIX = "ssc:post-match-line:";
+const LAST_WIN_LINE_KEY = "ssc:post-match:last-win";
+const LAST_LOSS_LINE_KEY = "ssc:post-match:last-loss";
 
 /* In-memory fallbacks when sessionStorage is unavailable (private
    mode, quota): the feature still works for the lifetime of the page. */
 const memoryCounts = new Map<WinGameId, number>();
 const memoryCounted = new Set<string>();
-let memoryLastLine = -1;
+const memoryLines = new Map<string, number>();
+let memoryLastWinLine = -1;
+let memoryLastLossLine = -1;
 
 function sessionGet(key: string): string | null {
   try {
@@ -92,19 +131,42 @@ function writeCount(game: WinGameId, count: number): void {
   sessionSet(`${COUNT_KEY_PREFIX}${game}`, String(count));
 }
 
-/** Pick one motivation line at random, never repeating the previous
-    line within the session. */
-export function pickMotivationLine(): string {
-  const rawLast = sessionGet(LAST_LINE_KEY);
-  const parsed = rawLast === null ? NaN : Number(rawLast);
-  const last = Number.isInteger(parsed) ? parsed : memoryLastLine;
-  let idx = Math.floor(Math.random() * WIN_MOTIVATION_LINES.length);
-  if (WIN_MOTIVATION_LINES.length > 1 && idx === last) {
-    idx = (idx + 1 + Math.floor(Math.random() * (WIN_MOTIVATION_LINES.length - 1))) % WIN_MOTIVATION_LINES.length;
+/** Random index into a pool of `length`, never equal to `last`
+    (when the pool has more than one line). */
+function pickFreshIndex(length: number, last: number): number {
+  let idx = Math.floor(Math.random() * length);
+  if (length > 1 && idx === last) {
+    idx = (idx + 1 + Math.floor(Math.random() * (length - 1))) % length;
   }
-  memoryLastLine = idx;
-  sessionSet(LAST_LINE_KEY, String(idx));
-  return WIN_MOTIVATION_LINES[idx];
+  return idx;
+}
+
+/**
+ * Pick the post-match line for one finished match. The same `key`
+ * always returns the same line within the session (re-renders and
+ * reloads showing the same finished match never swap it); a new key
+ * picks a fresh line, never repeating the previous line of that pool.
+ * Safe to call during render: it triggers no state updates.
+ */
+export function pickPostMatchLine(outcome: PostMatchOutcome, key: string): string {
+  const pool = outcome === "win" ? POST_MATCH_WIN_LINES : POST_MATCH_LOSS_LINES;
+  const marker = `${LINE_KEY_PREFIX}${outcome}:${key}`;
+  const raw = sessionGet(marker);
+  const parsed = raw === null ? NaN : Number(raw);
+  if (Number.isInteger(parsed) && parsed >= 0 && parsed < pool.length) return pool[parsed];
+  const memorized = memoryLines.get(marker);
+  if (memorized !== undefined && memorized < pool.length) return pool[memorized];
+  const lastKey = outcome === "win" ? LAST_WIN_LINE_KEY : LAST_LOSS_LINE_KEY;
+  const rawLast = sessionGet(lastKey);
+  const parsedLast = rawLast === null ? NaN : Number(rawLast);
+  const last = Number.isInteger(parsedLast) ? parsedLast : outcome === "win" ? memoryLastWinLine : memoryLastLossLine;
+  const idx = pickFreshIndex(pool.length, last);
+  if (outcome === "win") memoryLastWinLine = idx;
+  else memoryLastLossLine = idx;
+  sessionSet(lastKey, String(idx));
+  memoryLines.set(marker, idx);
+  sessionSet(marker, String(idx));
+  return pool[idx];
 }
 
 /**

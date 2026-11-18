@@ -3,8 +3,8 @@
 /* Chess vs Sweet AI: pick a difficulty and a colour, then play on the
    shared board. Undo takes back the last pair of moves; resign ends
    the game. Wins count toward the session Adobe Stock nudge (3 wins)
-   via the shared recordWin helper — no motivation line (Bubble
-   Shooter only). */
+   via the shared recordWin helper; the result card shows one
+   post-match line from the shared win/loss pools. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -26,7 +26,7 @@ import {
   type ChessPieceStyle,
   type ChessThemeId,
 } from "@/lib/chess/themes";
-import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, recordWin } from "@/lib/games/win-motivation";
+import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, pickPostMatchLine, recordWin } from "@/lib/games/win-motivation";
 import {
   isSoundEnabled,
   playButtonClick,
@@ -429,6 +429,12 @@ export default function ChessSoloPage() {
       {resultText && (
         <div className="card p-4 text-center">
           <p className="font-serif-d text-xl font-semibold">{resultText}</p>
+          <p className="mx-auto mt-2 max-w-md text-base font-bold" style={{ color: "var(--gold-deep)" }}>
+            {pickPostMatchLine(
+              resigned || (over?.kind === "checkmate" && over.winner !== playerColor) ? "loss" : "win",
+              `chess-ai:${gameKey}`,
+            )}
+          </p>
           {iWon && showNudge && (
             <p
               className="mx-auto mt-3 max-w-md rounded-xl px-3 py-2 text-sm font-semibold"

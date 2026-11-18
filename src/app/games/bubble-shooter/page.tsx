@@ -45,7 +45,7 @@ import {
 import {
   ADOBE_STOCK_NUDGE,
   NUDGE_AFTER_WINS,
-  pickMotivationLine,
+  pickPostMatchLine,
   recordWin,
 } from "@/lib/games/win-motivation";
 
@@ -111,8 +111,6 @@ export default function BubbleShooterPage() {
   const [finalScore, setFinalScore] = useState(0);
   const [earnedStars, setEarnedStars] = useState<1 | 2 | 3>(1);
   const [isNewBest, setIsNewBest] = useState(false);
-  /** Bengali motivation line for this win (picked once per win). */
-  const [motivation, setMotivation] = useState<string | null>(null);
   /** Adobe Stock nudge: shown from the 3rd session win onward. */
   const [showNudge, setShowNudge] = useState(false);
 
@@ -166,10 +164,9 @@ export default function BubbleShooterPage() {
     if (result === "won") {
       /* Count-once win identity: level + run (runId bumps on every
          (re)start, so each distinct run is a distinct win). The
-         motivation line is picked only when this call counted the
-         win, so a repeated outcome callback can't swap the line. */
-      const { count, isNew } = recordWin("bubble-shooter", `bubble-shooter:${n}:${runIdRef.current}`);
-      if (isNew) setMotivation(pickMotivationLine());
+         post-match line is picked at render time with the same
+         identity, so it stays stable for this run. */
+      const { count } = recordWin("bubble-shooter", `bubble-shooter:${n}:${runIdRef.current}`);
       setShowNudge(count >= NUDGE_AFTER_WINS);
     }
     setProgress((prevMap) => {
@@ -485,11 +482,9 @@ export default function BubbleShooterPage() {
             <div className="card p-5 text-center sm:p-6">
               <Trophy size={32} className="mx-auto" style={{ color: "var(--gold-deep)" }} aria-hidden="true" />
               <h2 className="font-serif-d mt-2 text-2xl font-semibold">{t.bubbles.winTitle}</h2>
-              {motivation && (
-                <p className="mt-2 text-lg font-bold" style={{ color: "var(--gold-deep)" }}>
-                  {motivation}
-                </p>
-              )}
+              <p className="mt-2 text-base font-bold" style={{ color: "var(--gold-deep)" }}>
+                {pickPostMatchLine("win", `bubble-shooter:${levelN}:${runId}`)}
+              </p>
               <p className="mt-2 flex items-center justify-center gap-1" aria-label={`${earnedStars}/3 ${t.bubbles.starsLabel}`}>
                 {[1, 2, 3].map((s) => (
                   <Star
@@ -562,6 +557,9 @@ export default function BubbleShooterPage() {
           ) : (
             <div className="card p-5 text-center sm:p-6">
               <h2 className="font-serif-d mt-2 text-2xl font-semibold">{t.bubbles.failTitle}</h2>
+              <p className="mt-2 text-base font-bold" style={{ color: "var(--gold-deep)" }}>
+                {pickPostMatchLine("loss", `bubble-shooter:${levelN}:${runId}`)}
+              </p>
               <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>
                 {t.bubbles.failSub}
               </p>

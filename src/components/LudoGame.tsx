@@ -12,7 +12,7 @@ import {
   type LudoColor,
   type LudoState,
 } from "@/lib/ludo/engine";
-import { COLOR_HEX, COLOR_TINT } from "@/lib/ludo/room";
+import { COLOR_HEX, COLOR_TINT, PIN_SHADES } from "@/lib/ludo/room";
 import {
   isSoundEnabled,
   playButtonClick,
@@ -294,6 +294,30 @@ function diffGrids(oldG: ProgressGrid, newG: ProgressGrid): GridDiff[] {
 const HOP_MS = 135;
 const FLY_HOME_MS = 550;
 
+/** Glossy 3D map-pin pawn, like the reference: gradient body, white
+    ring, glossy coloured centre with a specular highlight, and a
+    soft ground shadow. The pin's tip is at the bottom of the box —
+    the wrapper plants it on the cell centre. Gradients are defined
+    once in Board (ids `ludo-pin-<color>` / `ludo-pin-gloss`). */
+function LudoPin({ color }: { color: LudoColor }) {
+  const hex = COLOR_HEX[color];
+  return (
+    <svg viewBox="0 0 48 64" className="block h-full w-full" aria-hidden="true">
+      <ellipse cx="24" cy="60.5" rx="10.5" ry="3" fill="rgba(0,0,0,0.28)" />
+      <path
+        d="M24 58.5C24 58.5 7.5 37 7.5 23A16.5 16.5 0 1 1 40.5 23C40.5 37 24 58.5 24 58.5Z"
+        fill={`url(#ludo-pin-${color})`}
+        stroke="rgba(0,0,0,0.16)"
+        strokeWidth="1"
+      />
+      <circle cx="24" cy="23" r="13" fill="#ffffff" />
+      <circle cx="24" cy="23" r="10" fill={hex} />
+      <circle cx="24" cy="23" r="10" fill="url(#ludo-pin-gloss)" />
+      <ellipse cx="20.5" cy="18.5" rx="4.6" ry="3.1" fill="#ffffff" opacity="0.85" transform="rotate(-18 20.5 18.5)" />
+    </svg>
+  );
+}
+
 function Board({
   state,
   movable,
@@ -329,17 +353,29 @@ function Board({
     };
   }, []);
 
-  /* Animate single-token moves step by step; snap complex diffs. */
+  /* Animate single-token moves step by step; snap complex diffs.
+     The animating lock MUST be released on every path: when a new
+     state arrives mid-animation (remote move, timer auto-play, or a
+     duplicate poll payload), the cleanup below clears the pending
+     timers — without resetting the lock here the dice and tokens
+     would stay disabled forever. */
   useEffect(() => {
     const target = snapshot(state);
     const diffs = diffGrids(shownRef.current, target);
     if (diffs.length === 0) {
+      // Shown already matches the target: no animation is (or should
+      // be) running, so the input lock must be off.
+      onAnimatingRef.current(false);
       return;
     }
     const movers = diffs.filter((d) => d.to > d.from);
     const victims = diffs.filter((d) => d.to === -1 && d.from >= 0);
     const other = diffs.filter((d) => movers.indexOf(d) === -1 && victims.indexOf(d) === -1);
-    if (movers.length !== 1 || other.length !== 0) {
+    // A single legal move advances one token by at most 6 steps; a
+    // longer jump means intermediate states were missed (rejoin or a
+    // poll jump) — snap instead of hopping across the board.
+    const longJump = movers.length === 1 && movers[0].to - movers[0].from > 6;
+    if (movers.length !== 1 || other.length !== 0 || longJump) {
       shownRef.current = target;
       setShown(target);
       setHop(null);
@@ -403,6 +439,9 @@ function Board({
     return () => {
       timersRef.current.forEach((id) => window.clearTimeout(id));
       timersRef.current = [];
+      // The next run re-locks if it animates; releasing here keeps a
+      // mid-animation state change from freezing the inputs.
+      onAnimatingRef.current(false);
     };
     // Only the authoritative state drives the animation; `shown` is a ref mirror.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -437,21 +476,45 @@ function Board({
     return entry ? entry[0] : null;
   };
 
+  /* The board stays light in both themes, like the reference. */
+  const BOARD_LINE = "rgba(96,82,58,0.30)";
+
   return (
-    <div
-      className="relative aspect-square w-full overflow-hidden rounded-2xl border-2 select-none"
-      style={{
-        borderColor: "rgba(193,138,58,0.55)",
-        background: "var(--surface)",
-        boxShadow: "0 12px 32px rgba(0,0,0,0.16)",
-      }}
-    >
-      {/* Static cells: 15x15 grid */}
+    <div className="relative aspect-square w-full select-none">
+      {/* Shared pin gradients (one definition per colour). */}
+      <svg width="0" height="0" className="absolute" aria-hidden="true">
+        <defs>
+          {(Object.keys(COLOR_HEX) as LudoColor[]).map((color) => (
+            <linearGradient key={color} id={`ludo-pin-${color}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={PIN_SHADES[color].light} />
+              <stop offset="55%" stopColor={COLOR_HEX[color]} />
+              <stop offset="100%" stopColor={PIN_SHADES[color].dark} />
+            </linearGradient>
+          ))}
+          <radialGradient id="ludo-pin-gloss" cx="0.35" cy="0.3" r="0.75">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.55" />
+            <stop offset="45%" stopColor="#ffffff" stopOpacity="0.12" />
+            <stop offset="70%" stopColor="#ffffff" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+      </svg>
+      {/* Gold frame + clipped static grid. The tokens overlay below
+          sits OUTSIDE this clipped box so pin heads standing on the
+          top row are never cut off. */}
       <div
-        className="absolute inset-0 grid"
-        style={{ gridTemplateColumns: "repeat(15, minmax(0, 1fr))", gridTemplateRows: "repeat(15, minmax(0, 1fr))" }}
-        aria-hidden="true"
+        className="absolute inset-0 overflow-hidden rounded-[18px]"
+        style={{
+          border: "3px solid #D9A521",
+          background: "#FDFBF5",
+          boxShadow: "0 14px 34px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,255,255,0.4)",
+        }}
       >
+        {/* Static cells: 15x15 grid */}
+        <div
+          className="absolute inset-0 grid"
+          style={{ gridTemplateColumns: "repeat(15, minmax(0, 1fr))", gridTemplateRows: "repeat(15, minmax(0, 1fr))" }}
+          aria-hidden="true"
+        >
         {/* Base blocks */}
         {(Object.keys(BASE_ORIGIN) as LudoColor[]).map((color) => {
           const [r0, c0] = BASE_ORIGIN[color];
@@ -462,14 +525,19 @@ function Board({
               style={{
                 gridRow: `${r0 + 1} / span 6`,
                 gridColumn: `${c0 + 1} / span 6`,
-                background: `linear-gradient(135deg, ${COLOR_HEX[color]}, ${COLOR_HEX[color]}DD)`,
+                background: `linear-gradient(135deg, ${PIN_SHADES[color].light}, ${COLOR_HEX[color]} 55%, ${PIN_SHADES[color].dark})`,
                 borderRadius: 10,
-                boxShadow: "inset 0 2px 8px rgba(255,255,255,0.25), inset 0 -3px 8px rgba(0,0,0,0.18)",
+                boxShadow:
+                  "inset 0 2px 6px rgba(255,255,255,0.35), inset 0 -4px 8px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.18)",
               }}
             >
               <div
-                className="absolute rounded-2xl bg-white/95"
-                style={{ inset: "13%", boxShadow: "0 2px 8px rgba(0,0,0,0.18)" }}
+                className="absolute rounded-2xl"
+                style={{
+                  inset: "13%",
+                  background: "linear-gradient(160deg, #ffffff, #f6f1e6)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.20), inset 0 1px 2px rgba(255,255,255,0.9)",
+                }}
               />
               {[25, 75].map((top) =>
                 [25, 75].map((left) => (
@@ -480,9 +548,9 @@ function Board({
                       top: `${top}%`,
                       left: `${left}%`,
                       width: "22%",
-                      background: "radial-gradient(circle at 35% 30%, #ffffff, #f1e8d8)",
+                      background: "radial-gradient(circle at 38% 32%, #ffffff, #ece4d2)",
                       border: `2px solid ${COLOR_HEX[color]}`,
-                      boxShadow: "inset 0 2px 4px rgba(0,0,0,0.12)",
+                      boxShadow: "inset 0 3px 5px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.7)",
                     }}
                   />
                 )),
@@ -502,8 +570,9 @@ function Board({
               style={{
                 gridRow: r + 1,
                 gridColumn: c + 1,
-                borderColor: "var(--line)",
-                background: start ? COLOR_TINT[start] : "var(--surface)",
+                borderColor: BOARD_LINE,
+                background: start ? COLOR_TINT[start] : "#FDFBF5",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -2px 3px rgba(0,0,0,0.05)",
               }}
             >
               {safe && !start && (
@@ -517,7 +586,7 @@ function Board({
               {start && (
                 <span
                   className="block rounded-full"
-                  style={{ width: "38%", height: "38%", background: COLOR_HEX[start], boxShadow: "0 0 0 2px rgba(255,255,255,0.6)" }}
+                  style={{ width: "42%", height: "42%", background: COLOR_HEX[start], boxShadow: "0 0 0 2px rgba(255,255,255,0.75), 0 1px 3px rgba(0,0,0,0.25)" }}
                 />
               )}
               {arrow && !safe && (
@@ -535,22 +604,28 @@ function Board({
             </div>
           );
         })}
-        {/* Home columns */}
+        {/* Home columns: solid colour, like the reference */}
         {(Object.keys(HOME_CELLS) as LudoColor[]).map((color) =>
           HOME_CELLS[color].map(([r, c], i) => (
             <div
               key={`home-${color}-${i}`}
               className="border"
-              style={{ gridRow: r + 1, gridColumn: c + 1, borderColor: "var(--line)", background: COLOR_TINT[color] }}
+              style={{
+                gridRow: r + 1,
+                gridColumn: c + 1,
+                borderColor: BOARD_LINE,
+                background: `linear-gradient(160deg, ${PIN_SHADES[color].light}, ${COLOR_HEX[color]} 55%, ${PIN_SHADES[color].dark})`,
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -2px 4px rgba(0,0,0,0.15)",
+              }}
             />
           )),
         )}
         {/* Centre home triangle: 4 clipped triangles + gold star */}
-        <div className="relative" style={{ gridRow: "7 / span 3", gridColumn: "7 / span 3" }}>
-          <span className="absolute inset-0" style={{ background: COLOR_HEX.green, clipPath: "polygon(0 0, 100% 0, 50% 50%)" }} />
-          <span className="absolute inset-0" style={{ background: COLOR_HEX.yellow, clipPath: "polygon(100% 0, 100% 100%, 50% 50%)" }} />
-          <span className="absolute inset-0" style={{ background: COLOR_HEX.blue, clipPath: "polygon(0 100%, 100% 100%, 50% 50%)" }} />
-          <span className="absolute inset-0" style={{ background: COLOR_HEX.red, clipPath: "polygon(0 0, 0 100%, 50% 50%)" }} />
+        <div className="relative" style={{ gridRow: "7 / span 3", gridColumn: "7 / span 3", boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.08)" }}>
+          <span className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${PIN_SHADES.green.light}, ${COLOR_HEX.green})`, clipPath: "polygon(0 0, 100% 0, 50% 50%)" }} />
+          <span className="absolute inset-0" style={{ background: `linear-gradient(90deg, ${PIN_SHADES.yellow.light}, ${COLOR_HEX.yellow})`, clipPath: "polygon(100% 0, 100% 100%, 50% 50%)" }} />
+          <span className="absolute inset-0" style={{ background: `linear-gradient(0deg, ${PIN_SHADES.blue.light}, ${COLOR_HEX.blue})`, clipPath: "polygon(0 100%, 100% 100%, 50% 50%)" }} />
+          <span className="absolute inset-0" style={{ background: `linear-gradient(270deg, ${PIN_SHADES.red.light}, ${COLOR_HEX.red})`, clipPath: "polygon(0 0, 0 100%, 50% 50%)" }} />
           <span
             className="absolute flex items-center justify-center rounded-full bg-white/95"
             style={{ inset: "34%", boxShadow: "0 1px 4px rgba(0,0,0,0.25)" }}
@@ -560,14 +635,15 @@ function Board({
             </span>
           </span>
         </div>
+        </div>
       </div>
 
-      {/* Tokens overlay */}
+      {/* Tokens overlay (unclipped: pins may rise above the top row) */}
       <div className="pointer-events-none absolute inset-0">
         {placed.map((p) => {
           let x = p.pos.x;
           let y = p.pos.y;
-          let widthPct = p.pos.kind === "base" ? 6.2 : p.pos.kind === "finished" ? 3.8 : 5.4;
+          let widthPct = p.pos.kind === "base" ? 6.4 : p.pos.kind === "finished" ? 4.4 : 5.8;
           if (p.groupSize > 1) {
             const cols = p.groupSize <= 4 ? 2 : 3;
             const rows = Math.ceil(p.groupSize / cols);
@@ -575,35 +651,20 @@ function Board({
             const gy = Math.floor(p.groupIndex / cols);
             x += (gx - (cols - 1) / 2) * 0.46;
             y += (gy - (rows - 1) / 2) * 0.46;
-            widthPct = 4.3;
+            widthPct = 4.6;
           }
           const isMovable = canMove && p.player === state.turn && movable.includes(p.token);
           const isHopping = hop !== null && hop.p === p.player && hop.t === p.token;
           const isFlying = flyHome.has(`${p.player}:${p.token}`);
-          const hex = COLOR_HEX[p.color];
-          const visualClass = [
-            "relative block h-full w-full rounded-full",
-            isMovable ? "ludo-token-movable" : "",
+          const pinClass = [
+            "relative block h-full w-full",
+            isMovable ? "ludo-pin-movable" : "",
             isHopping ? (hop !== null && hop.n % 2 === 0 ? "ludo-token-hop-a" : "ludo-token-hop-b") : "",
             isFlying ? "ludo-token-flyhome" : "",
           ]
             .filter(Boolean)
             .join(" ");
-          const visualStyle: React.CSSProperties = {
-            background: `radial-gradient(circle at 32% 28%, rgba(255,255,255,0.65), rgba(255,255,255,0) 46%), ${hex}`,
-            border: "2px solid #fff",
-            boxShadow: "0 3px 7px rgba(0,0,0,0.35), inset 0 -3px 5px rgba(0,0,0,0.22)",
-          };
-          const inner = (
-            <>
-              <span className="absolute rounded-full bg-white/95" style={{ inset: "27%" }} aria-hidden="true" />
-              <span
-                className="absolute rounded-full"
-                style={{ inset: "42%", background: hex, boxShadow: "inset 0 1px 2px rgba(0,0,0,0.25)" }}
-                aria-hidden="true"
-              />
-            </>
-          );
+          const pin = <LudoPin color={p.color} />;
           return (
             <div
               key={`${p.player}-${p.token}`}
@@ -612,8 +673,9 @@ function Board({
                 left: `${(x * 100) / 15}%`,
                 top: `${(y * 100) / 15}%`,
                 width: `${widthPct}%`,
-                aspectRatio: "1",
-                transform: "translate(-50%, -50%)",
+                aspectRatio: "48 / 64",
+                /* The pin's tip plants on the cell centre. */
+                transform: "translate(-50%, -100%)",
                 transition: isFlying
                   ? "left 0.55s ease-in-out, top 0.55s ease-in-out"
                   : "left 0.13s ease-out, top 0.13s ease-out",
@@ -625,14 +687,14 @@ function Board({
                   type="button"
                   onClick={() => onToken(p.token)}
                   aria-label={`${colorNames[p.color]} ${p.token + 1}`}
-                  className={`pointer-events-auto ${visualClass}`}
-                  style={{ ...visualStyle, cursor: "pointer" }}
+                  className={`pointer-events-auto ${pinClass}`}
+                  style={{ cursor: "pointer" }}
                 >
-                  {inner}
+                  {pin}
                 </button>
               ) : (
-                <div className={visualClass} style={visualStyle} aria-hidden="true">
-                  {inner}
+                <div className={pinClass} aria-hidden="true">
+                  {pin}
                 </div>
               )}
             </div>
@@ -664,6 +726,60 @@ function Board({
 }
 
 const CONFETTI_COLORS = ["#E5484D", "#2FA36B", "#E8A90C", "#3E7BFA", "#C18A3A"];
+
+/** Ludo King-style corner player card: blue gradient, white text,
+    avatar with a white ring, home pips, and a gold glow on the
+    active turn. Real data only — no coins, levels, or flags. */
+function PlayerCornerCard({
+  meta,
+  color,
+  home,
+  active,
+}: {
+  meta: LudoPlayerMeta;
+  color: LudoColor;
+  home: number;
+  active: boolean;
+}) {
+  const { t } = useLang();
+  const hex = COLOR_HEX[color];
+  return (
+    <div
+      className={`flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2.5 py-2 sm:gap-2.5 sm:px-3 ${active ? "ludo-panel-active" : ""}`}
+      style={
+        {
+          "--panel-glow": "#F5C44E",
+          background:
+            "linear-gradient(160deg, rgba(255,255,255,0.22), rgba(255,255,255,0.06) 45%, rgba(0,0,0,0.12)), linear-gradient(160deg, #3B7BD4, #1D4E96)",
+          border: active ? "2px solid #F5C44E" : "2px solid rgba(255,255,255,0.35)",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.35)",
+        } as React.CSSProperties
+      }
+    >
+      <LudoAvatar url={meta.avatar_url} name={meta.name} size={34} ringColor="#ffffff" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13px] font-bold leading-tight text-white sm:text-sm">{meta.name}</p>
+        <p className="mt-1 flex items-center gap-1.5 text-[11px] whitespace-nowrap text-white/85">
+          <span className="flex shrink-0 items-center gap-[3px]" aria-hidden="true">
+            {[0, 1, 2, 3].map((d) => (
+              <span
+                key={d}
+                className="inline-block h-2 w-2 rounded-full sm:h-2.5 sm:w-2.5"
+                style={{ background: d < home ? hex : "transparent", border: "1.5px solid #ffffff" }}
+              />
+            ))}
+          </span>
+          <span className="hidden min-[420px]:inline">{t.ludo.tokensHome(home)}</span>
+        </p>
+      </div>
+      {(meta.isYou || meta.isBot) && (
+        <span className="chip shrink-0" style={{ background: "rgba(255,255,255,0.22)", color: "#ffffff" }}>
+          {meta.isYou ? t.ludo.you : t.ludo.computer}
+        </span>
+      )}
+    </div>
+  );
+}
 
 function Confetti() {
   return (
@@ -830,55 +946,32 @@ export default function LudoGame(props: LudoGameProps) {
   const timerPct = Math.max(0, Math.min(100, (remaining / timerSeconds) * 100));
   const timerLow = remaining <= 10;
 
+  /* Corner cards follow the board corners: red top-left, green
+     top-right, blue bottom-left, yellow bottom-right. */
+  const cornerCard = (color: LudoColor) => {
+    const i = state.players.findIndex((pl) => pl.color === color);
+    if (i === -1) return null;
+    const meta = metas[i];
+    if (!meta) return null;
+    return (
+      <PlayerCornerCard
+        key={color}
+        meta={meta}
+        color={color}
+        home={state.players[i].tokens.filter((p) => p === 57).length}
+        active={!finished && i === state.turn}
+      />
+    );
+  };
+  const topLeft = cornerCard("red");
+  const topRight = cornerCard("green");
+  const bottomLeft = cornerCard("blue");
+  const bottomRight = cornerCard("yellow");
+
   return (
     <div className="relative">
-      {/* Player panels */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {metas.map((meta, i) => {
-          const player = state.players[i];
-          const home = player ? player.tokens.filter((p) => p === 57).length : 0;
-          const active = !finished && i === state.turn;
-          const hex = player ? COLOR_HEX[player.color] : "var(--line)";
-          return (
-            <div
-              key={i}
-              className={`card flex items-center gap-2.5 p-2.5 ${active ? "ludo-panel-active" : ""}`}
-              style={
-                {
-                  "--panel-glow": hex,
-                  ...(active ? { boxShadow: `0 0 0 2px ${hex}` } : {}),
-                } as React.CSSProperties
-              }
-            >
-              <LudoAvatar url={meta.avatar_url} name={meta.name} size={36} ringColor={active ? hex : undefined} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold leading-tight">{meta.name}</p>
-                <p className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: "var(--muted)" }}>
-                  <span className="flex shrink-0 items-center gap-[3px]" aria-hidden="true">
-                    {[0, 1, 2, 3].map((d) => (
-                      <span
-                        key={d}
-                        className="inline-block h-2.5 w-2.5 rounded-full"
-                        style={{
-                          background: d < home ? hex : "transparent",
-                          border: `1.5px solid ${hex}`,
-                        }}
-                      />
-                    ))}
-                  </span>
-                  {t.ludo.tokensHome(home)}
-                </p>
-              </div>
-              {(meta.isYou || meta.isBot) && (
-                <span className="chip shrink-0">{meta.isYou ? t.ludo.you : t.ludo.computer}</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
       {/* Turn indicator + timer */}
-      <div className="card mt-3 p-3">
+      <div className="card p-3">
         <div className="flex items-center gap-3">
           {turnMeta && (
             <LudoAvatar url={turnMeta.avatar_url} name={turnMeta.name} size={40} ringColor={COLOR_HEX[turnColor]} />
@@ -961,15 +1054,41 @@ export default function LudoGame(props: LudoGameProps) {
       {/* Board + chat */}
       <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-start">
         <div className="mx-auto w-full max-w-[560px] flex-1">
-          <Board
-            state={state}
-            movable={movable}
-            canMove={effCanMove}
-            onToken={handleToken}
-            colorNames={t.ludo.colors}
-            capturedLabel={t.ludo.capturedLabel}
-            onAnimatingChange={onAnimatingChange}
-          />
+          {/* Blue patterned stage: corner player cards around the board. */}
+          <div
+            className="rounded-[22px] p-2.5 sm:p-3"
+            style={{
+              backgroundColor: "#2456A0",
+              backgroundImage:
+                "radial-gradient(rgba(255,255,255,0.10) 2.5px, transparent 3px), radial-gradient(rgba(255,255,255,0.07) 2.5px, transparent 3px), linear-gradient(160deg, #3573BD 0%, #1D4E8C 100%)",
+              backgroundSize: "44px 44px, 44px 44px, cover",
+              backgroundPosition: "0 0, 22px 22px, 0 0",
+              border: "2px solid rgba(217,165,33,0.65)",
+              boxShadow: "0 14px 30px rgba(20,50,100,0.35)",
+            }}
+          >
+            <div className="flex items-stretch justify-between gap-2">
+              {topLeft ?? <div className="flex-1" />}
+              {topRight ?? <div className="flex-1" />}
+            </div>
+            <div className="mt-2">
+              <Board
+                state={state}
+                movable={movable}
+                canMove={effCanMove}
+                onToken={handleToken}
+                colorNames={t.ludo.colors}
+                capturedLabel={t.ludo.capturedLabel}
+                onAnimatingChange={onAnimatingChange}
+              />
+            </div>
+            {(bottomLeft || bottomRight) && (
+              <div className="mt-2 flex items-stretch justify-between gap-2">
+                {bottomLeft ?? <div className="flex-1" />}
+                {bottomRight ?? <div className="flex-1" />}
+              </div>
+            )}
+          </div>
           <div className="mt-4 flex flex-col items-center gap-2">
             <div
               className={`rounded-[20px] ${effCanRoll ? "ludo-dice-ring" : ""}`}

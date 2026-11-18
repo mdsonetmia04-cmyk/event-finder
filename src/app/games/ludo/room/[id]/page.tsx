@@ -319,19 +319,31 @@ export default function RoomPage() {
     const st = cur?.state;
     if (!cur || !st || !session || st.phase !== "roll" || seatIndex(cur, session.id) !== st.turn) return;
     const myIdx = st.turn;
+    const moveNo = st.move_no;
+    if (diceTimerRef.current !== null) window.clearTimeout(diceTimerRef.current);
     setDiceRolling(true);
     const roll = rollDie();
-    await submitState(applyRoll(st, roll), st.move_no, (fresh) =>
-      fresh.phase === "roll" && fresh.turn === myIdx ? applyRoll(fresh, roll) : null,
-    );
-    diceTimerRef.current = window.setTimeout(() => setDiceRolling(false), 800);
+    try {
+      await submitState(applyRoll(st, roll), moveNo, (fresh) =>
+        fresh.move_no === moveNo && fresh.phase === "roll" && fresh.turn === myIdx
+          ? applyRoll(fresh, roll)
+          : null,
+      );
+    } finally {
+      // The dice must always settle, even if the write throws.
+      diceTimerRef.current = window.setTimeout(() => setDiceRolling(false), 800);
+    }
   };
 
   const handleToken = (token: number) => {
     const cur = roomRef.current;
     const st = cur?.state;
     if (!cur || !st || st.phase !== "move") return;
-    void submitState(applyMove(st, { token }), st.move_no, (fresh) => applyMove(fresh, { token }));
+    // The rebuild only applies to the same move: never replay this
+    // tap onto a later turn after a write conflict.
+    void submitState(applyMove(st, { token }), st.move_no, (fresh) =>
+      fresh.move_no === st.move_no ? applyMove(fresh, { token }) : null,
+    );
   };
 
   /* After a roll with zero legal moves, the acting client auto-passes. */
@@ -345,15 +357,24 @@ export default function RoomPage() {
     const id = window.setTimeout(() => {
       const latest = roomRef.current?.state;
       if (!latest || latest.move_no !== state.move_no) return;
+      // The rebuild re-checks the pass is still correct on the fresh
+      // state: same move, same roll, still zero legal moves.
       void submitState(applyMove(latest, { token: null }), latest.move_no, (fresh) =>
-        applyMove(fresh, { token: null }),
+        fresh.move_no === latest.move_no &&
+        fresh.phase === "move" &&
+        fresh.roll !== null &&
+        legalMoves(fresh, fresh.roll).length === 0
+          ? applyMove(fresh, { token: null })
+          : null,
       );
     }, 900);
     return () => window.clearTimeout(id);
   }, [room, state, session, submitState]);
 
   /* Timeout auto-play: every client runs the timer; the guarded write
-     lets exactly one client land the auto-played turn. */
+     lets exactly one client land the auto-played turn. A failed write
+     (e.g. transient network) retries while the turn is unchanged, so
+     an AFK player's turn can never stall the game. */
   const handleTimeout = useCallback(() => {
     const cur = roomRef.current;
     const st = cur?.state;
@@ -362,20 +383,28 @@ export default function RoomPage() {
     handledTimeoutRef.current = st.move_no;
     void (async () => {
       await new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * 600));
-      const latest = roomRef.current;
-      if (!latest?.state || latest.state.move_no !== st.move_no) return;
-      let auto = latest.state;
-      const startTurn = auto.turn;
-      for (let i = 0; i < 10; i++) {
-        if (auto.phase === "finished" || auto.turn !== startTurn) break;
-        if (auto.phase === "roll") auto = applyRoll(auto, rollDie());
-        else if (auto.phase === "move" && auto.roll !== null) {
-          auto = applyMove(auto, { token: botMove(auto, auto.roll) });
-        } else break;
+      for (let attemptNo = 0; attemptNo < 3; attemptNo++) {
+        const latest = roomRef.current;
+        if (!latest?.state || latest.state.move_no !== st.move_no) return;
+        let auto = latest.state;
+        const startTurn = auto.turn;
+        /* 40 steps covers a long extra-turn streak (6/capture/home);
+           the loop always ends when the turn passes or the game ends. */
+        for (let i = 0; i < 40; i++) {
+          if (auto.phase === "finished" || auto.turn !== startTurn) break;
+          if (auto.phase === "roll") auto = applyRoll(auto, rollDie());
+          else if (auto.phase === "move" && auto.roll !== null) {
+            auto = applyMove(auto, { token: botMove(auto, auto.roll) });
+          } else break;
+        }
+        if (auto.move_no === st.move_no) return;
+        const ok = await submitState(auto, st.move_no, undefined, true);
+        if (ok) {
+          void fetchAll();
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 5000));
       }
-      if (auto.move_no === st.move_no) return;
-      await submitState(auto, st.move_no, undefined, true);
-      void fetchAll();
     })();
   }, [fetchAll, submitState]);
 

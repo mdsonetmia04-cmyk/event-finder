@@ -1506,16 +1506,17 @@ html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spaci
   .ludo-dice-cube-tumble, .ludo-dice-ring { animation: none; }
 }
 
-/* ---- Ludo v2: movable token pulse highlight ---- */
-@keyframes ludo-token-pulse-kf {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 0 2px #fff, 0 0 0 5px var(--gold), 0 3px 7px rgba(0, 0, 0, 0.35); }
-  50% { transform: scale(1.16); box-shadow: 0 0 0 2px #fff, 0 0 0 8px var(--gold), 0 3px 9px rgba(0, 0, 0, 0.4); }
+/* ---- Ludo 3D: movable pin pulse highlight (drop-shadow follows the
+   pin silhouette, so the glow hugs the pin instead of a rectangle) ---- */
+@keyframes ludo-pin-pulse-kf {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 3px rgba(232, 169, 12, 0.9)) drop-shadow(0 3px 3px rgba(0, 0, 0, 0.3)); }
+  50% { transform: scale(1.14); filter: drop-shadow(0 0 9px rgba(232, 169, 12, 1)) drop-shadow(0 5px 5px rgba(0, 0, 0, 0.35)); }
 }
-.ludo-token-movable {
-  animation: ludo-token-pulse-kf 0.9s ease-in-out infinite;
+.ludo-pin-movable {
+  animation: ludo-pin-pulse-kf 0.9s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .ludo-token-movable { animation: none; }
+  .ludo-pin-movable { animation: none; }
 }
 
 /* ---- Ludo v2: token hop while moving (two identical keyframe sets so

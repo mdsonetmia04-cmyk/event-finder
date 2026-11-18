@@ -55,6 +55,14 @@ export const COLOR_TINT: Record<LudoColor, string> = {
   blue: "rgba(62, 123, 250, 0.22)",
 };
 
+/** Light/dark shades of each player colour, for the 3D pin gradient. */
+export const PIN_SHADES: Record<LudoColor, { light: string; dark: string }> = {
+  red: { light: "#F48388", dark: "#A92E33" },
+  green: { light: "#5CC795", dark: "#1E7A4E" },
+  yellow: { light: "#F6C74E", dark: "#B3850A" },
+  blue: { light: "#71A0FB", dark: "#2A5BC0" },
+};
+
 /** Room codes skip look-alike characters (I, L, O, 0, 1) for easy sharing. */
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 export const ROOM_CODE_LENGTH = 6;

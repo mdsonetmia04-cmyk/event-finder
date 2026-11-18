@@ -37,15 +37,19 @@ export default function SoloLudoPage() {
     };
   }, []);
 
-  /* Bot turns: roll after ~800ms, move after ~700ms. */
+  /* Bot turns: roll after ~800ms, move after ~700ms. The settle
+     timeout only applies its roll when the game is still on the
+     same move — a timeout auto-play in between must never receive
+     this stale roll. */
   useEffect(() => {
     if (!game || game.phase === "finished" || game.turn === 0) return;
+    const moveNo = game.move_no;
     if (game.phase === "roll") {
       const id = window.setTimeout(() => {
         setDiceRolling(true);
         const roll = rollDie();
         const settle = window.setTimeout(() => {
-          setGame((g) => (g && g.phase === "roll" ? applyRoll(g, roll) : g));
+          setGame((g) => (g && g.phase === "roll" && g.move_no === moveNo ? applyRoll(g, roll) : g));
           setDiceRolling(false);
         }, 800);
         timersRef.current.push(settle);
@@ -73,10 +77,11 @@ export default function SoloLudoPage() {
 
   const handleRoll = useCallback(() => {
     if (!game || game.phase !== "roll" || game.turn !== 0 || diceRolling) return;
+    const moveNo = game.move_no;
     setDiceRolling(true);
     const roll = rollDie();
     const id = window.setTimeout(() => {
-      setGame((g) => (g && g.phase === "roll" ? applyRoll(g, roll) : g));
+      setGame((g) => (g && g.phase === "roll" && g.move_no === moveNo ? applyRoll(g, roll) : g));
       setDiceRolling(false);
     }, 800);
     timersRef.current.push(id);
@@ -93,7 +98,9 @@ export default function SoloLudoPage() {
       if (!g || g.phase === "finished") return g;
       let auto = g;
       const startTurn = auto.turn;
-      for (let i = 0; i < 10; i++) {
+      /* 40 steps covers a long extra-turn streak (6/capture/home);
+         the loop always ends when the turn passes or the game ends. */
+      for (let i = 0; i < 40; i++) {
         if (auto.phase === "finished" || auto.turn !== startTurn) break;
         if (auto.phase === "roll") auto = applyRoll(auto, rollDie());
         else if (auto.phase === "move" && auto.roll !== null) {

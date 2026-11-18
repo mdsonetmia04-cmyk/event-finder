@@ -9,7 +9,7 @@
    remaining. Progress lives in localStorage only (per-device) — no
    database table, no Supabase calls. */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -448,15 +448,15 @@ export default function ArrowsOutPage() {
                           }
                           style={
                             isExiting
-                              ? {
-                                  /* Fly straight out of the board in the head
-                                     direction, fading near the end. The travel
-                                     distance clears the whole viewport from
-                                     any position. */
-                                  transform: `translate(${dc * (viewSpan + 24)}px, ${dr * (viewSpan + 24)}px)`,
-                                  opacity: 0,
-                                  transition: "transform 0.45s ease-in, opacity 0.3s ease 0.18s",
-                                }
+                              ? ({
+                                  /* Fly-out direction/distance for the
+                                     arrows-maze-exit keyframes: straight out
+                                     of the board in the head direction. The
+                                     travel distance clears the whole viewport
+                                     from any position. */
+                                  "--exit-dx": `${dc * (viewSpan + 24)}px`,
+                                  "--exit-dy": `${dr * (viewSpan + 24)}px`,
+                                } as CSSProperties)
                               : undefined
                           }
                         >

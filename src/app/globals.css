@@ -1696,6 +1696,19 @@ html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spaci
 .arrows-maze-hint {
   animation: arrows-maze-hint-kf 0.9s ease-in-out 2;
 }
+/* Fly-out exit: a keyframe animation (not a transition) — the
+   transition version was observed live to apply instantly with no
+   motion. Direction/distance come from --exit-dx/--exit-dy on the
+   element. `forwards` holds the flown-out state until React
+   removes the arrow. */
+@keyframes arrows-maze-exit-kf {
+  from { transform: translate(0, 0); opacity: 1; }
+  70% { opacity: 1; }
+  to { transform: translate(var(--exit-dx, 0px), var(--exit-dy, 0px)); opacity: 0; }
+}
+.arrows-maze-exit {
+  animation: arrows-maze-exit-kf 0.45s ease-in forwards;
+}
 /* Tap targets: no browser focus capsule around the arrow (it looked
    like a stray outline); keyboard focus gets a soft gold halo. */
 .arrows-tap {
@@ -1706,8 +1719,7 @@ html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spaci
   stroke-opacity: 0.3;
 }
 @media (prefers-reduced-motion: reduce) {
-  .arrows-maze-shake, .arrows-maze-hint { animation: none; }
-  .arrows-maze-exit { transition: none !important; }
+  .arrows-maze-shake, .arrows-maze-hint, .arrows-maze-exit { animation: none; }
 }
 
 /* ---------- First-load splash: never-stick fallback ---------- */

@@ -30,7 +30,7 @@ const MEDALS: Record<number, { ring: string; bg: string; fg: string }> = {
   3: { ring: "#B07A4F", bg: "#B07A4F", fg: "#fff8ef" },
 };
 
-const REFRESH_MS = 5 * 60 * 1000;
+const REFRESH_MS = 30 * 1000;
 
 /** Round avatar: the user's picture, or a medal-toned initial circle. */
 function LeaderAvatar({
@@ -114,7 +114,14 @@ export default function Leaderboard() {
     setFailed(false);
     void load(period);
     const id = setInterval(() => void load(period), REFRESH_MS);
-    return () => clearInterval(id);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load(period);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [period, load]);
 
   if (failed) return null;

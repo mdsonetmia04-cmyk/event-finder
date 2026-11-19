@@ -1681,7 +1681,14 @@ html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spaci
 }
 
 /* ---- Arrows Out (maze style): ink lines, bump shake, hint glow ---- */
-/* Ink: dark in light mode, gold in dark mode. */
+/* Ink: dark in light mode, gold in dark mode. Board: white in light
+   mode (video-style), card surface in dark mode. */
+.arrows-board {
+  background: #ffffff;
+}
+.dark .arrows-board {
+  background: var(--card);
+}
 .arrows-ink {
   stroke: var(--text);
 }
@@ -1704,12 +1711,24 @@ html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spaci
 .arrows-maze-shake {
   animation: arrows-maze-shake-kf 0.32s ease;
 }
+/* Hint glow: green (video-style safe-exit highlight). */
 @keyframes arrows-maze-hint-kf {
-  0%, 100% { filter: drop-shadow(0 0 1.5px var(--gold)); }
-  50% { filter: drop-shadow(0 0 3.5px var(--gold)); }
+  0%, 100% { filter: drop-shadow(0 0 1.5px #2FA36B); }
+  50% { filter: drop-shadow(0 0 3.5px #2FA36B); }
 }
 .arrows-maze-hint {
   animation: arrows-maze-hint-kf 0.9s ease-in-out 2;
+}
+/* Eraser removal: shrink + fade around the arrow's own center
+   (transform-box keeps the scale centred on the group). */
+@keyframes arrows-maze-erase-kf {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(0.1); opacity: 0; }
+}
+.arrows-maze-erase {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: arrows-maze-erase-kf 0.28s ease-in forwards;
 }
 /* Fly-out exit: a keyframe animation (not a transition) — the
    transition version was observed live to apply instantly with no
@@ -1734,7 +1753,7 @@ html.lang-bn .hero-title { font-family: "SolaimanLipi", sans-serif; letter-spaci
   stroke-opacity: 0.3;
 }
 @media (prefers-reduced-motion: reduce) {
-  .arrows-maze-shake, .arrows-maze-hint, .arrows-maze-exit { animation: none; }
+  .arrows-maze-shake, .arrows-maze-hint, .arrows-maze-exit, .arrows-maze-erase { animation: none; }
 }
 
 /* ---------- First-load splash: never-stick fallback ---------- */

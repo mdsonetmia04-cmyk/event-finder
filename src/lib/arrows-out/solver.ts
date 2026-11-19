@@ -21,6 +21,54 @@
 
 export type Direction = "up" | "down" | "left" | "right";
 
+/** Shaped boards (video-style): a mask over the square grid — cells
+    outside the shape hold no arrows. Void cells never block an exit
+    ray (they are empty space), so the straight-ray removal rule and
+    the greedy solver are unchanged; the mask only restricts where
+    arrow cells may sit. */
+export type ArrowsShape = "heart" | "circle" | "diamond";
+
+/** Playable-cell mask for a shaped board, row-major (true = inside
+    the shape). Heart/circle are 10x10 boards, diamond is 14x14. */
+export function shapeMask(size: number, shape: ArrowsShape): boolean[][] {
+  if (shape === "heart") {
+    const rows = [
+      "..........",
+      ".XXX..XXX.",
+      "XXXXXXXXXX",
+      "XXXXXXXXXX",
+      "XXXXXXXXXX",
+      ".XXXXXXXX.",
+      "..XXXXXX..",
+      "...XXXX...",
+      "....XX....",
+      "..........",
+    ];
+    return rows.map((r) => [...r].map((c) => c === "X"));
+  }
+  const mask: boolean[][] = [];
+  const mid = (size - 1) / 2;
+  for (let r = 0; r < size; r++) {
+    const row: boolean[] = [];
+    for (let c = 0; c < size; c++) {
+      if (shape === "circle") {
+        const dr = r - mid;
+        const dc = c - mid;
+        row.push(dr * dr + dc * dc <= 4.6 * 4.6);
+      } else {
+        row.push(Math.abs(r - mid) + Math.abs(c - mid) <= 7);
+      }
+    }
+    mask.push(row);
+  }
+  return mask;
+}
+
+/** Number of playable cells in a shape mask. */
+export function shapeCellCount(size: number, shape: ArrowsShape): number {
+  return shapeMask(size, shape).flat().filter(Boolean).length;
+}
+
 export interface CellPos {
   row: number;
   col: number;
@@ -61,9 +109,10 @@ export function headCell(arrow: MazeArrow): CellPos {
 }
 
 /** Parse one arrow spec into cells. Throws on bad steps, out-of-grid
-    cells, self-intersection, or a path shorter than 2 cells (a head
-    needs at least one step to point anywhere). */
-export function parseArrow(spec: ArrowSpec, id: number, size: number): MazeArrow {
+    cells, self-intersection, a path shorter than 2 cells (a head
+    needs at least one step to point anywhere), or — when `shape` is
+    given — a cell outside the shape mask. */
+export function parseArrow(spec: ArrowSpec, id: number, size: number, shape?: ArrowsShape): MazeArrow {
   const [startRow, startCol] = spec.start;
   if (
     !Number.isInteger(startRow) ||
@@ -74,6 +123,10 @@ export function parseArrow(spec: ArrowSpec, id: number, size: number): MazeArrow
     startCol >= size
   ) {
     throw new Error(`Arrows Out arrow ${id}: start [${startRow},${startCol}] is outside the ${size}x${size} grid`);
+  }
+  const mask = shape ? shapeMask(size, shape) : null;
+  if (mask && !mask[startRow][startCol]) {
+    throw new Error(`Arrows Out arrow ${id}: start [${startRow},${startCol}] is outside the ${shape} shape`);
   }
   if (typeof spec.steps !== "string" || spec.steps.length < 1) {
     throw new Error(`Arrows Out arrow ${id}: needs at least one step`);
@@ -92,6 +145,9 @@ export function parseArrow(spec: ArrowSpec, id: number, size: number): MazeArrow
     if (row < 0 || row >= size || col < 0 || col >= size) {
       throw new Error(`Arrows Out arrow ${id}: step "${ch}" leaves the ${size}x${size} grid`);
     }
+    if (mask && !mask[row][col]) {
+      throw new Error(`Arrows Out arrow ${id}: step "${ch}" leaves the ${shape} shape at [${row},${col}]`);
+    }
     const key = `${row},${col}`;
     if (seen.has(key)) throw new Error(`Arrows Out arrow ${id}: path revisits cell ${key}`);
     seen.add(key);
@@ -101,8 +157,8 @@ export function parseArrow(spec: ArrowSpec, id: number, size: number): MazeArrow
 }
 
 /** Parse a whole level. Throws when two arrows share a cell. */
-export function parseLevel(specs: ArrowSpec[], size: number): MazeArrow[] {
-  const arrows = specs.map((spec, i) => parseArrow(spec, i, size));
+export function parseLevel(specs: ArrowSpec[], size: number, shape?: ArrowsShape): MazeArrow[] {
+  const arrows = specs.map((spec, i) => parseArrow(spec, i, size, shape));
   const owner = new Map<string, number>();
   for (const arrow of arrows) {
     for (const cell of arrow.cells) {

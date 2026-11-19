@@ -1,4 +1,4 @@
-import type { ArrowSpec } from "./solver";
+import type { ArrowSpec, ArrowsShape } from "./solver";
 import { parseLevel, type MazeArrow } from "./solver";
 
 export type ArrowsDifficulty = "normal" | "hard" | "superHard";
@@ -8,6 +8,10 @@ export interface ArrowsLevel {
   n: number;
   /** Square grid size (size x size cells). */
   size: number;
+  /** Shaped board (video-style): L6 heart, L10 circle ("HARD LEVEL"),
+      L24 diamond. Omitted = full square board. Arrow cells must lie
+      inside the shape; void cells never block an exit ray. */
+  shape?: ArrowsShape;
   /** Winding arrows: tail cell + step letters (U/D/L/R), tail to head. */
   arrows: ArrowSpec[];
 }
@@ -105,18 +109,19 @@ export const ARROWS_LEVELS: ArrowsLevel[] = [
   {
     n: 6,
     size: 10,
+    shape: "heart",
     arrows: [
-    { start: [9, 6], steps: "UUUUUU" },
-    { start: [0, 7], steps: "DDLL" },
-    { start: [2, 3], steps: "RD" },
-    { start: [6, 1], steps: "UU" },
-    { start: [3, 2], steps: "RDD" },
-    { start: [2, 8], steps: "DDDLDD" },
-    { start: [9, 9], steps: "LLURR" },
-    { start: [5, 9], steps: "DLDR" },
-    { start: [1, 6], steps: "LLLL" },
-    { start: [6, 3], steps: "RRDLLL" },
-    { start: [7, 1], steps: "LUU" },
+    { start: [7, 5], steps: "DLUU" },
+    { start: [1, 7], steps: "RDLLLL" },
+    { start: [3, 0], steps: "RRU" },
+    { start: [5, 3], steps: "URR" },
+    { start: [3, 4], steps: "RR" },
+    { start: [5, 6], steps: "UR" },
+    { start: [3, 3], steps: "U" },
+    { start: [3, 7], steps: "R" },
+    { start: [2, 9], steps: "D" },
+    { start: [6, 7], steps: "URUR" },
+    { start: [1, 3], steps: "L" },
     ],
   },
   {
@@ -177,21 +182,22 @@ export const ARROWS_LEVELS: ArrowsLevel[] = [
   {
     n: 10,
     size: 10,
+    shape: "circle",
     arrows: [
-    { start: [1, 8], steps: "DDDDD" },
-    { start: [5, 4], steps: "RU" },
-    { start: [3, 1], steps: "LD" },
-    { start: [9, 3], steps: "LLLURRR" },
-    { start: [0, 6], steps: "DLLLL" },
-    { start: [5, 3], steps: "DL" },
-    { start: [6, 1], steps: "LDR" },
-    { start: [8, 9], steps: "UUUU" },
-    { start: [1, 9], steps: "ULLD" },
-    { start: [4, 3], steps: "LDL" },
-    { start: [3, 7], steps: "ULLLL" },
-    { start: [0, 2], steps: "LLDDRU" },
-    { start: [7, 7], steps: "ULLD" },
-    { start: [9, 7], steps: "RULLLDR" },
+    { start: [4, 8], steps: "ULU" },
+    { start: [1, 7], steps: "LDLDD" },
+    { start: [7, 6], steps: "L" },
+    { start: [8, 3], steps: "U" },
+    { start: [8, 2], steps: "U" },
+    { start: [6, 4], steps: "UUULL" },
+    { start: [1, 5], steps: "LUR" },
+    { start: [2, 4], steps: "L" },
+    { start: [1, 2], steps: "DLD" },
+    { start: [6, 2], steps: "UUL" },
+    { start: [7, 4], steps: "DRD" },
+    { start: [6, 5], steps: "RUR" },
+    { start: [4, 0], steps: "DRD" },
+    { start: [7, 8], steps: "LURUR" },
     ],
   },
   {
@@ -505,29 +511,30 @@ export const ARROWS_LEVELS: ArrowsLevel[] = [
   {
     n: 24,
     size: 14,
+    shape: "diamond",
     arrows: [
-    { start: [7, 9], steps: "LDLLLLLU" },
-    { start: [12, 7], steps: "UULLL" },
-    { start: [0, 6], steps: "LDDRDLDR" },
-    { start: [12, 12], steps: "LLU" },
-    { start: [2, 3], steps: "DDLD" },
-    { start: [6, 3], steps: "URRRDL" },
-    { start: [7, 12], steps: "DDDR" },
-    { start: [4, 0], steps: "URDDLDDDD" },
-    { start: [0, 13], steps: "DDDLU" },
-    { start: [0, 3], steps: "RDLL" },
-    { start: [8, 1], steps: "UURD" },
-    { start: [0, 7], steps: "DDDDDR" },
-    { start: [12, 3], steps: "UULD" },
-    { start: [7, 4], steps: "RRRURRUU" },
-    { start: [11, 4], steps: "RRDDLL" },
-    { start: [8, 11], steps: "DLU" },
-    { start: [10, 8], steps: "DDD" },
-    { start: [4, 13], steps: "DDLLLUR" },
-    { start: [12, 9], steps: "DRR" },
-    { start: [4, 8], steps: "UURUU" },
-    { start: [13, 1], steps: "UUULD" },
-    { start: [9, 7], steps: "RRDRRDR" },
+    { start: [11, 5], steps: "DR" },
+    { start: [12, 7], steps: "R" },
+    { start: [7, 13], steps: "LUUL" },
+    { start: [10, 8], steps: "DLU" },
+    { start: [3, 4], steps: "DRRDL" },
+    { start: [7, 8], steps: "L" },
+    { start: [1, 8], steps: "L" },
+    { start: [5, 4], steps: "LULDL" },
+    { start: [6, 7], steps: "LLLLL" },
+    { start: [5, 9], steps: "LLURR" },
+    { start: [9, 8], steps: "L" },
+    { start: [2, 5], steps: "URDR" },
+    { start: [7, 0], steps: "URD" },
+    { start: [9, 5], steps: "LLL" },
+    { start: [7, 2], steps: "DL" },
+    { start: [7, 6], steps: "LDR" },
+    { start: [8, 7], steps: "R" },
+    { start: [3, 8], steps: "URDRD" },
+    { start: [11, 9], steps: "UURD" },
+    { start: [7, 10], steps: "ULDDR" },
+    { start: [6, 11], steps: "DD" },
+    { start: [0, 6], steps: "R" },
     ],
   },
   {
@@ -724,5 +731,5 @@ export const ARROWS_LEVELS: ArrowsLevel[] = [
 ];
 
 export function levelArrows(level: ArrowsLevel): MazeArrow[] {
-  return parseLevel(level.arrows, level.size);
+  return parseLevel(level.arrows, level.size, level.shape);
 }

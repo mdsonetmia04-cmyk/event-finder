@@ -53,10 +53,13 @@ const solver = require(join(OUT, "solver.js"));
 const { ARROWS_LEVELS, levelDifficulty } = require(join(OUT, "levels.js"));
 rmSync(OUT, { recursive: true, force: true });
 
-const { parseLevel, countCells, removableArrows, isSolvable, headCell } = solver;
+const { parseLevel, countCells, removableArrows, isSolvable, headCell, shapeCellCount } = solver;
 
 // Size plan: 8x8 (1-5), 10x10 (6-12), 12x12 (13-20), 14x14 (21-26),
 // 16x16 (27-30).
+// Shaped boards (video-style): L6 heart (56 cells), L10 circle "HARD
+// LEVEL" (68 cells), L24 diamond (112 cells). Every other level is a
+// full square board.
 const EXPECTED_SIZES = [
   ...Array(5).fill(8),
   ...Array(7).fill(10),
@@ -94,10 +97,23 @@ ARROWS_LEVELS.forEach((level, i) => {
   }
   let arrows;
   try {
-    arrows = parseLevel(level.arrows, level.size);
+    arrows = parseLevel(level.arrows, level.size, level.shape);
   } catch (err) {
     fail(`${label}: unparsable level — ${err.message}`);
     return;
+  }
+  const EXPECTED_SHAPES = { 6: "heart", 10: "circle", 24: "diamond" };
+  const expectedShape = EXPECTED_SHAPES[level.n];
+  if ((level.shape ?? null) !== (expectedShape ?? null)) {
+    fail(`${label}: expected shape ${expectedShape ?? "none"}, got ${level.shape ?? "none"}`);
+    return;
+  }
+  if (level.shape) {
+    const expectedCells = { heart: 56, circle: 68, diamond: 112 }[level.shape];
+    if (shapeCellCount(level.size, level.shape) !== expectedCells) {
+      fail(`${label}: ${level.shape} mask has ${shapeCellCount(level.size, level.shape)} cells (expected ${expectedCells})`);
+      return;
+    }
   }
   const key = JSON.stringify(level.arrows);
   if (seen.has(key)) fail(`${label}: duplicate level`);
@@ -127,7 +143,7 @@ ARROWS_LEVELS.forEach((level, i) => {
     if (head.row !== last.row || head.col !== last.col) fail(`${label}: arrow ${arrow.id} head mismatch`);
   }
   console.log(
-    `${label} ${level.size}x${level.size} arrows=${arrows.length} cells=${countCells(arrows)} ` +
+    `${label} ${level.size}x${level.size}${level.shape ? ` ${level.shape}` : ""} arrows=${arrows.length} cells=${countCells(arrows)} ` +
       `clearable-at-start=${clearable.length} dirs=${dirs.size} solvable=${solvable ? "YES" : "NO"}`,
   );
 });

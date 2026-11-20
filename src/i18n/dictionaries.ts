@@ -10,7 +10,7 @@ const en = {
     calendar: "Smart Calendar",
     opportunities: "Opportunities",
     markets: "Global Markets",
-    planner: "Asset Planner",
+    planner: "Galaxy",
     evergreen: "Evergreen",
     sources: "Research Sources",
     contact: "Contact",
@@ -312,7 +312,7 @@ const en = {
     assets: {
       eyebrow: "Assets",
       title: "Asset types in demand",
-      open: "Open asset planner",
+      open: "Open Galaxy",
       desc: "Every event recommends specific asset types, vectors, icons, patterns, photos, templates and video, matched to what buyers license for that occasion.",
     },
   },
@@ -440,7 +440,7 @@ const en = {
     relLevels: ["", "Niche", "Emerging", "Strong", "Major", "Flagship"],
   },
   planner: {
-    title: "Asset Production Planner",
+    title: "Galaxy",
     sub: "Turn opportunities into a production queue. Tasks persist in your browser.",
     newTask: "New task",
     close: "Close",
@@ -771,7 +771,7 @@ const en = {
           "Account data: your name, WhatsApp number and password (stored as a secure hash \u2014 we never see your plain password).",
           "Profile data you add: email, full name, mobile number, date of birth, district, education, skills and interests, team number, gender, blood group and Facebook link.",
           "Usage data: when you were last active and how long you use the site, so we can show live presence and usage statistics.",
-          "Your content: production tasks (stored in your own browser), chat messages with the admin, and earning records you enter in the Asset Planner.",
+          "Your content: production tasks (stored in your own browser), chat messages with the admin, and earning records you enter in Galaxy.",
         ],
       },
       {
@@ -1437,7 +1437,7 @@ export const bn: Dict = {
     calendar: "স্মার্ট ক্যালেন্ডার",
     opportunities: "সুযোগসমূহ",
     markets: "বৈশ্বিক বাজার",
-    planner: "অ্যাসেট প্ল্যানার",
+    planner: "গ্যালাক্সি",
     evergreen: "এভারগ্রিন",
     sources: "গবেষণা উৎস",
     contact: "যোগাযোগ",
@@ -1739,7 +1739,7 @@ export const bn: Dict = {
     assets: {
       eyebrow: "অ্যাসেট",
       title: "চাহিদায় থাকা অ্যাসেটের ধরন",
-      open: "অ্যাসেট প্ল্যানার খুলুন",
+      open: "গ্যালাক্সি খুলুন",
       desc: "প্রতিটি ইভেন্ট নির্দিষ্ট অ্যাসেটের ধরন সুপারিশ করে, ভেক্টর, আইকন, প্যাটার্ন, ছবি, টেমপ্লেট ও ভিডিও, যা ক্রেতারা সেই উপলক্ষে লাইসেন্স করে তার সাথে মিলিয়ে।",
     },
   },
@@ -1867,7 +1867,7 @@ export const bn: Dict = {
     relLevels: ["", "নিশ", "উদীয়মান", "শক্তিশালী", "প্রধান", "ফ্ল্যাগশিপ"],
   },
   planner: {
-    title: "অ্যাসেট প্রোডাকশন প্ল্যানার",
+    title: "গ্যালাক্সি",
     sub: "সুযোগকে প্রোডাকশন সারিতে রূপ দিন। টাস্ক আপনার ব্রাউজারে সংরক্ষিত থাকে।",
     newTask: "নতুন টাস্ক",
     close: "বন্ধ",
@@ -2198,7 +2198,7 @@ export const bn: Dict = {
           "অ্যাকাউন্টের তথ্য: আপনার নাম, WhatsApp নম্বর ও পাসওয়ার্ড (নিরাপদ hash হিসেবে সংরক্ষিত \u2014 আমরা আপনার আসল পাসওয়ার্ড দেখি না)।",
           "আপনি যে প্রোফাইল তথ্য দেন: ইমেইল, পুরো নাম, মোবাইল নম্বর, জন্ম তারিখ, জেলা, শিক্ষা, দক্ষতা ও আগ্রহ, টিম নম্বর, লিঙ্গ, রক্তের গ্রুপ ও ফেসবুক লিংক।",
           "ব্যবহারের তথ্য: আপনি কখন সক্রিয় ছিলেন ও কতক্ষণ সাইট ব্যবহার করেছেন \u2014 live presence ও ব্যবহার পরিসংখ্যান দেখানোর জন্য।",
-          "আপনার কনটেন্ট: প্রোডাকশন টাস্ক (আপনার নিজের ব্রাউজারে সংরক্ষিত), অ্যাডমিনের সাথে চ্যাট বার্তা, এবং Asset Planner-এ আপনার দেওয়া আয়ের রেকর্ড।",
+          "আপনার কনটেন্ট: প্রোডাকশন টাস্ক (আপনার নিজের ব্রাউজারে সংরক্ষিত), অ্যাডমিনের সাথে চ্যাট বার্তা, এবং Galaxy-তে আপনার দেওয়া আয়ের রেকর্ড।",
         ],
       },
       {

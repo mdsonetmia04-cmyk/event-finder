@@ -1,6 +1,6 @@
 "use client";
 
-/* EarningsTracker: "date onujayi earning" inside the Asset Planner.
+/* EarningsTracker: "date onujayi earning" inside Galaxy.
    Three accounts (Account 1 — Non AI, Account 2 — AI, Account 3 — Icons).
    Each user records, per date, their total approved assets + earning.
    What the user saves stays as-is until their next update; the card shows the

@@ -2,9 +2,14 @@
    50 levels x 30 questions (1,500 total), all about the Adobe Stock
    contributor rules. Scoring is marks, not points: the player earns 1
    mark per correct answer; Sweet AI earns 1 mark whenever the player
-   answers wrong or times out. Win = player marks > AI marks (16+ of
-   30). 15–15 is a draw (replay, no unlock). Stars: 26–30 correct =
-   3 stars, 21–25 = 2 stars, 16–20 = 1 star.
+   answers wrong or times out.
+   UNLOCK (per band — user rule 2026-11-21): a level is CLEARED when
+   correct >= its band threshold, and only a cleared level unlocks the
+   next one: Basic (1–5) 15+, Intermediate (6–15) 20+, Advanced
+   (16–30) 22+, Expert (31–45) 25+, Master (46–50) 30/30.
+   Stars (unchanged): 26–30 correct = 3 stars, 21–25 = 2 stars,
+   16–20 = 1 star — so a Basic clear at 15 correct earns 0 stars.
+   The User-vs-AI marks are the scoreboard, not the unlock rule.
    Progress (highest unlocked level + stars/best per level) persists in
    localStorage under LEVELS_STORAGE_KEY. */
 
@@ -27,18 +32,30 @@ export interface LevelBand {
   nameBn: string;
   from: number;
   to: number;
+  /** Correct answers needed to clear a level in this band (0..30). */
+  threshold: number;
 }
 
 export const LEVEL_BANDS: LevelBand[] = [
-  { name: "Basic", nameBn: "বেসিক", from: 1, to: 5 },
-  { name: "Intermediate", nameBn: "ইন্টারমিডিয়েট", from: 6, to: 15 },
-  { name: "Advanced", nameBn: "অ্যাডভান্সড", from: 16, to: 30 },
-  { name: "Expert", nameBn: "এক্সপার্ট", from: 31, to: 45 },
-  { name: "Master", nameBn: "মাস্টার", from: 46, to: 50 },
+  { name: "Basic", nameBn: "বেসিক", from: 1, to: 5, threshold: 15 },
+  { name: "Intermediate", nameBn: "ইন্টারমিডিয়েট", from: 6, to: 15, threshold: 20 },
+  { name: "Advanced", nameBn: "অ্যাডভান্সড", from: 16, to: 30, threshold: 22 },
+  { name: "Expert", nameBn: "এক্সপার্ট", from: 31, to: 45, threshold: 25 },
+  { name: "Master", nameBn: "মাস্টার", from: 46, to: 50, threshold: 30 },
 ];
 
 export function bandForLevel(level: number): LevelBand {
   return LEVEL_BANDS.find((b) => level >= b.from && level <= b.to) ?? LEVEL_BANDS[0];
+}
+
+/** Correct answers needed to clear a level (unlock the next one). */
+export function unlockThresholdForLevel(level: number): number {
+  return bandForLevel(level).threshold;
+}
+
+/** A level is cleared when correct >= its band threshold. */
+export function isLevelCleared(level: number, correct: number): boolean {
+  return correct >= unlockThresholdForLevel(level);
 }
 
 /**
@@ -86,18 +103,15 @@ export function drawLevelQuestions(level: number): BattleQuestion[] {
 }
 
 /**
- * Stars from the correct count. A win needs 16+ correct:
+ * Stars from the correct count (unchanged by the unlock rule):
  * 26–30 = 3 stars, 21–25 = 2 stars, 16–20 = 1 star, otherwise 0.
+ * Note: a Basic clear at 15 correct earns 0 stars.
  */
 export function starsForCorrect(correct: number): number {
   if (correct >= 26) return 3;
   if (correct >= 21) return 2;
   if (correct >= 16) return 1;
   return 0;
-}
-
-export function isLevelWin(correct: number): boolean {
-  return correct > QUESTIONS_PER_LEVEL - correct;
 }
 
 export interface LevelsProgress {
@@ -155,8 +169,7 @@ export function saveLevelsProgress(progress: LevelsProgress): void {
 export interface LevelResult {
   progress: LevelsProgress;
   stars: number;
-  won: boolean;
-  draw: boolean;
+  cleared: boolean;
   unlockedNext: boolean;
 }
 
@@ -166,22 +179,23 @@ export function applyLevelResult(
   level: number,
   correct: number,
 ): LevelResult {
-  const stars = starsForCorrect(correct);
-  const won = isLevelWin(correct);
-  const draw = correct * 2 === QUESTIONS_PER_LEVEL;
+  const cleared = isLevelCleared(level, correct);
+  /* Stars only count on a cleared level: a Basic clear at 15 correct
+     earns 0 stars, and a failed attempt earns none either. */
+  const stars = cleared ? starsForCorrect(correct) : 0;
   const next: LevelsProgress = {
     unlocked: progress.unlocked,
     stars: { ...progress.stars },
     best: { ...progress.best },
   };
   next.best[level] = Math.max(next.best[level] ?? 0, correct);
-  if (won) {
+  if (cleared) {
     next.stars[level] = Math.max(next.stars[level] ?? 0, stars);
   }
   let unlockedNext = false;
-  if (won && level < LEVELS_COUNT && next.unlocked <= level) {
+  if (cleared && level < LEVELS_COUNT && next.unlocked <= level) {
     next.unlocked = level + 1;
     unlockedNext = true;
   }
-  return { progress: next, stars, won, draw, unlockedNext };
+  return { progress: next, stars, cleared, unlockedNext };
 }

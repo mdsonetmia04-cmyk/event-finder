@@ -35,6 +35,7 @@ import {
   loadLevelsProgress,
   saveLevelsProgress,
   starsForCorrect,
+  unlockThresholdForLevel,
   LEVEL_BANDS,
   LEVELS_COUNT,
   LEVEL_QUESTION_MS,
@@ -105,6 +106,8 @@ export default function QuizLevels({ onExit }: { onExit: () => void }) {
   const [showNudge, setShowNudge] = useState(false);
   const [starsEarned, setStarsEarned] = useState(0);
   const [unlockedNext, setUnlockedNext] = useState(false);
+  /** Whether the finished level reached its band threshold. */
+  const [cleared, setCleared] = useState(false);
 
   /* Refs mirror the values timers need, so callbacks never read stale state. */
   const phaseRef = useRef<Phase>("select");
@@ -196,7 +199,6 @@ export default function QuizLevels({ onExit }: { onExit: () => void }) {
         setPhase("results");
         const lvl = levelRef.current;
         const correct = marksRef.current.player;
-        const won = correct > QUESTIONS_PER_LEVEL - correct;
         const result = applyLevelResult(
           loadLevelsProgress(),
           lvl,
@@ -206,7 +208,8 @@ export default function QuizLevels({ onExit }: { onExit: () => void }) {
         setProgress(result.progress);
         setStarsEarned(result.stars);
         setUnlockedNext(result.unlockedNext);
-        if (won) {
+        setCleared(result.cleared);
+        if (result.cleared) {
           playWinFanfare();
           const { count } = recordWin(
             "quiz-battle",
@@ -290,6 +293,7 @@ export default function QuizLevels({ onExit }: { onExit: () => void }) {
       setShowNudge(false);
       setStarsEarned(0);
       setUnlockedNext(false);
+      setCleared(false);
       levelRef.current = lvl;
       setLevel(lvl);
       const questions = drawLevelQuestions(lvl);
@@ -401,6 +405,9 @@ export default function QuizLevels({ onExit }: { onExit: () => void }) {
               <span className="ml-2 text-sm font-normal" style={{ color: "var(--muted)" }}>
                 {t.quiz.levels.levelLabel(band.from)}–{band.to}
               </span>
+              <span className="ml-2 text-sm font-semibold" style={{ color: "var(--gold-deep)" }}>
+                · {t.quiz.levels.needToUnlock(band.threshold)}
+              </span>
             </h2>
             <div className="mt-3 grid grid-cols-5 gap-2 sm:grid-cols-10">
               {Array.from({ length: band.to - band.from + 1 }, (_, i) => band.from + i).map((lvl) => {
@@ -456,8 +463,7 @@ export default function QuizLevels({ onExit }: { onExit: () => void }) {
 
   /* ------------------------------ Results ------------------------------ */
   if (phase === "results") {
-    const won = playerMarks > botMarks;
-    const draw = playerMarks === botMarks;
+    const threshold = unlockThresholdForLevel(level);
     const stars = starsForCorrect(correctCount);
     const wrongFirst = [...review].sort((a, b) => Number(a.playerCorrect) - Number(b.playerCorrect));
     return (
@@ -466,13 +472,16 @@ export default function QuizLevels({ onExit }: { onExit: () => void }) {
         <div className="card p-5 text-center sm:p-6">
           <span
             className="mx-auto flex h-14 w-14 items-center justify-center rounded-full text-white"
-            style={{ background: won ? GREEN : "var(--gold)" }}
+            style={{ background: cleared ? GREEN : "var(--gold)" }}
           >
             <Trophy size={26} aria-hidden="true" />
           </span>
           <h2 className="font-serif-d mt-3 text-2xl font-semibold">
-            {draw ? t.quiz.levels.levelDraw : won ? t.quiz.levels.levelWon : t.quiz.levels.levelLost}
+            {cleared ? t.quiz.levels.levelCleared : t.quiz.levels.levelNotCleared}
           </h2>
+          <p className="mt-2 text-sm font-semibold" style={{ color: "var(--muted)" }}>
+            {t.quiz.levels.neededVsGot(threshold, correctCount)}
+          </p>
           {/* Stars earned */}
           <p className="mt-3 flex justify-center gap-1" aria-label={t.quiz.levels.starsEarned(stars)}>
             {[0, 1, 2].map((s) => (
@@ -485,15 +494,15 @@ export default function QuizLevels({ onExit }: { onExit: () => void }) {
               />
             ))}
           </p>
-          {won && unlockedNext && level < LEVELS_COUNT && (
+          {cleared && unlockedNext && level < LEVELS_COUNT && (
             <p className="mt-2 text-sm font-semibold" style={{ color: "var(--gold-deep)" }}>
               {t.quiz.levels.unlockedNext(level + 1)}
             </p>
           )}
           <p className="mt-2 text-base font-bold" style={{ color: "var(--gold-deep)" }}>
-            {pickPostMatchLine(won || draw ? "win" : "loss", `quiz-battle:level:${level}:${attemptIdRef.current}`)}
+            {pickPostMatchLine(cleared ? "win" : "loss", `quiz-battle:level:${level}:${attemptIdRef.current}`)}
           </p>
-          {won && showNudge && (
+          {cleared && showNudge && (
             <p
               className="mt-3 rounded-xl px-3 py-2 text-sm font-semibold"
               style={{ background: "var(--surface2)", color: "var(--gold-deep)" }}
@@ -522,7 +531,7 @@ export default function QuizLevels({ onExit }: { onExit: () => void }) {
             </div>
           </div>
           <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-            {won && level < LEVELS_COUNT && (
+            {cleared && level < LEVELS_COUNT && (
               <button
                 type="button"
                 className="btn btn-gold flex-1"
@@ -626,6 +635,9 @@ export default function QuizLevels({ onExit }: { onExit: () => void }) {
             {soundOn ? <Volume2 size={15} aria-hidden="true" /> : <VolumeX size={15} aria-hidden="true" />}
           </button>
         </div>
+        <p className="mt-2 text-xs font-semibold" style={{ color: "var(--gold-deep)" }}>
+          {t.quiz.levels.targetToClear(unlockThresholdForLevel(level))}
+        </p>
         <div className="mt-3 flex flex-col gap-2.5">
           <div className="flex items-center gap-2">
             <span className="w-24 shrink-0 truncate text-sm font-semibold">{session.name}</span>

@@ -39,6 +39,7 @@ import {
   unlockAudio,
 } from "@/lib/ludo/sounds";
 import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, pickPostMatchLine, recordWin } from "@/lib/games/win-motivation";
+import QuizLevels from "./levels";
 
 const QUESTION_COUNT = 10;
 const QUESTION_MS = 15000;
@@ -93,6 +94,8 @@ export default function QuizBattlePage() {
   const [soundOn, setSoundOn] = useState<boolean>(() => isSoundEnabled());
   /** Adobe Stock nudge: shown from the 3rd session win onward. */
   const [showNudge, setShowNudge] = useState(false);
+  /** Setup mode: Quick Battle (existing) or Levels (50 levels). */
+  const [mode, setMode] = useState<"quick" | "levels">("quick");
 
   /* Refs mirror the values timers need, so callbacks never read stale state. */
   const phaseRef = useRef<Phase>("setup");
@@ -307,6 +310,15 @@ export default function QuizBattlePage() {
     );
   }
 
+  /* Pressed states for the mode picker — computed before the levels
+     early-return below narrows `mode` to "quick". */
+  const isQuickMode = mode === "quick";
+  const isLevelsMode = mode === "levels";
+
+  if (mode === "levels") {
+    return <QuizLevels onExit={() => setMode("quick")} />;
+  }
+
   const current = battle[qIndex];
   const isLast = qIndex >= battle.length - 1;
   const secondsLeft = Math.ceil(timeLeftMs / 1000);
@@ -338,6 +350,35 @@ export default function QuizBattlePage() {
             </button>
           }
         />
+        <div>
+          <p className="text-sm font-semibold">{t.quiz.levels.modeTitle}</p>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              className="card !p-4 text-left"
+              onClick={() => setMode("quick")}
+              aria-pressed={isQuickMode}
+              style={isQuickMode ? { borderColor: "var(--gold)" } : undefined}
+            >
+              <p className="text-sm font-semibold">{t.quiz.levels.modeQuick}</p>
+              <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
+                {t.quiz.levels.modeQuickDesc}
+              </p>
+            </button>
+            <button
+              type="button"
+              className="card !p-4 text-left"
+              onClick={() => setMode("levels")}
+              aria-pressed={isLevelsMode}
+              style={isLevelsMode ? { borderColor: "var(--gold)" } : undefined}
+            >
+              <p className="text-sm font-semibold">{t.quiz.levels.modeLevels}</p>
+              <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
+                {t.quiz.levels.modeLevelsDesc}
+              </p>
+            </button>
+          </div>
+        </div>
         <div className="card p-5 sm:p-6">
           <p className="text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
             {t.quiz.setupDesc}

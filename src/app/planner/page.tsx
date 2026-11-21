@@ -8,7 +8,7 @@
    one entry to SITES below. */
 
 import { useState } from "react";
-import { ArrowLeft, ExternalLink, Globe2, Sparkles } from "lucide-react";
+import { ArrowLeft, ExternalLink, Globe2 } from "lucide-react";
 import { SectionHeader } from "@/components/ui";
 import { useLang } from "@/i18n/LanguageContext";
 
@@ -18,6 +18,7 @@ type GalaxySite = {
   desc: string;
   url: string;
   repo: string;
+  image: string;
 };
 
 export default function GalaxyPage() {
@@ -31,6 +32,23 @@ export default function GalaxyPage() {
       desc: t.planner.promptGuruDesc,
       url: "https://promptguru-two.vercel.app/",
       repo: "https://github.com/mdsonetmia04-cmyk/promptguru",
+      image: "/images/prompt-guru-card.png",
+    },
+    {
+      id: "sweet-design-studio",
+      name: "Sweet Design Studio",
+      desc: t.planner.designStudioDesc,
+      url: "https://sweet-design-studio-delta.vercel.app/",
+      repo: "https://github.com/mdsonetmia04-cmyk/sweet-design-studio",
+      image: "/images/sweet-design-studio-card.png",
+    },
+    {
+      id: "sweet-event-finder",
+      name: "Sweet Smart Calendar",
+      desc: t.planner.eventFinderDesc,
+      url: "https://event-finder-puce.vercel.app/",
+      repo: "https://github.com/mdsonetmia04-cmyk/event-finder",
+      image: "/images/sweet-event-finder-card.png",
     },
   ];
 
@@ -69,19 +87,16 @@ export default function GalaxyPage() {
       <SectionHeader title={t.planner.title} subtitle={t.planner.sub} />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {sites.map((site) => (
-          <button key={site.id} type="button" onClick={() => setActive(site)} className="card card-hover p-5 text-left">
-            <span
-              className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl"
-              style={{ background: "var(--gold-soft)", color: "var(--gold-deep)" }}
-            >
-              <Sparkles size={22} />
-            </span>
-            <span className="block font-serif-d text-lg font-semibold">{site.name}</span>
-            <span className="mt-1 block text-sm" style={{ color: "var(--muted)" }}>
-              {site.desc}
-            </span>
-            <span className="mt-4 block text-xs font-semibold" style={{ color: "var(--steel-deep)" }}>
-              {t.planner.openInside} →
+          <button key={site.id} type="button" onClick={() => setActive(site)} className="card card-hover overflow-hidden p-0 text-left">
+            <img src={site.image} alt={site.name} className="h-44 w-full object-cover object-center" />
+            <span className="block p-5 pt-4">
+              <span className="block font-serif-d text-lg font-semibold">{site.name}</span>
+              <span className="mt-1 block text-sm" style={{ color: "var(--muted)" }}>
+                {site.desc}
+              </span>
+              <span className="mt-4 block text-xs font-semibold" style={{ color: "var(--steel-deep)" }}>
+                {t.planner.openInside} →
+              </span>
             </span>
           </button>
         ))}

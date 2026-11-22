@@ -50,6 +50,14 @@ export default function GalaxyPage() {
       repo: "https://github.com/mdsonetmia04-cmyk/event-finder",
       image: "/images/sweet-event-finder-card.png",
     },
+    {
+      id: "promptex",
+      name: "PromptEx",
+      desc: t.planner.promptExDesc,
+      url: "https://promptex-nine.vercel.app/",
+      repo: "https://github.com/mdsonetmia04-cmyk/PromptEx",
+      image: "/images/promptex-card.png",
+    },
   ];
 
   if (active) {

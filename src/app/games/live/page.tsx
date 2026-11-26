@@ -1,24 +1,24 @@
 "use client";
 
 /* Live games: every room game currently RUNNING across Ludo, Draw &
-   Guess and Chess — playing rooms only, never waiting rooms. Everyone
-   can watch: opening a room shows the spectator view (live board, no
-   controls, no chat). A seated player opening their own game gets the
-   normal player view instead — each room page decides by seat, so this
-   list needs no membership logic of its own.
+   Guess, Chess and Quiz Battle — playing rooms only, never waiting
+   rooms. Everyone can watch: opening a room shows the spectator view
+   (live board, no controls, no chat). A seated player opening their
+   own game gets the normal player view instead — each room page
+   decides by seat, so this list needs no membership logic of its own.
 
-   Data paths mirror the three lobbies: Ludo reads ludo_rooms directly
+   Data paths mirror the lobbies: Ludo reads ludo_rooms directly
    (approved users can read rooms), Chess goes through
-   list_chess_rooms() + get_chess_room() per playing room, and Draw &
-   Guess goes through list_live_draw_rooms() (migration v24), which
-   returns spectator-safe fields only — no word, no used words. Until
-   that migration runs, the Draw & Guess call errors and those entries
-   are simply absent; the page never crashes on it. Refresh is the
-   same 10s poll the lobbies use. */
+   list_chess_rooms() + get_chess_room() per playing room, Draw &
+   Guess goes through list_live_draw_rooms() (migration v24), and
+   Quiz Battle goes through list_live_quiz_rooms() (migration v27) —
+   both return spectator-safe fields only. Until a migration runs, the
+   matching call errors and those entries are simply absent; the page
+   never crashes on it. Refresh is the same 10s poll the lobbies use. */
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Crown, Eye, PencilLine, RefreshCw } from "lucide-react";
+import { ArrowLeft, Brain, Crown, Eye, PencilLine, RefreshCw } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { useLang } from "@/i18n/LanguageContext";
 import { getSupabase } from "@/lib/supabase";
@@ -27,8 +27,9 @@ import { LudoAvatar } from "@/components/LudoGame";
 import { LOBBY_FRESH_MS, parseRoom } from "@/lib/ludo/room";
 import { parseChessLobbyRoom, parseChessRoom } from "@/lib/chess/room";
 import { parseLiveDrawRoom } from "@/lib/draw-guess/room";
+import { parseLiveQuizRoom } from "@/lib/quiz/multiplayer";
 
-type LiveGame = "ludo" | "draw" | "chess";
+type LiveGame = "ludo" | "draw" | "chess" | "quiz";
 
 interface LiveEntry {
   game: LiveGame;
@@ -43,6 +44,7 @@ const GAME_DOT: Record<LiveGame, string> = {
   ludo: "#E5484D",
   draw: "#E8A90C",
   chess: "#9C6B41",
+  quiz: "#3E7BFA",
 };
 
 export default function LiveGamesPage() {
@@ -127,6 +129,25 @@ export default function LiveGamesPage() {
       }
     }
 
+    // Quiz Battle: the live-list RPC (migration v27). Until it is
+    // run, this errors — treat as "no live Quiz Battle games".
+    const quizRes = await supabase.rpc("list_live_quiz_rooms");
+    if (!quizRes.error && quizRes.data) {
+      for (const row of quizRes.data as unknown[]) {
+        const room = parseLiveQuizRoom(row);
+        if (room) {
+          found.push({
+            game: "quiz",
+            id: room.id,
+            code: room.code,
+            updatedAt: room.updated_at,
+            players: room.players,
+            href: `/games/quiz-battle/room/${room.id}`,
+          });
+        }
+      }
+    }
+
     found.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
     setEntries(found);
     setLoading(false);
@@ -139,11 +160,18 @@ export default function LiveGamesPage() {
   }, [fetchLive]);
 
   const gameName = (game: LiveGame): string =>
-    game === "ludo" ? t.liveWatch.ludoName : game === "draw" ? t.liveWatch.drawName : t.liveWatch.chessName;
+    game === "ludo"
+      ? t.liveWatch.ludoName
+      : game === "draw"
+        ? t.liveWatch.drawName
+        : game === "quiz"
+          ? t.liveWatch.quizName
+          : t.liveWatch.chessName;
 
   const gameIcon = (game: LiveGame) => {
     if (game === "draw") return <PencilLine size={13} aria-hidden="true" />;
     if (game === "chess") return <Crown size={13} aria-hidden="true" />;
+    if (game === "quiz") return <Brain size={13} aria-hidden="true" />;
     return (
       <span className="grid grid-cols-2 gap-[1px]" aria-hidden="true">
         <span className="h-[5px] w-[5px] rounded-[1px]" style={{ background: "#E5484D" }} />

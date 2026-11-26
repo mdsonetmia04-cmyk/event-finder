@@ -40,6 +40,7 @@ import {
 } from "@/lib/ludo/sounds";
 import { ADOBE_STOCK_NUDGE, NUDGE_AFTER_WINS, pickPostMatchLine, recordWin } from "@/lib/games/win-motivation";
 import QuizLevels from "./levels";
+import QuizMultiplayer from "./multiplayer";
 
 const QUESTION_COUNT = 10;
 const QUESTION_MS = 15000;
@@ -94,8 +95,9 @@ export default function QuizBattlePage() {
   const [soundOn, setSoundOn] = useState<boolean>(() => isSoundEnabled());
   /** Adobe Stock nudge: shown from the 3rd session win onward. */
   const [showNudge, setShowNudge] = useState(false);
-  /** Setup mode: Quick Battle (existing) or Levels (50 levels). */
-  const [mode, setMode] = useState<"quick" | "levels">("quick");
+  /** Setup mode: Quick Battle (existing), Levels (50 levels), or
+      Multiplayer (2–4 players in a room). */
+  const [mode, setMode] = useState<"quick" | "levels" | "multiplayer">("quick");
 
   /* Refs mirror the values timers need, so callbacks never read stale state. */
   const phaseRef = useRef<Phase>("setup");
@@ -314,9 +316,14 @@ export default function QuizBattlePage() {
      early-return below narrows `mode` to "quick". */
   const isQuickMode = mode === "quick";
   const isLevelsMode = mode === "levels";
+  const isMultiplayerMode = mode === "multiplayer";
 
   if (mode === "levels") {
     return <QuizLevels onExit={() => setMode("quick")} />;
+  }
+
+  if (mode === "multiplayer") {
+    return <QuizMultiplayer onExit={() => setMode("quick")} />;
   }
 
   const current = battle[qIndex];
@@ -375,6 +382,18 @@ export default function QuizBattlePage() {
               <p className="text-sm font-semibold">{t.quiz.levels.modeLevels}</p>
               <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
                 {t.quiz.levels.modeLevelsDesc}
+              </p>
+            </button>
+            <button
+              type="button"
+              className="card !p-4 text-left"
+              onClick={() => setMode("multiplayer")}
+              aria-pressed={isMultiplayerMode}
+              style={isMultiplayerMode ? { borderColor: "var(--gold)" } : undefined}
+            >
+              <p className="text-sm font-semibold">{t.quiz.levels.modeMultiplayer}</p>
+              <p className="mt-1 text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
+                {t.quiz.levels.modeMultiplayerDesc}
               </p>
             </button>
           </div>

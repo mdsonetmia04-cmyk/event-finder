@@ -26,8 +26,8 @@ export interface QuizPlayer {
   /** Tiebreak: sum of answer times in ms (a timeout counts 15,000). */
   total_ms: number;
   seat: number;
-  /** Left mid-match: earned marks stay, no more answers. */
-  left: boolean;
+  /** Has left mid-match: earned marks stay, no more answers. */
+  has_left: boolean;
   /** Answered the current question. */
   answered: boolean;
 }
@@ -217,7 +217,7 @@ function parseQuizPlayer(entry: unknown): QuizPlayer | null {
     typeof entry.score !== "number" ||
     typeof entry.total_ms !== "number" ||
     typeof entry.seat !== "number" ||
-    typeof entry.left !== "boolean" ||
+    typeof entry.has_left !== "boolean" ||
     typeof entry.answered !== "boolean"
   ) {
     return null;
@@ -229,7 +229,7 @@ function parseQuizPlayer(entry: unknown): QuizPlayer | null {
     score: entry.score,
     total_ms: entry.total_ms,
     seat: entry.seat,
-    left: entry.left,
+    has_left: entry.has_left,
     answered: entry.answered,
   };
 }

@@ -41,7 +41,7 @@
 --    score is MARKS: 1 per correct answer, 0 for wrong/timeout.
 --    total_ms is the tiebreak: the sum of answer times in
 --    milliseconds (a timeout counts the full 15,000 ms). seat is the
---    join order (0 = host). left marks a player who left mid-match:
+--    join order (0 = host). has_left marks a player who left mid-match:
 --    their earned marks stay on the board, but they can no longer
 --    answer — their remaining answers are forfeited.
 --
@@ -101,7 +101,7 @@ create table if not exists public.quiz_players (
   avatar_url text,
   score integer not null default 0,
   total_ms bigint not null default 0,
-  left boolean not null default false,
+  has_left boolean not null default false,
   seat integer not null,
   primary key (room_id, user_id)
 );
@@ -162,7 +162,7 @@ begin
       'score', qp.score,
       'total_ms', qp.total_ms,
       'seat', qp.seat,
-      'left', qp.left,
+      'has_left', qp.has_left,
       'answered', exists (select 1 from public.quiz_answers qa
         where qa.room_id = p_room_id and qa.user_id = qp.user_id
           and qa.q_index = v_room.current_q)
@@ -235,7 +235,7 @@ begin
   return query
     select r.id, r.code,
       (select qp.name from public.quiz_players qp where qp.room_id = r.id order by qp.seat limit 1),
-      (select count(*) from public.quiz_players qp where qp.room_id = r.id and qp.left = false),
+      (select count(*) from public.quiz_players qp where qp.room_id = r.id and qp.has_left = false),
       r.max_players, r.updated_at
     from public.quiz_rooms r
     where r.status = 'waiting'
@@ -262,7 +262,7 @@ begin
   end if;
   return query
     select r.id, r.code, r.status,
-      (select count(*) from public.quiz_players qp where qp.room_id = r.id and qp.left = false),
+      (select count(*) from public.quiz_players qp where qp.room_id = r.id and qp.has_left = false),
       r.max_players, r.updated_at
     from public.quiz_rooms r
     where r.code = upper(trim(p_code))
@@ -344,7 +344,7 @@ begin
   if v_room.updated_at <= now() - interval '1 hour' then
     return false;
   end if;
-  select count(*) into v_count from public.quiz_players where room_id = p_room_id and left = false;
+  select count(*) into v_count from public.quiz_players where room_id = p_room_id and has_left = false;
   if v_count >= v_room.max_players then
     return false;
   end if;
@@ -361,7 +361,7 @@ $$;
 grant execute on function public.join_quiz_room(uuid) to authenticated;
 
 -- 9) Leave a room. Waiting: the host deletes the whole room; anyone
---    else removes only themselves. Playing: the leaver is marked left
+--    else removes only themselves. Playing: the leaver is marked has_left
 --    — their earned marks stay on the board, but they can no longer
 --    answer, so their remaining answers are forfeited. Finished:
 --    leaving just navigates away; the board keeps every seat.
@@ -390,8 +390,8 @@ begin
     end if;
     return true;
   end if;
-  -- Playing: mark left, keep the seat and the score.
-  update public.quiz_players set left = true
+  -- Playing: mark has_left, keep the seat and the score.
+  update public.quiz_players set has_left = true
   where room_id = p_room_id and user_id = auth.uid();
   update public.quiz_rooms set updated_at = now() where id = p_room_id;
   return true;
@@ -459,12 +459,12 @@ begin
   if v_room.status <> 'waiting' then
     return false;
   end if;
-  select count(*) into v_count from public.quiz_players where room_id = p_room_id and left = false;
+  select count(*) into v_count from public.quiz_players where room_id = p_room_id and has_left = false;
   if v_count < 2 then
     return false;
   end if;
   delete from public.quiz_answers where room_id = p_room_id;
-  update public.quiz_players set score = 0, total_ms = 0, left = false where room_id = p_room_id;
+  update public.quiz_players set score = 0, total_ms = 0, has_left = false where room_id = p_room_id;
   update public.quiz_rooms
   set status = 'playing', phase = 'question', current_q = 0,
       question_ids = p_question_ids, question_orders = p_orders, correct_indices = p_correct,
@@ -512,7 +512,7 @@ begin
     return false;
   end if;
   if not exists (select 1 from public.quiz_players
-                 where room_id = p_room_id and user_id = auth.uid() and left = false) then
+                 where room_id = p_room_id and user_id = auth.uid() and has_left = false) then
     return false;
   end if;
   if exists (select 1 from public.quiz_answers
@@ -558,7 +558,7 @@ begin
     return false;
   end if;
   if not exists (select 1 from public.quiz_players
-                 where room_id = p_room_id and user_id = auth.uid() and left = false) then
+                 where room_id = p_room_id and user_id = auth.uid() and has_left = false) then
     return false;
   end if;
   if v_room.question_ends_at is null or v_room.question_ends_at > now() then
@@ -567,7 +567,7 @@ begin
   if v_room.phase = 'question' then
     update public.quiz_players qp
     set total_ms = total_ms + 15000
-    where qp.room_id = p_room_id and qp.left = false
+    where qp.room_id = p_room_id and qp.has_left = false
       and not exists (select 1 from public.quiz_answers qa
         where qa.room_id = p_room_id and qa.user_id = qp.user_id
           and qa.q_index = v_room.current_q);
@@ -618,7 +618,7 @@ begin
     return false;
   end if;
   delete from public.quiz_answers where room_id = p_room_id;
-  update public.quiz_players set score = 0, total_ms = 0, left = false where room_id = p_room_id;
+  update public.quiz_players set score = 0, total_ms = 0, has_left = false where room_id = p_room_id;
   update public.quiz_rooms
   set status = 'waiting', phase = null, current_q = 0,
       question_ids = '[]'::jsonb, question_orders = '[]'::jsonb, correct_indices = '[]'::jsonb,

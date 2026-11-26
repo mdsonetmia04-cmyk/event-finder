@@ -124,7 +124,7 @@ export default function QuizRoomPage() {
   const isHost = room?.host_id === session?.id;
   const isMember = mySeat !== -1;
   const me = room && session ? room.players.find((p) => p.user_id === session.id) : undefined;
-  const iLeft = me?.left === true;
+  const iLeft = me?.has_left === true;
 
   /* A new question (or the reveal) clears my local pick. */
   useEffect(() => {
@@ -370,7 +370,7 @@ export default function QuizRoomPage() {
 
   /* Waiting view. */
   if (room.status === "waiting") {
-    const canStart = room.players.filter((p) => !p.left).length >= 2;
+    const canStart = room.players.filter((p) => !p.has_left).length >= 2;
     return (
       <div className="mx-auto flex max-w-3xl flex-col gap-4">
         {actionError && (
@@ -509,7 +509,7 @@ export default function QuizRoomPage() {
                 <span className="font-serif-d w-6 text-center text-lg font-bold">{i + 1}</span>
                 <LudoAvatar url={p.avatar_url} name={p.name} size={36} />
                 <span className="min-w-0 flex-1 truncate text-sm font-semibold">{p.name}</span>
-                {p.left && <span className="chip">{t.quiz.multi.leftLabel}</span>}
+                {p.has_left && <span className="chip">{t.quiz.multi.leftLabel}</span>}
                 {p.user_id === session.id && <span className="chip">{t.ludo.you}</span>}
                 <span className="text-right text-sm">
                   <span className="font-bold" style={{ color: "var(--gold-deep)" }}>
@@ -666,7 +666,7 @@ export default function QuizRoomPage() {
               {p.answered && room.phase === "question" && (
                 <Check size={15} style={{ color: GREEN }} aria-label={t.quiz.multi.answeredNote} />
               )}
-              {p.left && <span className="chip !py-0.5 text-[11px]">{t.quiz.multi.leftLabel}</span>}
+              {p.has_left && <span className="chip !py-0.5 text-[11px]">{t.quiz.multi.leftLabel}</span>}
             </div>
           ))}
         </div>

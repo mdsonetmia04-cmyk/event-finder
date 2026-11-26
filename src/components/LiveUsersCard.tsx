@@ -32,7 +32,7 @@ const LIVE_POLL_MS = 30_000;
     when the user is not on a game page.
     Unknown keys never render a pill. Labels reuse the game card titles
     so both languages stay consistent. */
-function gameLabelFor(
+export function gameLabelFor(
   currentGame: string | null,
   labels: { ludo: string; quizBattle: string; drawGuess: string; arrowsOut: string; bubbleShooter: string; chess: string },
 ): string | null {

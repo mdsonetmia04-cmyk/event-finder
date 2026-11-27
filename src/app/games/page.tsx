@@ -98,6 +98,42 @@ function ArcadeQuizArt() {
   );
 }
 
+/** Word Meaning Battle art: giant gold "Aa" + three word rows, first one checked. */
+function ArcadeWordArt() {
+  return (
+    <div className="flex items-center justify-center gap-4" aria-hidden="true">
+      <span
+        className="font-serif-d text-[84px] leading-none font-bold"
+        style={{
+          background: "linear-gradient(180deg,#FBE7B0,#E8B64C 55%,#B97F1E)",
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          color: "transparent",
+          filter: "drop-shadow(0 4px 14px rgba(232,182,76,0.45))",
+        }}
+      >
+        Aa
+      </span>
+      <span className="flex flex-col gap-2">
+        {[true, false, false].map((ok, i) => (
+          <span
+            key={i}
+            className="flex w-28 items-center gap-2 rounded-lg border px-2.5 py-2"
+            style={{ borderColor: "rgba(232,182,76,0.3)", background: "rgba(255,255,255,0.04)" }}
+          >
+            {ok ? (
+              <Check size={13} style={{ color: "#4ADE80" }} />
+            ) : (
+              <span className="h-3 w-3 shrink-0 rounded-full border" style={{ borderColor: "rgba(255,255,255,0.35)" }} />
+            )}
+            <span className="h-2 flex-1 rounded-full" style={{ background: "rgba(255,255,255,0.14)" }} />
+          </span>
+        ))}
+      </span>
+    </div>
+  );
+}
+
 /** Draw & Guess art: gold pencil doodling a star + lightbulb. */
 function ArcadeDrawArt() {
   return (
@@ -262,6 +298,7 @@ function LiveNowStrip() {
   const labels = {
     ludo: t.games.ludoTitle,
     quizBattle: t.games.quizTitle,
+    wordBattle: t.games.wordTitle,
     drawGuess: t.games.drawTitle,
     arrowsOut: t.games.arrowsTitle,
     bubbleShooter: t.games.bubbleTitle,
@@ -389,7 +426,7 @@ export default function GamesPage() {
 
         <LiveNowStrip />
 
-        {/* Six games, equal arcade cards. */}
+        {/* Seven games, equal arcade cards. */}
         <div className="grid gap-4 sm:grid-cols-2">
           <ArcadeCard art={<MiniBoard big />} title={t.games.ludoTitle} desc={t.games.ludoDesc}>
             <Link href="/games/ludo/solo" className="arcade-play">
@@ -410,6 +447,13 @@ export default function GamesPage() {
 
           <ArcadeCard art={<ArcadeQuizArt />} title={t.games.quizTitle} desc={t.games.quizDesc}>
             <Link href="/games/quiz-battle" className="arcade-play">
+              <Play size={17} aria-hidden="true" />
+              {t.games.playNow}
+            </Link>
+          </ArcadeCard>
+
+          <ArcadeCard art={<ArcadeWordArt />} title={t.games.wordTitle} desc={t.games.wordDesc}>
+            <Link href="/games/word-battle" className="arcade-play">
               <Play size={17} aria-hidden="true" />
               {t.games.playNow}
             </Link>

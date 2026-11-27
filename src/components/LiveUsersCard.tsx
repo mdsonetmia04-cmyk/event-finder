@@ -28,16 +28,17 @@ const LIVE_POLL_MS = 30_000;
 /** Localized game name for a current_game key ('ludo' / 'quiz-battle'
     from migration v15, 'draw-guess' from migration v18, 'arrows-out'
     from migration v20, 'bubble-shooter' from migration v22, 'chess'
-    from migration v23), or null
+    from migration v23, 'word-battle' from migration v28), or null
     when the user is not on a game page.
     Unknown keys never render a pill. Labels reuse the game card titles
     so both languages stay consistent. */
 export function gameLabelFor(
   currentGame: string | null,
-  labels: { ludo: string; quizBattle: string; drawGuess: string; arrowsOut: string; bubbleShooter: string; chess: string },
+  labels: { ludo: string; quizBattle: string; wordBattle: string; drawGuess: string; arrowsOut: string; bubbleShooter: string; chess: string },
 ): string | null {
   if (currentGame === "ludo") return labels.ludo;
   if (currentGame === "quiz-battle") return labels.quizBattle;
+  if (currentGame === "word-battle") return labels.wordBattle;
   if (currentGame === "draw-guess") return labels.drawGuess;
   if (currentGame === "arrows-out") return labels.arrowsOut;
   if (currentGame === "bubble-shooter") return labels.bubbleShooter;
@@ -188,7 +189,7 @@ export function LiveUsersCard() {
         ) : (
           <ul className="mt-3 max-h-80 space-y-3 overflow-y-auto pr-1">
             {liveUsers.map((u) => (
-              <LiveUserRow key={u.user_id} user={u} isYou={u.user_id === session.id} youLabel={t.zoneChat.you} gameLabel={gameLabelFor(u.current_game, { ludo: t.games.ludoTitle, quizBattle: t.games.quizTitle, drawGuess: t.games.drawTitle, arrowsOut: t.games.arrowsTitle, bubbleShooter: t.games.bubbleTitle, chess: t.games.chessTitle })} />
+              <LiveUserRow key={u.user_id} user={u} isYou={u.user_id === session.id} youLabel={t.zoneChat.you} gameLabel={gameLabelFor(u.current_game, { ludo: t.games.ludoTitle, quizBattle: t.games.quizTitle, wordBattle: t.games.wordTitle, drawGuess: t.games.drawTitle, arrowsOut: t.games.arrowsTitle, bubbleShooter: t.games.bubbleTitle, chess: t.games.chessTitle })} />
             ))}
           </ul>
         )}
@@ -210,7 +211,7 @@ export function LiveUsersCard() {
         ) : (
           <ul className="mt-3 max-h-80 space-y-3 overflow-y-auto pr-1">
             {inZone.map((u) => (
-              <LiveUserRow key={u.user_id} user={u} isYou={u.user_id === session.id} youLabel={t.zoneChat.you} gameLabel={gameLabelFor(u.current_game, { ludo: t.games.ludoTitle, quizBattle: t.games.quizTitle, drawGuess: t.games.drawTitle, arrowsOut: t.games.arrowsTitle, bubbleShooter: t.games.bubbleTitle, chess: t.games.chessTitle })} />
+              <LiveUserRow key={u.user_id} user={u} isYou={u.user_id === session.id} youLabel={t.zoneChat.you} gameLabel={gameLabelFor(u.current_game, { ludo: t.games.ludoTitle, quizBattle: t.games.quizTitle, wordBattle: t.games.wordTitle, drawGuess: t.games.drawTitle, arrowsOut: t.games.arrowsTitle, bubbleShooter: t.games.bubbleTitle, chess: t.games.chessTitle })} />
             ))}
           </ul>
         )}

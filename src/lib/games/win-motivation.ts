@@ -29,7 +29,7 @@
    SAME line. See pickTeamLine for why the per-client no-repeat rule
    cannot apply there. */
 
-export type WinGameId = "bubble-shooter" | "arrows-out" | "quiz-battle" | "ludo" | "draw-guess" | "chess";
+export type WinGameId = "bubble-shooter" | "arrows-out" | "quiz-battle" | "word-battle" | "ludo" | "draw-guess" | "chess";
 
 /** Outcome of a finished match from the viewing player's side.
     Draws/ties are reported as "win" (positive framing). */
